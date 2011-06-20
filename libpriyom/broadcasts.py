@@ -1,0 +1,146 @@
+from storm.locals import *
+import xmlintf
+import modulations
+import datetime
+
+class BroadcastFrequency(object):
+    __storm_table__ = "broadcastFrequencies"
+    ID = Int(primary = True)
+    BroadcastID = Int()
+    Frequency = Int()
+    ModulationID = Int()
+    Modulation = Reference(ModulationID, modulations.Modulation.ID)
+    
+    def __init__(self):
+        self.Frequency = 0
+        self.ModulationID = 0
+    
+    @staticmethod
+    def importFromDom(store, node, broadcast):
+        frequency = int(xmlintf.getText(node))
+        modname = node.getAttribute("modulation")
+        checklist = store.find(BroadcastFrequency, 
+            (BroadcastFrequency.Frequency == frequency) and
+            (BroadcastFrequency.BroadcastID == broadcast.ID))
+        for broadcastFrequency in checklist:
+            if broadcastFrequency.Modulation.Name == modname:
+                return broadcastFrequency
+        
+        obj = BroadcastFrequency()
+        store.add(obj)
+        obj.Broadcast = broadcast
+        obj.fromDom(node)
+        return obj
+    
+    def fromDom(self, node):
+        self.Frequency = int(xmlintf.getText(node))
+        self.Modulation = Store.of(self).find(modulations.Modulation, modulations.Modulation.Name == node.getAttribute("modulation")).any()
+        if self.Modulation is None:
+            self.Modulation = modulations.Modulation()
+            Store.of(self).add(self.Modulation)
+            self.Modulation.Name = node.getAttribute("modulation")
+    
+    def toDom(self, parentNode):
+        doc = parentNode.ownerDocument
+        frequency = xmlintf.buildTextElementNS(doc, "frequency", unicode(self.Frequency), xmlintf.namespace)
+        frequency.setAttribute("modulation", self.Modulation.Name)
+        parentNode.appendChild(frequency)
+        
+
+class Broadcast(xmlintf.XMLStorm):
+    __storm_table__ = "broadcasts"
+    ID = Int(primary = True)
+    StationID = Int()
+    Type = Enum(map={
+        "data": "data",
+        "continous": "continous"
+    })
+    BroadcastStart = Int()
+    BroadcastEnd = Int()
+    ScheduleLeafID = Int()
+    Confirmed = Bool()
+    Comment = Unicode()
+    Frequencies = ReferenceSet(ID, BroadcastFrequency.BroadcastID)
+    
+    xmlMapping = {
+        u"comment": "Comment",
+        u"type": "Type"
+    }
+    
+    def __init__(self):
+        self.Confirmed = False
+        self.BroadcastStart = 0
+        self.BroadcastEnd = None
+        self.Comment = None
+        self.StationID = 0
+        
+    def _dummy(self, element):
+        pass
+        
+    def _loadStart(self, element):
+        time = long(element.getAttribute("unix"))
+        self.BroadcastStart = time
+        
+    def _loadEnd(self, element):
+        time = long(element.getAttribute("unix"))
+        self.BroadcastEnd = time
+        
+    def _loadConfirmed(self, element):
+        if element.hasAttribute("delete"):
+            self.Confirmed = False
+        else:
+            self.Confirmed = True
+    
+    def _loadFrequency(self, element):
+        broadcastFrequency = BroadcastFrequency.importFromDom(Store.of(self), element, self)
+        if element.hasAttribute("delete"):
+            Store.of(self).remove(broadcastFrequency)
+    
+    def getIsOnAir(self):
+        now = datetime.datetime.utcnow()
+        start = datetime.datetime.utcfromtimestamp(self.BroadcastStart)
+        if now > start:
+            if self.BroadcastEnd is None:
+                return True
+            else:
+                end = datetime.datetime.utcfromtimestamp(self.BroadcastEnd)
+                return now < end
+        else:
+            return False
+        
+    
+    def toDom(self, parentNode, flags=None):
+        doc = parentNode.ownerDocument
+        broadcast = doc.createElementNS(xmlintf.namespace, "broadcast")
+        
+        xmlintf.appendTextElement(broadcast, "id", unicode(self.ID))
+        xmlintf.appendDateElement(broadcast, "start", self.BroadcastStart)
+        if self.BroadcastEnd is not None:
+            xmlintf.appendDateElement(broadcast, "end", self.BroadcastEnd)
+        xmlintf.appendTextElements(broadcast,
+            [
+                ("station-id", unicode(self.StationID)),
+                ("type", self.Type),
+                ("confirmed", "" if self.Confirmed else None),
+                ("on-air", "" if self.getIsOnAir() else None),
+                ("has-transmissions", "" if self.Transmissions.any() is not None else None)
+            ]
+        )
+        for frequency in self.Frequencies:
+            frequency.toDom(broadcast)
+        
+        parentNode.appendChild(broadcast)
+        
+    def loadDomElement(self, node):
+        print("loading %s" % node.tagName)
+        try:
+            {
+                u"start": self._loadStart,
+                u"end": self._loadEnd,
+                u"confirmed": self._loadConfirmed,
+                u"on-air": self._dummy,
+                u"has-transmissions": self._dummy,
+                u"frequency": self._loadFrequency
+            }[node.tagName](node)
+        except KeyError:
+            pass
