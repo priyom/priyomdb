@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<import>
+  <station>
+    <id>1</id>
+    <station-metadata>
+      <priyom-id>B10</priyom-id>
+    </station-metadata>
+    <broadcasts>
+        <broadcast>
+            <id>18</id>
+            <station-id>1</station-id>
+            <start unix="0" />
+            <confirmed />
+            <comment>test</comment>
+            <frequency modulation="USB+RTTY" delete="true">1234000</frequency>
+            <frequency modulation="LSB">1280000</frequency>
+        </broadcast>
+    </broadcasts>
+  </station>
+</import>
