@@ -26,17 +26,6 @@ class BroadcastsServlet(baseServlet.Servlet):
             raise ServletInvalidQueryError("Invalid argument count")
         update = not ("no-update" in arguments)
         all = "all" in arguments
-        if pathSegments[0] == "":
-            timeLimit = 86400 # one day
-            if update and timeLimit > queryLimits.broadcasts.maxTimeRangeForUpdatingQueries:
-                timeLimit = queryLimits.broadcasts.maxTimeRangeForUpdatingQueries
-        else:
-            try:
-                timeLimit = int(pathSegments[0])
-            except ValueError:
-                raise ServletInvalidQueryError("Non-integer time range (expected in unit of seconds)")
-            if update and (timeLimit > queryLimits.broadcasts.maxTimeRangeForUpdatingQueries):
-                raise ServletInvalidQueryError("Time range exceeds maximum for updating queries (%d). You may want to try the \"no-update\" flag, but you may receive outdated information" % queryLimits.broadcasts.maxTimeRangeForUpdatingQueries)
         
         try:
             stationId = int(arguments["station"])
@@ -45,15 +34,35 @@ class BroadcastsServlet(baseServlet.Servlet):
         except ValueError:
             raise ServletInvalidQueryError("Non-integer station id")
             
+        maxTimeRange = queryLimits.broadcasts.maxTimeRangeForUpdatingQueries if stationId is None else queryLimits.broadcasts.maxTimeRangeForStationBoundUpdatingQueries
+        
+        if pathSegments[0] == "":
+            timeLimit = maxTimeRange # automatically set
+        else:
+            try:
+                timeLimit = int(pathSegments[0])
+            except ValueError:
+                raise ServletInvalidQueryError("Non-integer time range (expected in unit of seconds)")
+            #if update and (timeLimit > maxTimeRange):
+            #    raise ServletInvalidQueryError("Time range exceeds maximum for updating queries (%d). You may want to try the \"no-update\" flag, but you may receive outdated information" % maxTimeRange)
+        
+            
         now = self._now()
         if update:
+            untilDate = datetime.datetime.fromtimestamp(now)
+            untilDate += datetime.timedelta(seconds=timeLimit)
+            untilDate = datetime.datetime(year=untilDate.year, month=untilDate.month, day=untilDate.day)
+            until = int(time.mktime(untilDate.timetuple()))
             if stationId is None:
-                self.priyomInterface.updateSchedules(now + timeLimit)
+                validUntil = self.priyomInterface.scheduleMaintainer.updateSchedules(until, maxTimeRange)
             else:
                 station = self.store.get(Station, stationId)
                 if station is None:
                     raise ServletError(404, "Station does not exist (no update query possible)")
-                self.priyomInterface.updateSchedule(station, now + timeLimit)
+                validUntil = self.priyomInterface.scheduleMaintainer.updateSchedule(station, until, maxTimeRange)
+            if validUntil < until:
+                self.setReplyCode(200, "Information may be out of date")
+            self.setHeader("Expires", self.formatTimestamp(validUntil))
         
         where = And(Or(Broadcast.BroadcastEnd > now, Broadcast.BroadcastEnd == None), (Broadcast.BroadcastStart < (now + timeLimit)))
         if not all:

@@ -11,4 +11,8 @@ iface = libpriyom.interface.PriyomInterface(store)
 priyomhttp.server.servlets.priyomInterface = iface
 
 server = BaseHTTPServer.HTTPServer(("", 8080), priyomhttp.server.PriyomHTTPRequestHandler, True)
-server.serve_forever()
+try:
+    server.serve_forever()
+except KeyboardInterrupt:
+    pass
+store.flush()

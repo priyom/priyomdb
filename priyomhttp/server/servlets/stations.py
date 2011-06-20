@@ -54,7 +54,10 @@ class StationsServlet(baseServlet.Servlet):
         else:
             operand = pathSegments[1]
             value = pathSegments[2]
-        resultSet = self._limitResults(self.finder.select(pathSegments[0], operand, value, negate), arguments)
+        try:
+            resultSet = self._limitResults(self.finder.select(pathSegments[0], operand, value, negate), arguments)
+        except libpriyom.helpers.selectors.ObjectFinderError as e:
+            raise ServletInvalidQueryError(str(e))
         stations = [station for station in resultSet]
         if len(stations) == 0:
             raise ServletError(404, "No stations match the given criteria")

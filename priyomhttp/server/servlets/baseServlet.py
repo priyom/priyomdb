@@ -1,4 +1,6 @@
 import cStringIO
+import time
+import datetime
 
 class ServletError(Exception):
     def __init__(self, code, message=None):
@@ -7,9 +9,12 @@ class ServletError(Exception):
         
 class ServletInvalidQueryError(ServletError):
     def __init__(self, message = "Invalid query"):
-        super(ServletInvalidQueryError, self).__init__(404, message)
+        super(ServletInvalidQueryError, self).__init__(400, message)
 
 class Servlet(object):
+    weekdayname = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+    monthname = [None, 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+    
     def __init__(self, instanceName, priyomInterface):
         self.instanceName = instanceName
         self.priyomInterface = priyomInterface
@@ -47,6 +52,12 @@ class Servlet(object):
         except KeyError:
             pass
             
+    def formatDate(self, dt):
+        return dt.strftime("%%s, %d %%s %Y %T UTC") % (Servlet.weekdayname[dt.weekday()], Servlet.monthname[dt.month])
+        
+    def formatTimestamp(self, timestamp):
+        return self.formatDate(datetime.datetime.fromtimestamp(timestamp))
+        
     def do_GET(self, pathSegments, arguments, rfile, wfile):
         self.setHeader("ContentType", "text/plain")
         wfile.write(u"command: %s\n" % command)

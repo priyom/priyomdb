@@ -1,13 +1,44 @@
-from ..broadcasts import Broadcast
-from ..schedules import Schedule
+from storm.locals import *
+from ..broadcasts import Broadcast, BroadcastFrequency
+from ..schedules import Schedule, ScheduleLeaf
 from ..stations import Station
 from time import mktime
 from datetime import datetime, timedelta
+from ..limits import limits
 
-class ScheduleLeafDescription(object):
-    def __init__(self, scheduleLeaf, timeAtStartOffset):
-        self.leaf = scheduleLeaf
-        self.offsetFromAlignment = timeAtStartOffset
+class ScheduleMaintainerError(Exception):
+    pass
+        
+class LeafDescriptor(object):
+    def __init__(self, leaf, startOffset):
+        self.leaf = leaf
+        self.startOffset = startOffset
+    
+class LeafList(object):
+    def __init__(self, store, station):
+        self.items = []
+        self.store = store
+        self.station = station
+        self.stationId = station.ID
+    
+    def add(self, scheduleNode, instanceStartOffset):
+        i = 0
+        for leaf in self.store.find(ScheduleLeaf, 
+            ScheduleLeaf.StationID == self.stationId,
+            ScheduleLeaf.ScheduleID == scheduleNode.ID):
+            
+            self.items.append(LeafDescriptor(leaf, instanceStartOffset))
+            i += 1
+        return i
+        
+class UpdateContext(object):
+    def __init__(self, rootSchedule, station, store, intervalStart, intervalEnd):
+        self.rootSchedule = rootSchedule
+        self.station = station
+        self.store = store
+        self.leafList = LeafList(store, station)
+        self.intervalStart = intervalStart
+        self.intervalEnd = intervalEnd
 
 class ScheduleMaintainer(object):
     def __init__(self, store):
@@ -22,149 +53,182 @@ class ScheduleMaintainer(object):
         return int(mktime(datetime.timetuple()))
         
     @staticmethod
+    def incYear(dt, by):
+        year = dt.year + by
+        return datetime(year=year, month=1, day=1)
+        
+    @staticmethod
     def incMonth(dt, by):
         month = dt.month + by
         year = dt.year + int((month-1) / 12)
         month -= int((month-1) / 12) * 12
         return datetime(year=year, month=month, day=1)
         
-    def findScheduleLeafRecurse(self, schedule, lowerConstraint, upperConstraint, timeAtStartOffset, time, allowClosest = False):
-        for child in schedule.Children:
-            match = self.findScheduleLeaf(schedule, lowerConstraint, upperConstraint, time, allowClosest)
-            if match is not None:
-                return match
-        return ScheduleLeafDescription(schedule, timeAtStartOffset)
+    def getLeavesInIntervalRecurse(self, context, node, lowerConstraint, upperConstraint, allowLeaf = True):
+        hasChildren = False
+        for child in node.Children:
+            hasChildren = True
+            self.getLeavesInInterval(context, child, lowerConstraint, upperConstraint)
+        if not hasChildren and allowLeaf:
+            context.leafList.add(node, lowerConstraint - node.StartTimeOffset)
         
-    def findScheduleLeafRecurseEx(self, schedule, lowerConstraint, upperConstraint, lcDate, ucDate, time, allowClosest = False):
-        lc = ScheduleMaintainer.toTimestamp(lcDate) + schedule.StartTimeOffset
-        if schedule.EndTimeOffset is not None:
-            uc = ScheduleMaintainer.toTimestamp(lcDate) + schedule.EndTimeOffset
-        else:
-            uc = ScheduleMaintainer.toTimestamp(ucDate)
-        if upperConstraint is not None:
-            if uc > upperConstraint:
-                uc = upperConstraint
-        
-        if (lc <= time) and (uc > time):
-            origLc = lc
-            if lowerConstraint is not None:
-                if lc < lowerConstraint:
-                    lc = lowerConstraint
-            return self.findScheduleLeafRecurse(schedule, lc, uc, origLc, time, allowClosest)
-        elif allowClosest and (lc > time):
-            origLc = lc
-            if lowerConstraint is not None:
-                if lc < lowerConstraint:
-                    lc = lowerConstraint
-            return self.findScheduleLeafRecurse(schedule, lc, uc, origLc, lc, allowClosest)
-        else:
-            return None
-        
-    def findScheduleLeaf_once(self, schedule, lowerConstraint, upperConstraint, time, allowClosest = False):
-        lc = schedule.StartTimeOffset
-        if lowerConstraint is not None:
-            lc += lowerConstraint
-        uc = schedule.EndTimeOffset
-        if upperConstraint is not None:
-            if uc is None:
+    def getLeavesInInterval_once(self, context, node, lowerConstraint, upperConstraint):
+        if node.Parent is None:
+            lc = max(lowerConstraint, node.StartTimeOffset)
+            if node.EndTimeOffset is None:
                 uc = upperConstraint
             else:
-                uc += upperConstraint
-        
-        if lc <= time and (uc is None or uc > time):
-            return self.findScheduleLeafRecurse(schedule, lc, uc, schedule.StartTimeOffset, time, allowClosest)
-        elif allowClosest and lc > time:
-            return self.findScheduleLeafRecurse(schedule, lc, uc, schedule.StartTimeOffset, lc, allowClosest)
+                uc = min(upperConstraint, node.EndTimeOffset)
         else:
-            return None
+            lc = lowerConstraint + node.StartTimeOffset
+            uc = min(lowerConstraint + node.EndTimeOffset, upperConstraint)
+        if (lc >= context.intervalStart):
+            self.getLeavesInIntervalRecurse(context, node, lc, uc, node.Parent is not None)
             
-    def findScheduleLeaf_year(self, schedule, lowerConstraint, upperConstraint, time, allowClosest = False):
-        lcDate = datetime.utcfromtimestamp(lowerConstraint)
-        lcDate = datetime(year=lcDate.year + schedule.Skip, day=1, month=1)
-        ucDate = datetime(year=lcDate.year + 1, day=1, month=1)
-        if schedule.Every is not None:
-            while (uc <= time):
-                if uc > upperConstraint:
-                    return None
-                lcDate = datetime(year=lcDate.year + schedule.Every)
-                ucDate = datetime(year=lcDate.year + 1, day=1, month=1)
-                uc = ScheduleMaintainer.toTimestamp(ucDate)
+    def getLeavesInInterval_year(self, context, node, lowerConstraint, upperConstraint):
+        lcDate = datetime.fromtimestamp(lowerConstraint)
+        lcDate = datetime(year=lcDate.year + node.Skip, month=1, day=1)
+        ucDate = datetime(year=lcDate.year + 1, month=1, day=1)
+        lc = ScheduleMaintainer.toTimestamp(lcDate)
+        uc = ScheduleMaintainer.toTimestamp(ucDate)
         
-        return self.findScheduleLeafRecurseEx(schedule, lowerConstraint, upperConstraint, lcDate, ucDate, time, allowClosest)
+        upperLimit = min(upperConstraint, context.intervalEnd)
+        while (lc < upperLimit):
+            if (uc > lowerConstraint):
+                self.getLeavesInIntervalRecurse(context, node, lc + node.StartTimeOffset, min(lc + node.EndTimeOffset, upperConstraint, uc), lc >= context.intervalStart)
+            if node.Every is None:
+                break
+            lcDate = ScheduleMaintainer.incYear(lcDate, node.Every)
+            ucDate = ScheduleMaintainer.incYear(lcDate, 1)
+            lc = ScheduleMaintainer.toTimestamp(lcDate)
+            uc = ScheduleMaintainer.toTimestamp(ucDate)
             
-    def findScheduleLeaf_month(self, schedule, lowerConstraint, upperConstraint, time, allowClosest = False):
-        lcDate = datetime.utcfromtimestamp(lowerConstraint)
-        ScheduleMaintainer.incMonth(lcDate, schedule.Skip)
-        lcDate = datetime(year=lcDate.year, month=startMonth, day=1)
-        ucDate = ScheduleMaintainer.nextMonth(lcDate)
-        if schedule.Every is not None:
-            while (ScheduleMaintainer.toTimestamp(ucDate) <= time):
-                startMonth = lcDate.month + schedule.Every
-                if startMonth > 12:
-                    return None
-                lcDate = datetime(year=lcDate.year, month=startMonth, day=1)
-                ucDate = ScheduleMaintainer.nextMonth(lcDate)
+    def getLeavesInInterval_month(self, context, node, lowerConstraint, upperConstraint):
+        lcDate = datetime.fromtimestamp(lowerConstraint)
+        lcDate = ScheduleMaintainer.incMonth(datetime(year=lcDate.year, month=1, day=1), node.Skip)
+        ucDate = ScheduleMaintainer.incMonth(lcDate, 1)
+        lc = ScheduleMaintainer.toTimestamp(lcDate)
+        uc = ScheduleMaintainer.toTimestamp(ucDate)
         
-        return self.findScheduleLeafRecurseEx(schedule, lowerConstraint, upperConstraint, lcDate, ucDate, time, allowClosest)
-    
-    def findScheduleLeaf_week(self, schedule, lowerConstraint, upperConstraint, time, allowClosest = False):
-        lcDate = datetime.utcfromtimestamp(lowerConstraint)
-        lcDate = datetime(year=lcDate.year, month=lcDate.month, day=lcDate.day) # align to day boundaries
-        interval = timedelta(days=7)
-        lcDate = lcDate + interval * schedule.Skip
+        upperLimit = min(upperConstraint, context.intervalEnd)
+        while (lc < upperLimit):
+            if (uc > lowerConstraint):
+                self.getLeavesInIntervalRecurse(context, node, lc + node.StartTimeOffset, min(lc + node.EndTimeOffset, upperConstraint, uc), lc >= context.intervalStart)
+            if node.Every is None:
+                break
+            lcDate = ScheduleMaintainer.incMonth(lcDate, node.Every)
+            ucDate = ScheduleMaintainer.incMonth(lcDate, 1)
+            lc = ScheduleMaintainer.toTimestamp(lcDate)
+            uc = ScheduleMaintainer.toTimestamp(ucDate)
+            
+    def _handleDeltaRepeat(self, context, node, lowerConstraint, upperConstraint, lcDate, interval):
         ucDate = lcDate + interval
-        if schedule.Every is not None:
-            while (ScheduleMaintainer.toTimestamp(ucDate) <= time):
-                lcDate += interval * schedule.Every
-                ucDate = lcDate * interval
+        lc = ScheduleMaintainer.toTimestamp(lcDate)
+        uc = ScheduleMaintainer.toTimestamp(ucDate)
         
-        return self.findScheduleLeafRecurseEx(schedule, lowerConstraint, upperConstraint, lcDate, ucDate, time, allowClosest)
+        upperLimit = min(upperConstraint, context.intervalEnd)
+        while (lc < upperLimit):
+            if (uc > lowerConstraint):
+                self.getLeavesInIntervalRecurse(context, node, lc + node.StartTimeOffset, min(lc + node.EndTimeOffset, upperConstraint, uc), lc >= context.intervalStart)
+            if node.Every is None:
+                break
+            lcDate += interval * node.Every
+            ucDate = lcDate + interval
+            lc = ScheduleMaintainer.toTimestamp(lcDate)
+            uc = ScheduleMaintainer.toTimestamp(ucDate)
         
-    def findScheduleLeaf_day(self, schedule, lowerConstraint, upperConstraint, time, allowClosest = False):
-        lcDate = datetime.utcfromtimestamp(lowerConstraint)
-        lcDate = datetime(year=lcDate.year, month=lcDate.month, day=lcDate.day) # align to day boundaries
+    def getLeavesInInterval_week(self, context, node, lowerConstraint, upperConstraint):
+        lcDate = datetime.fromtimestamp(lowerConstraint)
+        lcDate = datetime(year=lcDate.year, month=lcDate.month, day=lcDate.day)
+        interval = timedelta(days=7)
+        
+        self._handleDeltaRepeat(context, node, lowerConstraint, upperConstraint, lcDate, interval)
+        
+    def getLeavesInInterval_day(self, context, node, lowerConstraint, upperConstraint):
+        lcDate = datetime.fromtimestamp(lowerConstraint)
+        lcDate = datetime(year=lcDate.year, month=lcDate.month, day=lcDate.day)
         interval = timedelta(days=1)
         
-        lcDate = lcDate + interval * schedule.Skip
-        ucDate = lcDate + interval
-        if schedule.Every is not None:
-            while (ScheduleMaintainer.toTimestamp(ucDate) <= time):
-                lcDate += interval * schedule.Every
-                ucDate = lcDate * interval
+        self._handleDeltaRepeat(context, node, lowerConstraint, upperConstraint, lcDate, interval)
         
-        return self.findScheduleLeafRecurseEx(schedule, lowerConstraint, upperConstraint, lcDate, ucDate, time, allowClosest)
-        
-    def findScheduleLeaf_hour(self, schedule, lowerConstraint, upperConstraint, time, allowClosest = False):
-        lcDate = datetime.utcfromtimestamp(lowerConstraint)
-        lcDate = datetime(year=lcDate.year, month=lcDate.month, day=lcDate.day, hour=lcDate.hour) # align to hour boundaries
+    def getLeavesInInterval_hour(self, context, node, lowerConstraint, upperConstraint):
+        lcDate = datetime.fromtimestamp(lowerConstraint)
+        lcDate = datetime(year=lcDate.year, month=lcDate.month, day=lcDate.day)
         interval = timedelta(hours=1)
         
-        lcDate = lcDate + interval * schedule.Skip
-        ucDate = lcDate + interval
-        if schedule.Every is not None:
-            while (ScheduleMaintainer.toTimestamp(ucDate) <= time):
-                lcDate += interval * schedule.Every
-                ucDate = lcDate * interval
+        self._handleDeltaRepeat(context, node, lowerConstraint, upperConstraint, lcDate, interval)
         
-        return self.findScheduleLeafRecurseEx(schedule, lowerConstraint, upperConstraint, lcDate, ucDate, time, allowClosest)
+    def getLeavesInInterval(self, context, node, lowerConstraint, upperConstraint):
+        method = getattr(self, "getLeavesInInterval_"+node.ScheduleKind)
+        method(context, node, lowerConstraint, upperConstraint)
         
-    def findScheduleLeaf(self, schedule, lowerConstraint, upperConstraint, time, allowClosest = False):
-        method = getattr(self, "findScheduleLeaf_%s" % schedule.Kind)
-        return method(schedule, lowerConstraint, upperConstraint, time, allowClosest)
-        
-    def findScheduleLeafAtTimeFromRoot(self, schedule, time, allowClosest = False):
-        self.findScheduleLeaf(schedule, None, None, time, allowClosest)
-        
-    def getNextScheduleLeaf(self, leafDescription):
-        return self.findScheduleLeaf(leafDescription.schedule, None, None, (leafDescription.timeAtStartOffset - schedule.StartTimeOffset) + schedule.EndTimeOffset, True)
-    
-    def updateSchedule(self, station, until):
+    def getLeavesInIntervalFromRoot(self, station, intervalStart, intervalEnd):
         if station.Schedule is None:
-            return
-        if station.ScheduleUpToDateUntil is not None and station.ScheduleUpToDateUntil >= until:
-            return
+            raise ScheduleMaintainerError("Station %s has no schedule assigned" % (str(station)))
+        context = UpdateContext(station.Schedule, station, self.store, intervalStart, intervalEnd)
+        self.getLeavesInInterval(context, context.rootSchedule, intervalStart, intervalEnd)
+        return context.leafList.items
+        
+    def _rebuildStationSchedule(self, station, start, end):
+        self.store.find(Broadcast, Broadcast.StationID == station.ID, Broadcast.ScheduleLeaf != None, Broadcast.BroadcastStart > start).remove()
+        leaves = self.getLeavesInIntervalFromRoot(station, start, end)
+        for leaf in leaves:
+            newBroadcast = Broadcast()
+            self.store.add(newBroadcast)
+            schedule = leaf.leaf.Schedule
+            newBroadcast.BroadcastStart = schedule.StartTimeOffset + leaf.startOffset
+            newBroadcast.BroadcastEnd = schedule.EndTimeOffset + leaf.startOffset
+            newBroadcast.Type = leaf.leaf.BroadcastType
+            for frequency in leaf.leaf.Frequencies:
+                newFreq = self.store.find(BroadcastFrequency, BroadcastFrequency.Frequency == frequency.Frequency, BroadcastFrequency.ModulationID == frequency.ModulationID).any()
+                if newFreq is None:
+                    newFreq = BroadcastFrequency()
+                    self.store.add(newFreq)
+                    newFreq.Frequency = frequency.Frequency
+                    newFreq.ModulationID = frequency.ModulationID
+                newBroadcast.Frequencies.add(newFreq)
+            newBroadcast.Confirmed = False
+            newBroadcast.Comment = None
+            newBroadcast.Station = station
+            newBroadcast.ScheduleLeaf = leaf.leaf
+        station.ScheduleUpToDateUntil = end
+        
+    def updateSchedule(self, station, until, limit = None):
+        now = ScheduleMaintainer.now()
+        if station.Schedule is None:
+            return until
+        if (until - now) > limits.schedule.maxLookahead:
+            until = now + limits.schedule.maxLookahead
         if station.ScheduleUpToDateUntil is None:
-            currLeaf = self.findNextScheduleLeaf(ScheduleMaintainer.now())
+            start = now
         else:
-            currLeaf = self.findNextScheduleLeaf(station.ScheduleUpToDateUntil)
+            start = station.ScheduleUpToDateUntil
+        if until <= start:
+            return start
+        if limit is not None and (until - start) > limit:
+            until = start + limit
+        self._rebuildStationSchedule(station, start, until)
+        return until
+    
+    def updateSchedules(self, until, limit = None):
+        now = ScheduleMaintainer.now()
+        if until < now:
+            return now
+        if (until - now) > limits.schedule.maxLookahead:
+            until = now + limits.schedule.maxLookahead
+        validUntil = until
+        if limit is None:
+            limit = until
+        for station in self.store.find(Station, Station.Schedule != None, Or(Station.ScheduleUpToDateUntil < until, Station.ScheduleUpToDateUntil == None)):
+            start = now
+            if station.ScheduleUpToDateUntil is not None:
+                start = station.ScheduleUpToDateUntil
+                if until <= start:
+                    continue
+            if (until - start) > limit:
+                self._rebuildStationSchedule(station, start, start+limit)
+                validUntil = min(validUntil, start+limit)
+            else:
+                self._rebuildStationSchedule(station, start, until)
+        return validUntil
         

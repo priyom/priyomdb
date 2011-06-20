@@ -98,12 +98,12 @@ class Broadcast(xmlintf.XMLStorm):
     
     def getIsOnAir(self):
         now = datetime.datetime.utcnow()
-        start = datetime.datetime.utcfromtimestamp(self.BroadcastStart)
+        start = datetime.datetime.fromtimestamp(self.BroadcastStart)
         if now > start:
             if self.BroadcastEnd is None:
                 return True
             else:
-                end = datetime.datetime.utcfromtimestamp(self.BroadcastEnd)
+                end = datetime.datetime.fromtimestamp(self.BroadcastEnd)
                 return now < end
         else:
             return False

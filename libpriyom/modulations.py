@@ -6,7 +6,7 @@ class Modulation(object):
     ID = Int(primary = True)
     Name = Unicode()
 
-class Frequency(object):
+"""class Frequency(object):
     __storm_table__ = "frequencies"
     ID = Int(primary = True)
     Frequency = Int()
@@ -19,3 +19,4 @@ class Frequency(object):
         frequency.setAttribute("modulation", self.Modulation.Name)
         parentNode.appendChild(frequency)
 
+"""

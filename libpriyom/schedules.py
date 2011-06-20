@@ -59,15 +59,15 @@ class Schedule(object):
             repeat.setAttribute("skip", unicode(self.Skip))
             schedule.appendChild(repeat)
         
-        start = datetime.datetime.utcfromtimestamp(self.StartTimeOffset)
+        start = datetime.datetime.fromtimestamp(self.StartTimeOffset)
         start = start - datetime.timedelta(hours=1)
         
         end = None
         if self.EndTimeOffset is not None:
-            end = datetime.datetime.utcfromtimestamp(self.EndTimeOffset)
+            end = datetime.datetime.fromtimestamp(self.EndTimeOffset)
             end = end - datetime.timedelta(hours=1)
         else:
-            end = datetime.datetime.utcfromtimestamp(0)
+            end = datetime.datetime.fromtimestamp(0)
             
         startStr, endStr = {
             "once": self._formatOnce(start, end),
@@ -103,9 +103,38 @@ class Schedule(object):
                 
         parentNode.appendChild(schedule)
         return schedule
+        
+    def __repr__(self):
+        return '<Schedule id="%d" kind="%s" start-offset="%d" end-offset="%r">%s</Schedule>' % (self.ID, self.ScheduleKind, self.StartTimeOffset, self.EndTimeOffset, self.Name)
+        
+    def __str__(self):
+        return 'Schedule "%s"' % (self.Name)
     
 Schedule.Parent = Reference(Schedule.ParentID, Schedule.ID)
 Schedule.Children = ReferenceSet(Schedule.ID, Schedule.ParentID)
+
+class ScheduleLeafFrequency(object):
+    __storm_table__ = "scheduleLeafFrequencies"
+    ID = Int(primary = True)
+    ScheduleLeafID = Int()
+    Frequency = Int()
+    ModulationID = Int()
+    Modulation = Reference(ModulationID, modulations.Modulation.ID)
+    
+    def fromDom(self, node):
+        self.Frequency = int(xmlintf.getText(node))
+        self.Modulation = Store.of(self).find(modulations.Modulation, modulations.Modulation.Name == node.getAttribute("modulation")).any()
+        if self.Modulation is None:
+            self.Modulation = modulations.Modulation()
+            Store.of(self).add(self.Modulation)
+            self.Modulation.Name = node.getAttribute("modulation")
+    
+    def toDom(self, parentNode):
+        doc = parentNode.ownerDocument
+        frequency = xmlintf.buildTextElementNS(doc, "frequency", unicode(self.Frequency), xmlintf.namespace)
+        frequency.setAttribute("modulation", self.Modulation.Name)
+        parentNode.appendChild(frequency)
+
     
 class ScheduleLeaf(object):
     __storm_table__ = "scheduleLeaves"
@@ -113,8 +142,7 @@ class ScheduleLeaf(object):
     StationID = Int()
     ScheduleID = Int()
     Schedule = Reference(ScheduleID, Schedule.ID)
-    FrequencyID = Int()
-    Frequency = Reference(FrequencyID, modulations.Frequency.ID)
+    Frequencies = ReferenceSet(ID, ScheduleLeafFrequency.ScheduleLeafID)
     BroadcastType = Enum(map={
         "data": "data",
         "continous": "continous"
@@ -124,6 +152,8 @@ class ScheduleLeaf(object):
         doc = parentNode.ownerDocument
         leaf = doc.createElementNS(xmlintf.namespace, "leaf")
         xmlintf.appendTextElement(leaf, "kind", self.BroadcastType)
-        self.Frequency.toDom(leaf)
+        # self.Frequency.toDom(leaf)
+        for frequency in self.Frequencies:
+            frequency.toDom(leaf)
         parentNode.appendChild(leaf)
 
