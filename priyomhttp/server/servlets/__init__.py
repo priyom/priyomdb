@@ -33,3 +33,4 @@ def register(servletName, servletClass, allowReplace=True, fileName=None):
 import station
 import stations
 import broadcasts
+import broadcast
