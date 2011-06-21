@@ -128,6 +128,10 @@ class Broadcast(xmlintf.XMLStorm):
         )
         for frequency in self.Frequencies:
             frequency.toDom(broadcast)
+            
+        if flags is not None and "broadcast-transmissions" in flags:
+            for transmission in self.Transmissions:
+                transmission.toDom(broadcast, flags)
         
         parentNode.appendChild(broadcast)
         

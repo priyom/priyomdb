@@ -8,7 +8,7 @@ class StationServlet(baseServlet.Servlet):
     def _writeStation(self, station, arguments, wfile):
         doc = self.priyomInterface.exportToDom(station, flags=frozenset((key for key, value in arguments.items() if value == u"1")))
         self.setHeader("Content-Type", "text/xml; charset=utf-8")
-        wfile.write(doc.toprettyxml().encode("UTF-8"))
+        wfile.write(doc.toxml().encode("UTF-8"))
     
     def getById(self, pathSegments, arguments, rfile, wfile):
         if len(pathSegments) != 1:

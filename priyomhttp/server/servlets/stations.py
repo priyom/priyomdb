@@ -17,7 +17,7 @@ class StationsServlet(baseServlet.Servlet):
         for station in stations:
             station.toDom(rootNode, frozenset())
         self.setHeader("Content-Type", "text/xml; charset=utf-8")
-        wfile.write(doc.toprettyxml().encode("utf-8"))
+        wfile.write(doc.toxml().encode("utf-8"))
     
     def doListAll(self, arguments, wfile):
         stations = [station for station in self._limitResults(self.store.find(libpriyom.stations.Station), arguments)]

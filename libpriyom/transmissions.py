@@ -196,7 +196,7 @@ class Transmission(object):
         parentNode.appendChild(metadata)
         
     
-    def toDom(self, parentNode):
+    def toDom(self, parentNode, flags=None):
         doc = parentNode.ownerDocument
         transmission = doc.createElementNS(xmlintf.namespace, "transmission")
         xmlintf.appendTextElement(transmission, "id", unicode(self.ID))

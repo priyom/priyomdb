@@ -11,8 +11,10 @@ iface = libpriyom.interface.PriyomInterface(store)
 priyomhttp.server.servlets.priyomInterface = iface
 
 server = BaseHTTPServer.HTTPServer(("", 8080), priyomhttp.server.PriyomHTTPRequestHandler, True)
+print("Server ready.")
 try:
     server.serve_forever()
 except KeyboardInterrupt:
+    print("KeyboardInterrupt received, terminated.")
     pass
 store.flush()

@@ -105,13 +105,13 @@ class Station(xmlintf.XMLStorm):
         if flags is None or "broadcasts" in flags:
             broadcasts = doc.createElementNS(xmlintf.namespace, "broadcasts")
             for broadcast in self.Broadcasts:
-                broadcast.toDom(broadcasts)
+                broadcast.toDom(broadcasts, flags)
             station.appendChild(broadcasts)
         
-        if flags is None or "transmissions" in flags:
+        if flags is None or ("transmissions" in flags and not ("broadcasts" in flags and "broadcast-transmissions" in flags)):
             transmissions = doc.createElementNS(xmlintf.namespace, "transmissions")
             for transmission in self.Transmissions:
-                transmission.toDom(transmissions)
+                transmission.toDom(transmissions, flags)
             station.appendChild(transmissions)
         
         parentNode.appendChild(station)

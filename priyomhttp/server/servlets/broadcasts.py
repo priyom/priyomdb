@@ -14,13 +14,13 @@ class BroadcastsServlet(baseServlet.Servlet):
     def _now(self):
         return int(time.mktime(datetime.datetime.utcnow().timetuple()))
         
-    def _writeList(self, broadcasts, wfile):
+    def _writeList(self, broadcasts, arguments, wfile):
         doc = self.priyomInterface.createDocument("priyom-broadcasts-export")
         rootNode = doc.documentElement
         for broadcast in broadcasts:
-            broadcast.toDom(rootNode, frozenset())
+            broadcast.toDom(rootNode, frozenset((flag for flag in arguments.keys() if arguments[flag] == u"1")))
         self.setHeader("Content-Type", "text/xml; charset=utf-8")
-        wfile.write(doc.toprettyxml().encode("utf-8"))
+        wfile.write(doc.toxml().encode("utf-8"))
     
     def doUpcoming(self, pathSegments, arguments, wfile):
         if len(pathSegments) != 1:
@@ -77,7 +77,7 @@ class BroadcastsServlet(baseServlet.Servlet):
         if len(broadcasts) == 0:
             raise ServletError(404, "No upcoming %sbroadcasts within the next %d seconds" % ("" if all else "data (you may want to try the \"all\" flag) ", timeLimit))
         
-        self._writeList(broadcasts, wfile)
+        self._writeList(broadcasts, arguments, wfile)
         
     def doFrequency(self, pathSegments, arguments, wfile):
         minFreq = 0
@@ -119,7 +119,7 @@ class BroadcastsServlet(baseServlet.Servlet):
         resultSet = self._limitResults(self.store.find((Broadcast, BroadcastFrequency, Modulation), where), arguments)
         #if resultSet.count() > 100:
         #    raise ServletError(500, "Too many results (try to use ?limit= and ?offset=)")
-        self._writeList((broadcast for broadcast, frequency, modulation in resultSet), wfile)
+        self._writeList((broadcast for broadcast, frequency, modulation in resultSet), arguments, wfile)
     
     def do_GET(self, pathSegments, arguments, rfile, wfile):
         try:
