@@ -180,12 +180,10 @@ class ScheduleMaintainer(object):
             newBroadcast.BroadcastEnd = schedule.EndTimeOffset + leaf.startOffset
             newBroadcast.Type = leaf.leaf.BroadcastType
             for frequency in leaf.leaf.Frequencies:
-                newFreq = self.store.find(BroadcastFrequency, BroadcastFrequency.Frequency == frequency.Frequency, BroadcastFrequency.ModulationID == frequency.ModulationID).any()
-                if newFreq is None:
-                    newFreq = BroadcastFrequency()
-                    self.store.add(newFreq)
-                    newFreq.Frequency = frequency.Frequency
-                    newFreq.ModulationID = frequency.ModulationID
+                newFreq = BroadcastFrequency()
+                self.store.add(newFreq)
+                newFreq.Frequency = frequency.Frequency
+                newFreq.ModulationID = frequency.ModulationID
                 newBroadcast.Frequencies.add(newFreq)
             newBroadcast.Confirmed = False
             newBroadcast.Comment = None

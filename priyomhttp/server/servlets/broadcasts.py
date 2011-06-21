@@ -4,7 +4,8 @@ import baseServlet
 from baseServlet import ServletError, ServletInvalidQueryError
 import libpriyom.interface
 from libpriyom.stations import Station
-from libpriyom.broadcasts import Broadcast
+from libpriyom.broadcasts import Broadcast, BroadcastFrequency
+from libpriyom.modulations import Modulation
 import libpriyom.helpers.selectors
 from ..servlets import register
 import time, datetime
@@ -77,11 +78,54 @@ class BroadcastsServlet(baseServlet.Servlet):
             raise ServletError(404, "No upcoming %sbroadcasts within the next %d seconds" % ("" if all else "data (you may want to try the \"all\" flag) ", timeLimit))
         
         self._writeList(broadcasts, wfile)
+        
+    def doFrequency(self, pathSegments, arguments, wfile):
+        minFreq = 0
+        maxFreq = 30000000
+        if len(pathSegments) == 0:
+            raise ServletInvalidQueryError()
+        if pathSegments[0] == "around":
+            if len(pathSegments) < 2:
+                raise ServletInvalidQueryError()
+            try:
+                minFreq = int(pathSegments[1])
+                jitter = 1500
+                if len(pathSegments) >= 3:
+                    jitter = int(pathSegments[2])
+            except ValueError:
+                raise ServletInvalidQueryError("Non-integer frequency (frequencies are expected to be given in Hz)")
+        elif pathSegments[0] == "at":
+            if len(pathSegments) < 2:
+                raise ServletInvalidQueryError()
+            try:
+                minFreq = int(pathSegments[1])
+                jitter = 100
+            except ValueError:
+                raise ServletInvalidQueryError("Non-integer frequency (frequencies are expected to be given in Hz)")
+        else:
+            try:
+                minFreq = int(pathSegments[0])
+                jitter = 0
+            except ValueError:
+                raise ServletInvalidQueryError("Specify integer frequency (in units of Hz)")
+        
+        maxFreq = minFreq + jitter
+        minFreq = minFreq - jitter
+        
+        where = And(And(And(BroadcastFrequency.BroadcastID == Broadcast.ID, BroadcastFrequency.ModulationID == Modulation.ID), BroadcastFrequency.Frequency >= minFreq), BroadcastFrequency.Frequency <= maxFreq)
+        if "modulation" in arguments:
+            where = And(where, Modulation.Name == arguments["modulation"])
+        
+        resultSet = self._limitResults(self.store.find((Broadcast, BroadcastFrequency, Modulation), where), arguments)
+        #if resultSet.count() > 100:
+        #    raise ServletError(500, "Too many results (try to use ?limit= and ?offset=)")
+        self._writeList((broadcast for broadcast, frequency, modulation in resultSet), wfile)
     
     def do_GET(self, pathSegments, arguments, rfile, wfile):
         try:
             method = {
-                "upcoming": self.doUpcoming
+                "upcoming": self.doUpcoming,
+                "frequency": self.doFrequency
             }[pathSegments[0]]
         except KeyError:
             raise ServletInvalidQueryError("Unknown selector")

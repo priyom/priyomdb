@@ -26,7 +26,7 @@ class StationsServlet(baseServlet.Servlet):
         self._writeList(stations, wfile)
     
     def doList(self, pathSegments, arguments, wfile):
-        if len(pathSegments) == 0:
+        if len(pathSegments) == 0 or len(pathSegments[0]) == 0:
             self.doListAll(arguments, wfile)
             return
         if len(pathSegments) > 1:
@@ -71,7 +71,7 @@ class StationsServlet(baseServlet.Servlet):
                 "find": self.doFind
             }[pathSegments[0]]
         except KeyError:
-            self.setReplyCode(404, "Invalid query")
+            raise ServletInvalidQueryError(404, "Invalid query")
         method(pathSegments[1:], arguments, wfile)
 
 register("stations", StationsServlet, True, "stations.py")
