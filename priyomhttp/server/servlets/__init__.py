@@ -1,6 +1,7 @@
 import storm.exceptions
 import os
 import os.path
+import libpriyom.interface
 known_servlets = {}
 loaded_servlets = {}
 priyomInterface = None
