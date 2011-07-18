@@ -7,3 +7,6 @@ class ServletInvalidQueryError(ServletError):
     def __init__(self, message = "Invalid query"):
         super(ServletInvalidQueryError, self).__init__(400, message)
 
+class ServletMissingArgument(ServletError):
+    def __init__(self, argumentName):
+        super(ServletMissingArgument, self).__init__(400, "Missing argument '%s'" % (argumentName))
