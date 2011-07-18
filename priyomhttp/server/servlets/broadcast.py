@@ -1,5 +1,5 @@
 import baseServlet
-from baseServlet import ServletError, ServletInvalidQueryError
+from errors import ServletError, ServletInvalidQueryError
 import libpriyom.interface
 from libpriyom.broadcasts import Broadcast
 from ..servlets import register

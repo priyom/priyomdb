@@ -1,6 +1,6 @@
 from storm.locals import *
 import baseServlet
-from baseServlet import ServletError, ServletInvalidQueryError
+from errors import ServletError, ServletInvalidQueryError
 import libpriyom.interface
 import libpriyom.stations
 import libpriyom.helpers.selectors

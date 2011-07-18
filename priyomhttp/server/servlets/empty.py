@@ -1,5 +1,5 @@
 import baseServlet
-from baseServlet import ServletError, ServletInvalidQueryError
+from errors import ServletError, ServletInvalidQueryError
 from ..servlets import register
 
 class EmptyServlet(baseServlet.Servlet):

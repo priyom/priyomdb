@@ -1,7 +1,7 @@
 from ..limits import queryLimits
 from storm.locals import *
 import baseServlet
-from baseServlet import ServletError, ServletInvalidQueryError
+from errors import ServletError, ServletInvalidQueryError
 import libpriyom.interface
 from libpriyom.stations import Station
 from libpriyom.broadcasts import Broadcast, BroadcastFrequency

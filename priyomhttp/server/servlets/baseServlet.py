@@ -1,15 +1,7 @@
 import cStringIO
 import time
 import datetime
-
-class ServletError(Exception):
-    def __init__(self, code, message=None):
-        self.code = code
-        self.message = message
-        
-class ServletInvalidQueryError(ServletError):
-    def __init__(self, message = "Invalid query"):
-        super(ServletInvalidQueryError, self).__init__(400, message)
+import errors
 
 class Servlet(object):
     weekdayname = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
@@ -78,7 +70,7 @@ class Servlet(object):
             self.setReplyCode(400, "Invalid request command.")
         try:
             method(pathSegments, arguments, rfile, wfile)
-        except ServletError as error:
+        except errors.ServletError as error:
             self.setReplyCode(error.code, error.message)
         
     def serve(self, command, pathSegments, arguments, rfile):
