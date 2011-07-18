@@ -8,7 +8,7 @@ class InvalidServletResponseError(Exception):
     pass
 
 class PriyomHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
-    server_version = "PriyomHTTPd/0.1"
+    server_version = "PriyomHTTPd/0.1.1"
     
     def checkVersion(self):
         if self.request_version == "HTTP/0.9":
