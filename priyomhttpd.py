@@ -6,7 +6,7 @@ import priyomhttp.server
 import priyomhttp.server.servlets as servlets
 from priyomhttp.server.CommandNamespaces import ExportMethod, ExportNamespace, MethodArgumentMapping, DefaultArguments, invFlagCast, flagCast, flagsCast, commaList, intRange
 
-db = create_database("mysql://priyom-test:priyom-test@localhost/priyom-test")
+db = create_database("mysql://priyom@localhost/priyom")
 store = Store(db)
 iface = libpriyom.interface.PriyomInterface(store)
 priyomhttp.server.servlets.priyomInterface = iface
