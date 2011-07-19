@@ -87,7 +87,7 @@ class Station(xmlintf.XMLStorm):
         doc = parentNode.ownerDocument
         station = doc.createElementNS(xmlintf.namespace, "station")
         xmlintf.appendTextElement(station, "id", unicode(self.ID))
-        if flags is not None and not "no-metadata" in flags:
+        if flags is None or not "no-metadata" in flags:
             self._metadataToDom(doc, station)
         
         if flags is None or "schedule" in flags:
