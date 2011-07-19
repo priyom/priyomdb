@@ -141,7 +141,7 @@ priyomhttp.server.PriyomHTTPRequestHandler.exports = ExportMethod(
 )
 priyomhttp.server.setupNamespaceNames(priyomhttp.server.PriyomHTTPRequestHandler.exports)
 
-server = BaseHTTPServer.HTTPServer(("", 8080), priyomhttp.server.PriyomHTTPRequestHandler, True)
+server = BaseHTTPServer.HTTPServer(("", 8001), priyomhttp.server.PriyomHTTPRequestHandler, True)
 print("Server ready.")
 try:
     server.serve_forever()
