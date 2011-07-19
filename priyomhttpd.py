@@ -75,7 +75,7 @@ priyomhttp.server.PriyomHTTPRequestHandler.exports = ExportMethod(
                     "byPriyomIdentifier": ExportMethod(
                         servlets.get('station').getByPriyomId,
                         {
-                            "pid": MethodArgumentMapping("args", 0, int, 
+                            "pid": MethodArgumentMapping("args", 0, unicode, 
                                 description="Priyom identifier of the station to fetch.")
                         },
                         {                    
@@ -85,7 +85,7 @@ priyomhttp.server.PriyomHTTPRequestHandler.exports = ExportMethod(
                     "byEnigmaIdentifier": ExportMethod(
                         servlets.get('station').getByPriyomId,
                         {
-                            "eid": MethodArgumentMapping("args", 0, int, 
+                            "eid": MethodArgumentMapping("args", 0, unicode, 
                                 description="Enigma identifier of the station to fetch.")
                         },
                         {                    
