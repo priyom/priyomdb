@@ -10,21 +10,21 @@ class StationServlet(baseServlet.Servlet):
         self.setHeader("Content-Type", "text/xml; charset=utf-8")
         httpRequest.wfile.write(doc.toxml().encode("UTF-8"))
     
-    def getById(self, httpRequest, id, flags = None):
+    def getById(self, id, httpRequest, flags = None):
         station = self.store.get(libpriyom.stations.Station, id)
         if station is None:
             raise ServletError(404, "Station does not exist")
         
         self._writeStation(station, flags, httpRequest)
         
-    def getByEnigmaId(self, httpRequest, enigmaId, flags = None):
+    def getByEnigmaId(self, enigmaId, httpRequest, flags = None):
         station = self.store.find(libpriyom.stations.Station, EnigmaIdentifier=enigmaId).any()
         if station is None:
             raise ServletError(404, "No station with this enigma identifier exists")
         
         self._writeStation(station, flags, httpRequest)
         
-    def getByPriyomId(self, httpRequest, priyomId, flags = None):
+    def getByPriyomId(self, priyomId, httpRequest, flags = None):
         station = self.store.find(libpriyom.stations.Station, PriyomIdentifier=priyomId).any()
         if station is None:
             raise ServletError(404, "No station with this priyom identifier exists")
