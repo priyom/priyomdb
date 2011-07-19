@@ -7,7 +7,7 @@ from ..servlets import register
 class StationServlet(baseServlet.Servlet):
     def _writeStation(self, station, flags, httpRequest):
         doc = self.priyomInterface.exportToDom(station, flags)
-        self.setHeader("Content-Type", "text/xml; charset=utf-8")
+        httpRequest.setHeader("Content-Type", "text/xml; charset=utf-8")
         httpRequest.wfile.write(doc.toxml().encode("UTF-8"))
     
     def getById(self, id, httpRequest, flags = None):
