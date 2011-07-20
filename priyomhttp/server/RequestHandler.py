@@ -14,7 +14,7 @@ class InvalidServletResponseError(errors.ServletError):
     pass
 
 class PriyomHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
-    server_version = "PriyomHTTPd/0.3"
+    server_version = "PriyomHTTPd/0.3.1"
     
     exports = None
     def setHeader(self, key, value):
