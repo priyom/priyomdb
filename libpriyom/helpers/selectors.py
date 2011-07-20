@@ -1,4 +1,5 @@
 from storm.locals import *
+from storm.variables import IntVariable, FloatVariable
 
 class ObjectFinderError(Exception):
     pass
@@ -45,6 +46,11 @@ class ObjectFinder(object):
             raise ObjectFinderError("Operator \"null\" requires empty operand")
         try:
             field = getattr(self.targetClass, field)
+            fieldType = field.variable_factory.func
+            if fieldType == IntVariable:
+                operand = int(operand)
+            elif fieldType == FloatVariable:
+                operand = float(operand)
         except AttributeError:
             raise ObjectFinderError("Field \"%s\" undefined" % field)
         where = func(field, operand)

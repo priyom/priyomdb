@@ -5,8 +5,9 @@ import libpriyom.interface
 import priyomhttp.server
 import priyomhttp.server.servlets as servlets
 from priyomhttp.server.CommandNamespaces import ExportMethod, ExportNamespace, MethodArgumentMapping, DefaultArguments, invFlagCast, flagCast, flagsCast, commaList, intRange
+import cfg_priyomhttpd
 
-db = create_database("mysql://priyom@localhost/priyom")
+db = create_database("mysql://%s@localhost/%s" % (cfg_priyomhttpd.userpass, cfg_priyomhttpd.database))
 store = Store(db)
 iface = libpriyom.interface.PriyomInterface(store)
 priyomhttp.server.servlets.priyomInterface = iface
@@ -58,6 +59,44 @@ priyomhttp.server.PriyomHTTPRequestHandler.exports = ExportMethod(
                             "distinct": DefaultArguments.distinct,
                         }
                     )
+                }
+            ),
+            "listForStation": ExportMethod(
+                servlets.get('broadcasts').listForStation,
+                {
+                    "stationId": MethodArgumentMapping("args", 0, int,
+                        description="ID of the station")
+                },
+                {                    
+                    "flags": DefaultArguments.flags,
+                }
+            ),
+            "find": ExportMethod(
+                servlets.get('broadcasts').find,
+                {
+                    "field": MethodArgumentMapping("args", 0, unicode, 
+                        description="Name of the field to check against."),
+                    "operator": MethodArgumentMapping("args", 1, unicode,
+                        description="""
+                            Operator to apply. Valid operators are:
+                            <ul>
+                                <li>equals</li>
+                                <li>like</li>
+                                <li>less</li>
+                                <li>greater</li>
+                                <li>lequal</li>
+                                <li>gequal</li>
+                                <li>null</li>
+                            </ul>"""),
+                    "value": MethodArgumentMapping("args", 2, unicode,
+                        description="Second operand for the operation. This may be empty (but not unset) if the null operator is used.")
+                },
+                {
+                    "negate": MethodArgumentMapping("kwargs", "negate", flagCast(),
+                        description="If set, the negation of the operation is applied."),
+                    "offset": DefaultArguments.offset,
+                    "limit": DefaultArguments.limit,
+                    "distinct": DefaultArguments.distinct,
                 }
             )
         }),
@@ -141,7 +180,7 @@ priyomhttp.server.PriyomHTTPRequestHandler.exports = ExportMethod(
 )
 priyomhttp.server.setupNamespaceNames(priyomhttp.server.PriyomHTTPRequestHandler.exports)
 
-server = BaseHTTPServer.HTTPServer(("", 8001), priyomhttp.server.PriyomHTTPRequestHandler, True)
+server = BaseHTTPServer.HTTPServer(("", cfg_priyomhttpd.listenport), priyomhttp.server.PriyomHTTPRequestHandler, True)
 print("Server ready.")
 try:
     server.serve_forever()

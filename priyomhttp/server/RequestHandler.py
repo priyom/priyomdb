@@ -14,7 +14,7 @@ class InvalidServletResponseError(errors.ServletError):
     pass
 
 class PriyomHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
-    server_version = "PriyomHTTPd/0.3"
+    server_version = "PriyomHTTPd/0.3.1"
     
     exports = None
     def setHeader(self, key, value):
@@ -115,8 +115,8 @@ class PriyomHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             self.log_error("Request timed out: %r", e)
             self.close_connection = 1
             return
-        except Exception as error:
-            self.send_error(500, str(error))
+        #except Exception as error:
+        #    self.send_error(500, str(error))
 
 def _setupNamespaceNamesRecurse(namespace):
     for key, value in iter(namespace):

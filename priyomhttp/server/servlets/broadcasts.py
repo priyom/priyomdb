@@ -11,6 +11,10 @@ from ..servlets import register
 import time, datetime
 
 class BroadcastsServlet(baseServlet.Servlet):
+    def __init__(self, instanceName, priyomInterface):
+        super(BroadcastsServlet, self).__init__(instanceName, priyomInterface)
+        self.finder = libpriyom.helpers.selectors.ObjectFinder(self.store, Broadcast)
+
     def _now(self):
         return int(time.mktime(datetime.datetime.utcnow().timetuple()))
         
@@ -22,7 +26,7 @@ class BroadcastsServlet(baseServlet.Servlet):
         httpRequest.setHeader("Content-Type", "text/xml; charset=utf-8")
         httpRequest.wfile.write(doc.toxml().encode("utf-8"))
         
-    def getUpcoming(self, httpRequest, timeLimit = None, update = True, all = False, stationId = None, flags = [], **kwargs):
+    def getUpcoming(self, httpRequest, timeLimit = None, update = True, all = False, stationId = None, flags = frozenset(), **kwargs):
         responseMessage = None
         maxTimeRange = queryLimits.broadcasts.maxTimeRangeForUpdatingQueries if stationId is None else queryLimits.broadcasts.maxTimeRangeForStationBoundUpdatingQueries
         
@@ -61,7 +65,7 @@ class BroadcastsServlet(baseServlet.Servlet):
         self._writeList(broadcasts, flags, httpRequest)
         return responseMessage
         
-    def getByFrequency(self, frequency, httpRequest, jitter = 0, modulation = None, flags = None, **kwargs):
+    def getByFrequency(self, frequency, httpRequest, jitter = 0, modulation = None, flags = frozenset(), **kwargs):
         if type(frequency) == tuple:
             minFreq = frequency[0]
             maxFreq = frequency[1]
@@ -77,5 +81,21 @@ class BroadcastsServlet(baseServlet.Servlet):
         #if resultSet.count() > 100:
         #    raise ServletError(500, "Too many results (try to use ?limit= and ?offset=)")
         self._writeList((broadcast for broadcast, frequency, modulation in resultSet), flags, httpRequest)
+        
+    def listForStation(self, stationId, httpRequest, flags = frozenset(), **kwargs):
+        resultSet = self._limitResults(self.store.find(Broadcast, Broadcast.StationID == stationId), kwargs)
+        self._writeList((broadcast for broadcast in resultSet), flags, httpRequest)
+        
+    def find(self, field, operator, value, httpRequest, negate = False, **kwargs):
+        try:
+            resultSet = self._limitResults(self.finder.select(field, operator, value, negate), kwargs)
+        except libpriyom.helpers.selectors.ObjectFinderError as e:
+            raise ServletInvalidQueryError(str(e))
+        broadcasts = [broadcast for broadcast in resultSet]
+        if len(broadcasts) == 0:
+            raise ServletError(404, "No stations match the given criteria")
+        
+        self._writeList(broadcasts, frozenset(), httpRequest)
+
 
 register("broadcasts", BroadcastsServlet, True, "broadcasts.py")
