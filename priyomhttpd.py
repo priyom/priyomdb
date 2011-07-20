@@ -5,8 +5,9 @@ import libpriyom.interface
 import priyomhttp.server
 import priyomhttp.server.servlets as servlets
 from priyomhttp.server.CommandNamespaces import ExportMethod, ExportNamespace, MethodArgumentMapping, DefaultArguments, invFlagCast, flagCast, flagsCast, commaList, intRange
+import cfg_priyomhttpd
 
-db = create_database("mysql://priyom-test:priyom-test@localhost/priyom-test")
+db = create_database("mysql://%s@localhost/%s" % (cfg_priyomhttpd.userpass, cfg_priyomhttpd.database)
 store = Store(db)
 iface = libpriyom.interface.PriyomInterface(store)
 priyomhttp.server.servlets.priyomInterface = iface
@@ -141,7 +142,7 @@ priyomhttp.server.PriyomHTTPRequestHandler.exports = ExportMethod(
 )
 priyomhttp.server.setupNamespaceNames(priyomhttp.server.PriyomHTTPRequestHandler.exports)
 
-server = BaseHTTPServer.HTTPServer(("", 8080), priyomhttp.server.PriyomHTTPRequestHandler, True)
+server = BaseHTTPServer.HTTPServer(("", cfg_priyomhttpd.listenport), priyomhttp.server.PriyomHTTPRequestHandler, True)
 print("Server ready.")
 try:
     server.serve_forever()
