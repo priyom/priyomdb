@@ -10,7 +10,7 @@ class BroadcastServlet(baseServlet.Servlet):
         httpRequest.setHeader("Content-Type", "text/xml; charset=utf-8")
         httpRequest.wfile.write(doc.toxml().encode("UTF-8"))
     
-    def getById(self, id, httpRequest, flags = None):
+    def getById(self, id, httpRequest, flags = frozenset()):
         broadcast = self.store.get(Broadcast, id)
         if broadcast is None:
             raise ServletError(404, "Broadcast does not exist")

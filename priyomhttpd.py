@@ -60,6 +60,44 @@ priyomhttp.server.PriyomHTTPRequestHandler.exports = ExportMethod(
                         }
                     )
                 }
+            ),
+            "listForStation": ExportMethod(
+                servlets.get('broadcasts').listForStation,
+                {
+                    "stationId": MethodArgumentMapping("args", 0, int,
+                        description="ID of the station")
+                },
+                {                    
+                    "flags": DefaultArguments.flags,
+                }
+            ),
+            "find": ExportMethod(
+                servlets.get('broadcasts').find,
+                {
+                    "field": MethodArgumentMapping("args", 0, unicode, 
+                        description="Name of the field to check against."),
+                    "operator": MethodArgumentMapping("args", 1, unicode,
+                        description="""
+                            Operator to apply. Valid operators are:
+                            <ul>
+                                <li>equals</li>
+                                <li>like</li>
+                                <li>less</li>
+                                <li>greater</li>
+                                <li>lequal</li>
+                                <li>gequal</li>
+                                <li>null</li>
+                            </ul>"""),
+                    "value": MethodArgumentMapping("args", 2, unicode,
+                        description="Second operand for the operation. This may be empty (but not unset) if the null operator is used.")
+                },
+                {
+                    "negate": MethodArgumentMapping("kwargs", "negate", flagCast(),
+                        description="If set, the negation of the operation is applied."),
+                    "offset": DefaultArguments.offset,
+                    "limit": DefaultArguments.limit,
+                    "distinct": DefaultArguments.distinct,
+                }
             )
         }),
         'stations': ExportNamespace({

@@ -115,8 +115,8 @@ class PriyomHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             self.log_error("Request timed out: %r", e)
             self.close_connection = 1
             return
-        except Exception as error:
-            self.send_error(500, str(error))
+        #except Exception as error:
+        #    self.send_error(500, str(error))
 
 def _setupNamespaceNamesRecurse(namespace):
     for key, value in iter(namespace):
