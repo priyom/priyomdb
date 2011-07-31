@@ -15,6 +15,13 @@ class NoPriyomInterfaceError(Exception):
         super(NoPriyomInterfaceError, self).__init__("No priyom interface defined.")
 
 class PriyomInterface:
+    Class2RootNode = {
+        Transmission: "priyom-transmission-export",
+        Schedule: "priyom-schedule-export",
+        Station: "priyom-station-export",
+        Broadcast: "priyom-broadcast-export"
+    }
+    
     def __init__(self, store):
         if store is None:
             raise ValueError("store must not be None.")
@@ -27,8 +34,11 @@ class PriyomInterface:
     def _createDocumentOptional(self, givendoc, rootNodeName):
         return self.createDocument(rootNodeName) if givendoc is None else givendoc
         
+    def _getClassDoc(self, classType, doc):
+        return self._createDocumentOptional(doc, self.Class2RootNode[classType])
+        
     def _exportToDomSimple(self, obj, rootName, flags = None, doc = None):
-        thisDoc = self._createDocumentOptional(doc, rootName)
+        thisDoc = self._getClassDoc(type(obj), rootName)
         obj.toDom(thisDoc.documentElement, flags)
         return thisDoc
         
@@ -51,6 +61,12 @@ class PriyomInterface:
             Station: self.exportStationToDom,
             Broadcast: self.exportBroadcastToDom
         }[type(obj)](obj, flags, doc)
+        
+    def exportListToDom(self, list, classType, flags = None, doc = None):
+        doc = self._getClassDoc(classType, doc)
+        for obj in list:
+            obj.toDom(thisDoc.documentElement, flags)
+        return doc
         
     def _importFromDomSimple(self, cls, node):
         Imports.importSimple(self.store, cls, node)
