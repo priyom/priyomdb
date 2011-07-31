@@ -1,8 +1,8 @@
 from storm.locals import *
-import xmlintf
+import XMLIntf
 
 def importSimple(store, cls, node):
-    idNode = xmlintf.getChild(node, "id")
+    idNode = XMLIntf.getChild(node, "id")
     if idNode is None:
         return None
     id = int(idNode.childNodes[0].data)

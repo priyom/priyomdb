@@ -1,12 +1,11 @@
 from storm.locals import *
-import xmlintf
-import schedules
-import transmissions
-import imports
-import broadcasts
+import XMLIntf
+from Schedule import Schedule
+import Imports
+from Broadcast import Broadcast
 import xml.dom.minidom as dom
 
-class Station(xmlintf.XMLStorm):
+class Station(XMLIntf.XMLStorm):
     __storm_table__ = "stations"
     ID = Int(primary = True)
     EnigmaIdentifier = Unicode()
@@ -16,7 +15,7 @@ class Station(xmlintf.XMLStorm):
     Status = Unicode()
     Location = Unicode()
     ScheduleID = Int()
-    Schedule = Reference(ScheduleID, schedules.Schedule.ID)
+    Schedule = Reference(ScheduleID, Schedule.ID)
     ScheduleConfirmed = Bool()
     ScheduleUpToDateUntil = Int()
     
@@ -30,8 +29,8 @@ class Station(xmlintf.XMLStorm):
     }
     
     def _metadataToDom(self, doc, parentNode):
-        metadata = doc.createElementNS(xmlintf.namespace, "station-metadata")
-        xmlintf.appendTextElements(metadata,
+        metadata = doc.createElementNS(XMLIntf.namespace, "station-metadata")
+        XMLIntf.appendTextElements(metadata,
             [
                 ("enigma-id", self.EnigmaIdentifier),
                 ("priyom-id", self.PriyomIdentifier),
@@ -42,9 +41,9 @@ class Station(xmlintf.XMLStorm):
             noneHandler = lambda name: ""
         )
         if self.Location is not None:
-            xmlintf.appendTextElement(metadata, "location", self.Location)
+            XMLIntf.appendTextElement(metadata, "location", self.Location)
         if self.getIsOnAir():
-            metadata.appendChild(doc.createElementNS(xmlintf.namespace, "on-air"))
+            metadata.appendChild(doc.createElementNS(XMLIntf.namespace, "on-air"))
         parentNode.appendChild(metadata)
         
     def _broadcastsFromDom(self, node):
@@ -52,18 +51,18 @@ class Station(xmlintf.XMLStorm):
             if child.nodeType != dom.Node.ELEMENT_NODE:
                 continue
             if child.tagName == "broadcast":
-                broadcast = imports.importSimple(Store.of(self), broadcasts.Broadcast, child)
+                broadcast = Imports.importSimple(Store.of(self), Broadcast, child)
                 if broadcast.Station != self and broadcast.ScheduleLeaf is not None and broadcast.ScheduleLeaf.Station != self:
                     print("Cannot reassign a broadcast which is bound to a schedule leaf which is not assigned to target station.")
                 else:
                     broadcast.Station = self
         
     def _transmissionsFromDom(self, node):
-        print("Cannot import transmissions using station import. Please import transmissions directly or as part of broadcast imports.")
+        print("Cannot import transmissions using station import. Please import transmissions directly or as part of broadcast Imports.")
         pass
         
     def _scheduleFromDom(self, node):
-        self.Schedule = imports.importSimple(Store.of(self), Schedule, node)
+        self.Schedule = Imports.importSimple(Store.of(self), Schedule, node)
         self.ScheduleConfirmed = node.getAttribute("confirmed") == "true"
         
     def loadDomElement(self, node):
@@ -85,8 +84,8 @@ class Station(xmlintf.XMLStorm):
     
     def toDom(self, parentNode, flags = None):
         doc = parentNode.ownerDocument
-        station = doc.createElementNS(xmlintf.namespace, "station")
-        xmlintf.appendTextElement(station, "id", unicode(self.ID))
+        station = doc.createElementNS(XMLIntf.namespace, "station")
+        XMLIntf.appendTextElement(station, "id", unicode(self.ID))
         if flags is None or not "no-metadata" in flags:
             self._metadataToDom(doc, station)
         
@@ -98,18 +97,18 @@ class Station(xmlintf.XMLStorm):
                 else:
                     scheduleNode.setAttribute("confirmed", "false")
             elif self.ScheduleConfirmed:
-                scheduleNode = doc.createElementNS(xmlintf.namespace, "schedule")
+                scheduleNode = doc.createElementNS(XMLIntf.namespace, "schedule")
                 scheduleNode.setAttribute("confirmed", "true")
                 station.appendChild(scheduleNode)
             
         if flags is None or "broadcasts" in flags:
-            broadcasts = doc.createElementNS(xmlintf.namespace, "broadcasts")
+            broadcasts = doc.createElementNS(XMLIntf.namespace, "broadcasts")
             for broadcast in self.Broadcasts:
                 broadcast.toDom(broadcasts, flags)
             station.appendChild(broadcasts)
         
         if flags is None or ("transmissions" in flags and not ("broadcasts" in flags and "broadcast-transmissions" in flags)):
-            transmissions = doc.createElementNS(xmlintf.namespace, "transmissions")
+            transmissions = doc.createElementNS(XMLIntf.namespace, "transmissions")
             for transmission in self.Transmissions:
                 transmission.toDom(transmissions, flags)
             station.appendChild(transmissions)

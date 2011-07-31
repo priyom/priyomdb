@@ -1,6 +1,6 @@
 from storm.locals import *
-import xmlintf
-import modulations
+import XMLIntf
+import Modulation
 import datetime
 
 class BroadcastFrequency(object):
@@ -17,7 +17,7 @@ class BroadcastFrequency(object):
     
     @staticmethod
     def importFromDom(store, node, broadcast):
-        frequency = int(xmlintf.getText(node))
+        frequency = int(XMLIntf.getText(node))
         modname = node.getAttribute("modulation")
         checklist = store.find(BroadcastFrequency, 
             (BroadcastFrequency.Frequency == frequency) and
@@ -33,7 +33,7 @@ class BroadcastFrequency(object):
         return obj
     
     def fromDom(self, node):
-        self.Frequency = int(xmlintf.getText(node))
+        self.Frequency = int(XMLIntf.getText(node))
         self.Modulation = Store.of(self).find(modulations.Modulation, modulations.Modulation.Name == node.getAttribute("modulation")).any()
         if self.Modulation is None:
             self.Modulation = modulations.Modulation()
@@ -42,12 +42,12 @@ class BroadcastFrequency(object):
     
     def toDom(self, parentNode):
         doc = parentNode.ownerDocument
-        frequency = xmlintf.buildTextElementNS(doc, "frequency", unicode(self.Frequency), xmlintf.namespace)
+        frequency = XMLIntf.buildTextElementNS(doc, "frequency", unicode(self.Frequency), XMLIntf.namespace)
         frequency.setAttribute("modulation", self.Modulation.Name)
         parentNode.appendChild(frequency)
         
 
-class Broadcast(xmlintf.XMLStorm):
+class Broadcast(XMLIntf.XMLStorm):
     __storm_table__ = "broadcasts"
     ID = Int(primary = True)
     StationID = Int()
@@ -111,13 +111,13 @@ class Broadcast(xmlintf.XMLStorm):
     
     def toDom(self, parentNode, flags=None):
         doc = parentNode.ownerDocument
-        broadcast = doc.createElementNS(xmlintf.namespace, "broadcast")
+        broadcast = doc.createElementNS(XMLIntf.namespace, "broadcast")
         
-        xmlintf.appendTextElement(broadcast, "id", unicode(self.ID))
-        xmlintf.appendDateElement(broadcast, "start", self.BroadcastStart)
+        XMLIntf.appendTextElement(broadcast, "id", unicode(self.ID))
+        XMLIntf.appendDateElement(broadcast, "start", self.BroadcastStart)
         if self.BroadcastEnd is not None:
-            xmlintf.appendDateElement(broadcast, "end", self.BroadcastEnd)
-        xmlintf.appendTextElements(broadcast,
+            XMLIntf.appendDateElement(broadcast, "end", self.BroadcastEnd)
+        XMLIntf.appendTextElements(broadcast,
             [
                 ("station-id", unicode(self.StationID)),
                 ("type", self.Type),

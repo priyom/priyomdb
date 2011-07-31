@@ -1,6 +1,6 @@
 from storm.locals import *
 from storm.exceptions import NoStoreError
-import xmlintf
+import XMLIntf
 
 class ForeignSupplement(object):
     __storm_table__ = "foreignSupplement"
@@ -32,7 +32,7 @@ class ForeignHelper:
     def toDom(self, parentNode, name):
         if self.hasForeign():
             doc = parentNode.ownerDocument
-            node = doc.createElementNS(xmlintf.namespace, name)
+            node = doc.createElementNS(XMLIntf.namespace, name)
             node.appendChild(doc.createTextNode(self.supplement.ForeignText))
             node.setAttribute("lang", self.supplement.LangCode)
             parentNode.appendChild(node)

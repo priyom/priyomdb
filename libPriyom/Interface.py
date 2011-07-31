@@ -1,14 +1,14 @@
 from storm.locals import *
-import imports
-import xmlintf
+import Imports
+import XMLIntf
 import xml.dom.minidom as dom
-from modulations import Modulation
-from broadcasts import BroadcastFrequency, Broadcast
-from transmissions import Transmission, TransmissionClass, TransmissionClassTable, TransmissionClassTableField
-from schedules import Schedule, ScheduleLeaf
-from stations import Station
-from foreign import ForeignSupplement
-from helpers.scheduleMaintainer import ScheduleMaintainer
+from Modulation import Modulation
+from Broadcast import BroadcastFrequency, Broadcast
+from Transmission import Transmission, TransmissionClass, TransmissionClassTable, TransmissionClassTableField
+from Schedule import Schedule, ScheduleLeaf
+from Station import Station
+from Foreign import ForeignSupplement
+from Helpers.ScheduleMaintainer import ScheduleMaintainer
 
 class NoPriyomInterfaceError(Exception):
     def __init__(self):
@@ -22,7 +22,7 @@ class PriyomInterface:
         self.scheduleMaintainer = ScheduleMaintainer(store)
         
     def createDocument(self, rootNodeName):
-        return dom.getDOMImplementation().createDocument(xmlintf.namespace, rootNodeName, None)
+        return dom.getDOMImplementation().createDocument(XMLIntf.namespace, rootNodeName, None)
         
     def _createDocumentOptional(self, givendoc, rootNodeName):
         return self.createDocument(rootNodeName) if givendoc is None else givendoc
@@ -53,7 +53,7 @@ class PriyomInterface:
         }[type(obj)](obj, flags, doc)
         
     def _importFromDomSimple(self, cls, node):
-        imports.importSimple(self.store, cls, node)
+        Imports.importSimple(self.store, cls, node)
         
     def importTransmissionFromDom(self, node):
         return self._importFromDomSimple(Transmission, node)

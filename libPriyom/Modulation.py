@@ -1,5 +1,5 @@
 from storm.locals import *
-import xmlintf
+import XMLIntf
 
 class Modulation(object):
     __storm_table__ = "modulations"
@@ -15,7 +15,7 @@ class Modulation(object):
     
     def toDom(self, parentNode):
         doc = parentNode.ownerDocument
-        frequency = xmlintf.buildTextElementNS(doc, "frequency", unicode(self.Frequency), xmlintf.namespace)
+        frequency = XMLIntf.buildTextElementNS(doc, "frequency", unicode(self.Frequency), XMLIntf.namespace)
         frequency.setAttribute("modulation", self.Modulation.Name)
         parentNode.appendChild(frequency)
 
