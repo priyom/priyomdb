@@ -30,6 +30,9 @@ class StationServlet(baseServlet.Servlet):
             raise ServletError(404, "No station with this priyom identifier exists")
         
         self._writeStation(station, flags, httpRequest)
-    
         
+    def post(self, httpRequest):
+        httpRequest.setHeader("Content-Type", "text/plain; charset=utf-8")
+        # httpRequest.wfile.write(httpRequest.rfile.readline().encode("UTF-8"))
+    
 register("station", StationServlet, True, "station.py")

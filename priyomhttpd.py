@@ -174,6 +174,12 @@ priyomhttp.server.PriyomHTTPRequestHandler.exports = ExportMethod(
                     "limit": DefaultArguments.limit,
                     "distinct": DefaultArguments.distinct,
                 }
+            ),
+            "post": ExportMethod(
+                servlets.get('station').post,
+                {},
+                {},
+                ["POST"]
             )
         })
     }

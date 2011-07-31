@@ -12,8 +12,11 @@ class ServletUnknownCommand(ServletInvalidQueryError):
         super(ServletUnknownCommand, self).__init__("Unknown command")
         
 class ServletUnsupportedMethod(ServletInvalidQueryError):
-    def __init__(self, httpCommand):
-        super(ServletUnsupportedMethod, self).__init__("This HTTP command (%s) is not supported by the requested method.")
+    def __init__(self, httpCommand, supportedCommands = None):
+        message = "This HTTP command (%s) is not supported by the requested method." % httpCommand
+        if supportedCommands is not None:
+            message = message + " Supported commands are: " + ", ".join(supportedCommands)
+        super(ServletUnsupportedMethod, self).__init__(message)
 
 class ServletMissingArgument(ServletError):
     def __init__(self, argumentName):

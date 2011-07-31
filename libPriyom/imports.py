@@ -10,11 +10,9 @@ def importSimple(store, cls, node):
     if id < 0:
         obj = cls()
         store.add(obj)
-        print("added to store")
     else:
         obj = store.get(cls, id)
         if obj is None:
             raise ValueError("Invalid id %d for %s." % (id, unicode(cls)))
-    print("calling fromDom")
     obj.fromDom(node)
     return obj

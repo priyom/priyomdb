@@ -11,7 +11,9 @@ test = store.get(Station, 2)
 intf = PriyomInterface(store)
 
 doc = dom.getDOMImplementation().createDocument(xmlintf.namespace, "priyom-db-export", None)
-sched = intf.scheduleMaintainer
-start = ScheduleMaintainer.now()
-sched.updateSchedule(test, start+86400*7)
-store.flush()
+intf.exportStationToDom(buzzer, None, doc)
+print(doc.toprettyxml())
+#sched = intf.scheduleMaintainer
+#start = ScheduleMaintainer.now()
+#sched.updateSchedule(test, start+86400*7)
+#store.flush()

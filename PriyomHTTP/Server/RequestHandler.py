@@ -80,7 +80,8 @@ class PriyomHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                             if getDoc or currExport.supports(httpCommand):
                                 currExport = currExport[segment]
                             else:
-                                raise errors.ServletUnsupportedMethod(httpCommand)
+                                print("unsupported in: ", str(currExport))
+                                raise errors.ServletUnsupportedMethod(httpCommand, currExport.getSupportedCommands())
                     if getDoc:
                         if httpCommand != "GET":
                             raise errors.ServletError(400, "Invalid request method for doc/ prefix.")
@@ -95,6 +96,8 @@ class PriyomHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                     else:
                         if not callable(currExport):
                             raise errors.ServletUnknownCommand()
+                        if not currExport.callSupports(httpCommand):
+                            raise errors.ServletUnsupportedMethod(httpCommand, currExport.getSupportedCommandsForCall())
                         message = currExport(self, arguments)
                 finally:
                     responseData = self.wfile.getvalue()

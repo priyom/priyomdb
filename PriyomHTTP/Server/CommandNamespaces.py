@@ -76,6 +76,7 @@ class MethodArgumentMapping(object):
         return result
 
 class Export(object):
+    
     def supports(self, httpCommand):
         return True
         
@@ -109,6 +110,9 @@ class ExportNamespace(Export):
         else:
             return True
     
+    def getSupportedCommands(self):
+        return self.restrictCommandsTo
+    
     def html_listExports(self):
         exportFmt = '<a href="%s">%s</a>'
         exports = "</li><li>".join(exportFmt % (obj.fullPath, str(export)) for export, obj in self.exports.iteritems())
@@ -123,8 +127,8 @@ class ExportMethod(ExportNamespace):
     defaultSupportedHTTPCommands = {"GET": True}
     
     def __init__(self, method, requiredArguments = {}, optionalArguments = {}, 
-        supportedHTTPCommands = None, exports = {}):
-        super(ExportMethod, self).__init__(exports, supportedHTTPCommands)
+        supportedHTTPCommands = None, restrictCommandsTo = None, exports = {}):
+        super(ExportMethod, self).__init__(exports, restrictCommandsTo)
         
         if supportedHTTPCommands is None:
             self.supportedHTTPCommands = ExportMethod.defaultSupportedHTTPCommands
@@ -181,7 +185,7 @@ class ExportMethod(ExportNamespace):
         return self.method(*args, **kwargs)
         
     def __str__(self):
-        return self.method.func_name
+        return "Function: %s" % self.method.func_name
         
     def html(self):
         argFormat = "<b>%s</b>%s"
@@ -205,8 +209,11 @@ class ExportMethod(ExportNamespace):
             namespaceStr
         )
     
-    def supports(self, httpCommand):
+    def callSupports(self, httpCommand):
         return httpCommand in self.supportedHTTPCommands
+    
+    def getSupportedCommandsForCall(self):
+        return self.supportedHTTPCommands.iterkeys()
 
 
 class DefaultArguments(object):

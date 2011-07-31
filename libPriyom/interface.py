@@ -35,14 +35,14 @@ class PriyomInterface:
     def exportTransmissionToDom(self, transmission, flags = None, doc = None):
         return self._exportToDomSimple(transmission, "priyom-transmission-export", flags, doc)
         
-    def exportScheduleToDom(self, transmission, flags = None, doc = None):
-        return self._exportToDomSimple(transmission, "priyom-schedule-export", flags, doc)
+    def exportScheduleToDom(self, schedule, flags = None, doc = None):
+        return self._exportToDomSimple(schedule, "priyom-schedule-export", flags, doc)
         
-    def exportStationToDom(self, transmission, flags = None, doc = None):
-        return self._exportToDomSimple(transmission, "priyom-station-export", flags, doc)
+    def exportStationToDom(self, station, flags = None, doc = None):
+        return self._exportToDomSimple(station, "priyom-station-export", flags, doc)
         
-    def exportBroadcastToDom(self, transmission, flags = None, doc = None):
-        return self._exportToDomSimple(transmission, "priyom-broadcast-export", flags, doc)
+    def exportBroadcastToDom(self, broadcast, flags = None, doc = None):
+        return self._exportToDomSimple(broadcast, "priyom-broadcast-export", flags, doc)
         
     def exportToDom(self, obj, flags = None, doc = None):
         return {
