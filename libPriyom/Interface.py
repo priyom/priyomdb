@@ -38,7 +38,7 @@ class PriyomInterface:
         return self._createDocumentOptional(doc, self.Class2RootNode[classType])
         
     def _exportToDomSimple(self, obj, rootName, flags = None, doc = None):
-        thisDoc = self._getClassDoc(type(obj), rootName)
+        thisDoc = self._getClassDoc(type(obj), doc)
         obj.toDom(thisDoc.documentElement, flags)
         return thisDoc
         
@@ -65,7 +65,7 @@ class PriyomInterface:
     def exportListToDom(self, list, classType, flags = None, doc = None):
         doc = self._getClassDoc(classType, doc)
         for obj in list:
-            obj.toDom(thisDoc.documentElement, flags)
+            obj.toDom(doc.documentElement, flags)
         return doc
         
     def _importFromDomSimple(self, cls, node):

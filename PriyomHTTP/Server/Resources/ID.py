@@ -2,10 +2,10 @@ from libPriyom import *
 from WebStack.Generic import ContentType
 from Resource import Resource
 
-class BroadcastResource(Resource):
-    def __init__(self, model):
-        super(BroadcastResource, self).__init__(model)
-        self.firstCall = True
+class IDResource(Resource):
+    def __init__(self, model, classType):
+        super(IDResource, self).__init__(model)
+        self.classType = classType
         
     def handle(self, trans):
         path = trans.get_virtual_path_info().split('/')
@@ -17,17 +17,17 @@ class BroadcastResource(Resource):
             return
         
         try:
-            broadcastId = int(path[1].decode("utf-8"))
+            objId = int(path[1].decode("utf-8"))
         except ValueError:
             trans.set_response_code(404)
             return
-        broadcast = self.store.get(Broadcast, broadcastId)
+        obj = self.store.get(self.classType, objId)
         
-        if broadcast is None:
+        if obj is None:
             trans.set_response_code(404)
             return
         
         trans.set_content_type(ContentType("application/xml"))
-        print >>self.out, self.model.exportToXml(broadcast)
+        print >>self.out, self.model.exportToXml(obj)
 
 

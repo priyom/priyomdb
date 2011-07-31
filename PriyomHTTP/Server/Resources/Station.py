@@ -5,7 +5,6 @@ from Resource import Resource
 class StationResource(Resource):
     def __init__(self, model):
         super(StationResource, self).__init__(model)
-        self.firstCall = True
         
     def handle(self, trans):
         path = trans.get_virtual_path_info().split('/')

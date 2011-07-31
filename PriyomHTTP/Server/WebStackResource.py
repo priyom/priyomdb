@@ -4,6 +4,7 @@ from WebStack.Resources.Login import LoginResource, LoginAuthenticator
 from WebStack.Resources.Selectors import EncodingSelector, PathSelector
 
 from WebModel import WebModel
+from libPriyom import *
 from Resources import *
 #from Resources.API.FindStations import FindStations
 #from Resources.API.FindBroadcasts import FindBroadcasts
@@ -15,7 +16,9 @@ def get_site_map(priyomInterface):
     return EncodingSelector(
         MapResource({
             "station": StationResource(model),
-            "broadcast": BroadcastResource(model),
+            "broadcast": IDResource(model, Broadcast),
+            "transmission": IDResource(model, Transmission),
+            "schedule": IDResource(model, Schedule),
             "": EmptyResource(model)
         }),
         "utf-8"
