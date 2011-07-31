@@ -15,6 +15,7 @@ def get_site_map(priyomInterface):
     return EncodingSelector(
         MapResource({
             "station": StationResource(model),
+            "broadcast": BroadcastResource(model),
             "": EmptyResource(model)
         }),
         "utf-8"
