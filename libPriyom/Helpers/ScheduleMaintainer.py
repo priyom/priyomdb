@@ -1,10 +1,10 @@
 from storm.locals import *
-from ..broadcasts import Broadcast, BroadcastFrequency
-from ..schedules import Schedule, ScheduleLeaf
-from ..stations import Station
+from ..Broadcast import Broadcast, BroadcastFrequency
+from ..Schedule import Schedule, ScheduleLeaf
+from ..Station import Station
 from time import mktime
 from datetime import datetime, timedelta
-from ..limits import limits
+from ..Limits import limits
 
 class ScheduleMaintainerError(Exception):
     pass

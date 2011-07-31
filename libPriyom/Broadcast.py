@@ -1,6 +1,6 @@
 from storm.locals import *
 import XMLIntf
-import Modulation
+from Modulation import Modulation
 import datetime
 
 class BroadcastFrequency(object):
@@ -9,7 +9,7 @@ class BroadcastFrequency(object):
     BroadcastID = Int()
     Frequency = Int()
     ModulationID = Int()
-    Modulation = Reference(ModulationID, modulations.Modulation.ID)
+    Modulation = Reference(ModulationID, Modulation.ID)
     
     def __init__(self):
         self.Frequency = 0
@@ -34,9 +34,9 @@ class BroadcastFrequency(object):
     
     def fromDom(self, node):
         self.Frequency = int(XMLIntf.getText(node))
-        self.Modulation = Store.of(self).find(modulations.Modulation, modulations.Modulation.Name == node.getAttribute("modulation")).any()
+        self.Modulation = Store.of(self).find(Modulation, Modulation.Name == node.getAttribute("modulation")).any()
         if self.Modulation is None:
-            self.Modulation = modulations.Modulation()
+            self.Modulation = Modulation()
             Store.of(self).add(self.Modulation)
             self.Modulation.Name = node.getAttribute("modulation")
     
