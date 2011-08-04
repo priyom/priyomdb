@@ -148,6 +148,6 @@ class Broadcast(XMLIntf.XMLStorm):
             }[node.tagName](node, context)
         except KeyError:
             pass
-            
+        
     def __str__(self):
         return "%s broadcast from %s until %s" % (self.Type, repr(self.BroadcastStart), repr(self.BroadcastEnd))

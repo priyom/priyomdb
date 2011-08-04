@@ -7,7 +7,7 @@
     </station-metadata>
     <broadcasts>
         <broadcast>
-            <id>18</id>
+            <id>-1</id>
             <station-id>1</station-id>
             <start unix="0" />
             <confirmed />

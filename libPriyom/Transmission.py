@@ -58,7 +58,11 @@ class TransmissionClassBase(object):
                 supplement = self.supplements[field.FieldName]
                 supplement.ForeignText = XMLIntf.getText(item)
                 supplement.LangCode = langCode
-        
+    
+    def deleteForeignSupplements(self):
+        store = Store.of(self)
+        for supplement in self.supplements.itervalues():
+            store.remove(supplement.supplement)
 
 def NewTransmissionClass(table):
     cls = types.ClassType(table.TableName.encode("utf-8"), (TransmissionClassBase, ), {})
@@ -139,8 +143,13 @@ class Transmission(object):
         blocks.sort(cmp=lambda x,y: cmp(x.Order, y.Order))
         self.blocks = blocks
     
+    def __init__(self):
+        self.ForeignCallsign = None
+    
     def __storm_invalidated__(self):
         self.updateBlocks()
+        
+        self.ForeignCallsign = ForeignHelper(self, "Callsign")
     
     def __storm_loaded__(self):
         self.updateBlocks()
