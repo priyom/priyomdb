@@ -1,10 +1,11 @@
 from storm.locals import *
+import xml.dom.minidom as dom
 import XMLIntf
 from Modulation import Modulation
 import datetime
 import Formatting
 
-class Schedule(object):
+class Schedule(XMLIntf.XMLStorm):
     __storm_table__ = "schedules"
     ID = Int(primary = True)
     ParentID = Int()
@@ -21,6 +22,23 @@ class Schedule(object):
     Every = Int()
     StartTimeOffset = Int()
     EndTimeOffset = Int()
+    
+    @staticmethod
+    def checkNestable(parentKind, childKind):
+        if parentKind == "once":
+            return childKind in ["year", "month", "week", "day", "hour"]
+        elif parentKand == "year":
+            return childKind in ["month", "week", "day", "hour"]
+        elif parentKind == "month":
+            return childKind in ["week", "day", "hour"]
+        elif parentKind == "week":
+            return childKind in ["day", "hour"]
+        elif parentKind == "day":
+            return childKind in ["hour"]
+        elif parentKind == "hour":
+            return False
+        else:
+            return False
     
     def _formatOnce(self, start, end):
         return start.strftime(Formatting.priyomdate), end.strftime(Formatting.priyomdate)
@@ -104,6 +122,56 @@ class Schedule(object):
         parentNode.appendChild(schedule)
         return schedule
         
+    def _leavesFromDom(self, node, context):
+        for node in (node for node in node.childNodes if node.nodeType == dom.Node.ELEMENT_NODE):
+            if node.tagName != "leaf":
+                context.log("Found invalid node in schedule.leaves. Skipping.")
+                continue
+            leaf = ScheduleLeaf()
+            self.store.add(leaf)
+            leaf.Schedule = self
+            leaf.fromDom(leaf)
+            
+    def _schedulesFromDom(self, node, context):
+        for node in (node for node in node.childNodes if node.nodeType == dom.Node.ELEMENT_NODE):
+            if node.tagName != "schedule-reference":
+                context.log("Found invalid node in schedule.schedules. Skipping.")
+                continue
+            try:
+                id = int(node.getAttribute("id"))
+            except:
+                context.log("Schedule references in schedule.schedules must consist only of <schedule id=\"id\" />")
+                continue
+            schedule = self.store.get(Schedule, id)
+            if schedule is not None:
+                if schedule.Parent is not None:
+                    context.log("Schedule %d is already assigned to another parent." % (schedule.ID))
+                    continue
+                if not Schedule.checkNestable(self.ScheduleKind, schedule.ScheduleKind):
+                    context.log("Cannot nest a \"%s\" schedule into a \"%s\" schedule." % (self.ScheduleKind, schedule.ScheduleKind))
+                    continue
+                schedule.Parent = self
+        
+    def loadDomElement(self, node, context):
+        if node.tagName == "repeat":
+            self.ScheduleKind = node.getAttribute("step")
+            self.Skip = node.getAttribute("skip")
+            self.Every = XMLIntf.getText(node)
+        elif node.tagName == "name":
+            self.Name = XMLIntf.getText(node)
+        elif node.tagName == "start-offset":
+            self.StartTimeOffset = node.getAttribute("seconds")
+        elif node.tagName == "end-offset":
+            self.EndTimeOffset = node.getAttribute("seconds")
+        elif node.tagName == "leaves":
+            for leaf in list(self.Leaves):
+                leaf.delete()
+            self._leavesFromDom(node, context)
+        elif node.tagName == "schedules":
+            for schedule in list(self.Children):
+                schedule.Parent = None
+            self._schedulesFromDom(node, context)
+        
     def __repr__(self):
         return '<Schedule id="%d" kind="%s" start-offset="%d" end-offset="%r">%s</Schedule>' % (self.ID, self.ScheduleKind, self.StartTimeOffset, self.EndTimeOffset, self.Name)
         
@@ -147,13 +215,21 @@ class ScheduleLeaf(object):
         "data": "data",
         "continous": "continous"
     })
+        
+    def delete(self):
+        Frequencies.remove()
+        Store.of(self).remove(self)
     
     def toDom(self, parentNode):
         doc = parentNode.ownerDocument
         leaf = doc.createElementNS(XMLIntf.namespace, "leaf")
-        XMLIntf.appendTextElement(leaf, "kind", self.BroadcastType)
+        XMLIntf.appendTextElements(leaf, {
+            "kind": self.BroadcastType,
+            "station-id": self.StationID
+        })
         # self.Frequency.toDom(leaf)
         for frequency in self.Frequencies:
             frequency.toDom(leaf)
         parentNode.appendChild(leaf)
 
+Schedule.Leaves = ReferenceSet(Schedule.ID, ScheduleLeaf.ScheduleID)

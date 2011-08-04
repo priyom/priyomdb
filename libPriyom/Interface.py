@@ -70,3 +70,92 @@ class PriyomInterface:
         
     def getImportContext(self):
         return Imports.ImportContext(self.store)
+        
+    def deleteTransmissionBlock(self, obj, force = False):
+        store = self.store
+        obj.deleteForeignSupplements()
+        store.remove(obj)
+        
+    def deleteTransmission(self, obj, force = False):
+        store = self.store
+        blocks = obj.blocks
+        if force:
+            for block in blocks:
+                self.deleteTransmissionBlock(block, True)
+        else:
+            if len(blocks) > 0:
+                return False
+        if obj.ForeignCallsign is not None:
+            store.remove(obj.ForeignCallsign.supplement)
+        store.remove(obj)
+        return True
+        
+    def deleteScheduleLeaf(self, obj, force = False):
+        store = self.store
+        freqs = store.find(ScheduleLeafFrequency, ScheduleLeafFrequency.ScheduleLeafID == obj.ID)
+        if force:
+            freqs.remove()
+        else:
+            if freqs.count() > 0:
+                return False
+        store.remove(obj)
+        return True
+        
+    def deleteSchedule(self, obj, force = False):
+        store = self.store
+        stations = store.find(Station, Station.ScheduleID == obj.ID)
+        # won't delete all stations which are using this schedule, not
+        # even with force == True
+        if stations.count() > 0:
+            return False
+        children = store.find(Schedule, Schedule.ParentID == obj.ID)
+        leaves = store.find(ScheduleLeaf, ScheduleLeaf.ScheduleID == obj.ID)
+        if force:
+            for child in children:
+                self.deleteSchedule(child, True)
+            for leaf in leaves:
+                self.deleteScheduleLeaf(leaf, True)
+        else:
+            if children.count() > 0:
+                return False
+            if leaves.count() > 0:
+                return False
+        store.remove(Schedule)
+        return True
+    
+    def deleteStation(self, obj, force = False):
+        store = self.store
+        broadcasts = store.find(Broadcast, Broadcast.StationID == obj.ID)
+        if force:
+            for broadcast in broadcasts:
+                self.deleteBroadcast(broadcast, True)
+        else:
+            if broadcasts.count() > 0:
+                return False
+        store.remove(obj)
+        return True
+        
+    def deleteBroadcast(self, obj, force = False):
+        store = self.store
+        transmissions = store.find(Transmission, Transmission.BroadcastID == obj.ID)
+        if force:
+            for transmission in transmissions:
+                self.deleteTransmission(transmission, True)
+        else:
+            if transmissions.count() > 0:
+                return False
+        store.find(BroadcastFrequency, BroadcastFrequency.BroadcastID == obj.ID).remove()
+        store.remove(obj)
+        return True
+        
+    def delete(self, obj, force = False):
+        try:
+            method = {
+                Transmission: self.deleteTransmission,
+                Schedule: self.deleteSchedule,
+                Station: self.deleteStation,
+                Broadcast: self.deleteBroadcast
+            }[type(obj)]
+        except KeyError:
+            raise Exception("Can only delete elementary objects (got object of type %s)." % (str(type(obj))))
+        return method(obj, force)
