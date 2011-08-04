@@ -1,6 +1,6 @@
 import xml.dom.minidom as dom
 import datetime
-import formatting
+import Formatting
 
 namespace = "http://priyom.org/station-db"
 debugXml = True
@@ -72,7 +72,7 @@ def appendTextElements(parentNode, data, useNamespace = namespace, noneHandler =
 
 def appendDateElement(parentNode, name, value, useNamespace = namespace, doNotAppend = False):
     date = datetime.datetime.fromtimestamp(value)
-    node = appendTextElement(parentNode, name, date.strftime(formatting.priyomdate), useNamespace, True)
+    node = appendTextElement(parentNode, name, date.strftime(Formatting.priyomdate), useNamespace, True)
     node.setAttribute("unix", unicode(value))
     if not doNotAppend:
         parentNode.appendChild(node)

@@ -1,8 +1,8 @@
 from storm.locals import *
-import xmlintf
-import foreign
-import broadcasts
-import stations
+import XMLIntf
+from Foreign import ForeignHelper
+from Broadcast import Broadcast
+from Station import Station
 import types
     
 class TransmissionClassBase(object):
@@ -21,7 +21,7 @@ class TransmissionClassBase(object):
     def initSupplements(self):
         self.supplements = {}
         for field in self.fields:
-            self.supplements[field.FieldName] = foreign.ForeignHelper(self, field.FieldName)
+            self.supplements[field.FieldName] = ForeignHelper(self, field.FieldName)
         
     def __init__(self, store):
         store.add(self)
@@ -32,13 +32,13 @@ class TransmissionClassBase(object):
         
     def toDom(self, parentNode):
         doc = parentNode.ownerDocument
-        group = doc.createElementNS(xmlintf.namespace, "group")
+        group = doc.createElementNS(XMLIntf.namespace, "group")
         group.setAttribute("class", self.TransmissionClassTable.XMLGroupClass)
         group.setAttribute("name", self.TransmissionClassTable.TableName)
         
         for (field, value) in self:
             kind = field.Kind
-            xmlintf.appendTextElement(group, "item", value).setAttribute("class", kind)
+            XMLIntf.appendTextElement(group, "item", value).setAttribute("class", kind)
             supplement = self.supplements[field.FieldName]
             node = supplement.toDom(group, "item")
             if node is not None:
@@ -53,10 +53,10 @@ class TransmissionClassBase(object):
             langCode = item.getAttribute("lang")
             if langCode is None:
                 field = fields.__next__()
-                setattr(self, field.FieldName, xmlintf.getText(item))
+                setattr(self, field.FieldName, XMLIntf.getText(item))
             else:
                 supplement = self.supplements[field.FieldName]
-                supplement.ForeignText = xmlintf.getText(item)
+                supplement.ForeignText = XMLIntf.getText(item)
                 supplement.LangCode = langCode
         
 
@@ -112,9 +112,9 @@ class Transmission(object):
     __storm_table__ = "transmissions"
     ID = Int(primary = True)
     StationID = Int()
-    Station = Reference(StationID, stations.Station.ID)
+    Station = Reference(StationID, Station.ID)
     BroadcastID = Int()
-    Broadcast = Reference(BroadcastID, broadcasts.Broadcast.ID)
+    Broadcast = Reference(BroadcastID, Broadcast.ID)
     Callsign = Unicode()
     Timestamp = Int()
     ClassID = Int()
@@ -145,14 +145,14 @@ class Transmission(object):
     def __storm_loaded__(self):
         self.updateBlocks()
         
-        self.ForeignCallsign = foreign.ForeignHelper(self, "Callsign")
+        self.ForeignCallsign = ForeignHelper(self, "Callsign")
         
     def _loadCallsign(self, node):
         if node.getAttribute("lang") is not None:
-            self.ForeignCallsign.supplement.ForeignText = xmlintf.getText(node)
-            self.ForeignCallsign.supplement.LangCode = xmlintf.getAttribute("lang")
+            self.ForeignCallsign.supplement.ForeignText = XMLIntf.getText(node)
+            self.ForeignCallsign.supplement.LangCode = XMLIntf.getAttribute("lang")
         else:
-            self.Callsign = xmlintf.getText(node)
+            self.Callsign = XMLIntf.getText(node)
         
     """
         Note that loading the contents is, in contrast to most other 
@@ -176,8 +176,8 @@ class Transmission(object):
             block.fromDom(group)
         
     def _metadataToDom(self, doc, parentNode):
-        metadata = doc.createElementNS(xmlintf.namespace, "transmission-metadata")
-        xmlintf.appendTextElements(metadata,
+        metadata = doc.createElementNS(XMLIntf.namespace, "transmission-metadata")
+        XMLIntf.appendTextElements(metadata,
             [
                 ("station-id", unicode(self.Station.ID) if self.Station is not None else None),
                 ("broadcast-id", unicode(self.Broadcast.ID)),
@@ -186,8 +186,8 @@ class Transmission(object):
             ]
         )
         self.ForeignCallsign.toDom(metadata, "callsign")
-        xmlintf.appendDateElement(metadata, "timestamp", self.Timestamp)
-        xmlintf.appendTextElements(metadata,
+        XMLIntf.appendDateElement(metadata, "timestamp", self.Timestamp)
+        XMLIntf.appendTextElements(metadata,
             [
                 ("recording", self.RecordingURL),
                 ("remarks", self.Remarks)
@@ -198,11 +198,11 @@ class Transmission(object):
     
     def toDom(self, parentNode, flags=None):
         doc = parentNode.ownerDocument
-        transmission = doc.createElementNS(xmlintf.namespace, "transmission")
-        xmlintf.appendTextElement(transmission, "id", unicode(self.ID))
+        transmission = doc.createElementNS(XMLIntf.namespace, "transmission")
+        XMLIntf.appendTextElement(transmission, "id", unicode(self.ID))
         self._metadataToDom(doc, transmission)
         
-        contents = doc.createElementNS(xmlintf.namespace, "contents")
+        contents = doc.createElementNS(XMLIntf.namespace, "contents")
         for block in self.blocks:
             block.toDom(contents)
         transmission.appendChild(contents)

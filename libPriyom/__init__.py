@@ -1,12 +1,12 @@
 from storm.locals import *
-from modulations import Modulation
-from broadcasts import BroadcastFrequency, Broadcast
-from transmissions import Transmission, TransmissionClass, TransmissionClassTable, TransmissionClassTableField
-from schedules import Schedule, ScheduleLeaf
-from stations import Station
-from foreign import ForeignSupplement
-import xmlintf
-from interface import PriyomInterface
+from Modulation import Modulation
+from Broadcast import BroadcastFrequency, Broadcast
+from Transmission import Transmission, TransmissionClass, TransmissionClassTable, TransmissionClassTableField
+from Schedule import Schedule, ScheduleLeaf
+from Station import Station
+from Foreign import ForeignSupplement
+import XMLIntf
+from Interface import PriyomInterface
 
 BroadcastFrequency.Broadcast = Reference(BroadcastFrequency.BroadcastID, Broadcast.ID)
 Broadcast.Station = Reference(Broadcast.StationID, Station.ID)

@@ -1,2 +1,4 @@
 *.pyc
 data
+.htaccess
+cfg_priyomhttpd.py

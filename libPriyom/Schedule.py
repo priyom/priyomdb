@@ -1,8 +1,8 @@
 from storm.locals import *
-import xmlintf
-import modulations
+import XMLIntf
+from Modulation import Modulation
 import datetime
-import formatting
+import Formatting
 
 class Schedule(object):
     __storm_table__ = "schedules"
@@ -23,7 +23,7 @@ class Schedule(object):
     EndTimeOffset = Int()
     
     def _formatOnce(self, start, end):
-        return start.strftime(formatting.priyomdate), end.strftime(formatting.priyomdate)
+        return start.strftime(Formatting.priyomdate), end.strftime(Formatting.priyomdate)
     
     def _formatYear(self, start, end):
         return start.strftime("%b %d."), end.strftime("%b %d.")
@@ -43,18 +43,18 @@ class Schedule(object):
     def toDom(self, parentNode, stationId = None):
         doc = parentNode.ownerDocument
         store = Store.of(self)
-        schedule = doc.createElementNS(xmlintf.namespace, "schedule")
+        schedule = doc.createElementNS(XMLIntf.namespace, "schedule")
         
-        xmlintf.appendTextElements(schedule,
+        XMLIntf.appendTextElements(schedule,
             [
                 ("id", unicode(self.ID)),
                 ("name", self.Name)
             ]
         )
         if self.ScheduleKind == "once":
-            xmlintf.appendTextElement(schedule, "no-repeat", "")
+            XMLIntf.appendTextElement(schedule, "no-repeat", "")
         else:
-            repeat = xmlintf.appendTextElement(schedule, "repeat", unicode(self.Every), doNotAppend = True)
+            repeat = XMLIntf.appendTextElement(schedule, "repeat", unicode(self.Every), doNotAppend = True)
             repeat.setAttribute("step", self.ScheduleKind)
             repeat.setAttribute("skip", unicode(self.Skip))
             schedule.appendChild(repeat)
@@ -78,19 +78,19 @@ class Schedule(object):
             "hour": self._formatHour(start, end)
         }[self.ScheduleKind]
         
-        startOffset = xmlintf.appendTextElement(schedule, "start-offset", startStr)
+        startOffset = XMLIntf.appendTextElement(schedule, "start-offset", startStr)
         startOffset.setAttribute("seconds", unicode(self.StartTimeOffset))
         
         if self.EndTimeOffset is not None:
-            endOffset = xmlintf.appendTextElement(schedule, "end-offset", endStr)
+            endOffset = XMLIntf.appendTextElement(schedule, "end-offset", endStr)
             endOffset.setAttribute("seconds", unicode(self.EndTimeOffset))
             
-        schedules = doc.createElementNS(xmlintf.namespace, "schedules")
+        schedules = doc.createElementNS(XMLIntf.namespace, "schedules")
         for _schedule in self.Children:
             _schedule.toDom(schedules, stationId)
         schedule.appendChild(schedules)
         
-        leaves = doc.createElementNS(xmlintf.namespace, "leaves")
+        leaves = doc.createElementNS(XMLIntf.namespace, "leaves")
         if stationId is not None:
             leavesSelect = store.find(ScheduleLeaf, 
                 (ScheduleLeaf.StationID == stationId) and (ScheduleLeaf.ScheduleID == self.ID))
@@ -119,19 +119,19 @@ class ScheduleLeafFrequency(object):
     ScheduleLeafID = Int()
     Frequency = Int()
     ModulationID = Int()
-    Modulation = Reference(ModulationID, modulations.Modulation.ID)
+    Modulation = Reference(ModulationID, Modulation.ID)
     
     def fromDom(self, node):
-        self.Frequency = int(xmlintf.getText(node))
-        self.Modulation = Store.of(self).find(modulations.Modulation, modulations.Modulation.Name == node.getAttribute("modulation")).any()
+        self.Frequency = int(XMLIntf.getText(node))
+        self.Modulation = Store.of(self).find(Modulation, Modulation.Name == node.getAttribute("modulation")).any()
         if self.Modulation is None:
-            self.Modulation = modulations.Modulation()
+            self.Modulation = Modulation()
             Store.of(self).add(self.Modulation)
             self.Modulation.Name = node.getAttribute("modulation")
     
     def toDom(self, parentNode):
         doc = parentNode.ownerDocument
-        frequency = xmlintf.buildTextElementNS(doc, "frequency", unicode(self.Frequency), xmlintf.namespace)
+        frequency = XMLIntf.buildTextElementNS(doc, "frequency", unicode(self.Frequency), XMLIntf.namespace)
         frequency.setAttribute("modulation", self.Modulation.Name)
         parentNode.appendChild(frequency)
 
@@ -150,8 +150,8 @@ class ScheduleLeaf(object):
     
     def toDom(self, parentNode):
         doc = parentNode.ownerDocument
-        leaf = doc.createElementNS(xmlintf.namespace, "leaf")
-        xmlintf.appendTextElement(leaf, "kind", self.BroadcastType)
+        leaf = doc.createElementNS(XMLIntf.namespace, "leaf")
+        XMLIntf.appendTextElement(leaf, "kind", self.BroadcastType)
         # self.Frequency.toDom(leaf)
         for frequency in self.Frequencies:
             frequency.toDom(leaf)
