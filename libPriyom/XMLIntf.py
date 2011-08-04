@@ -3,7 +3,7 @@ import datetime
 import Formatting
 
 namespace = "http://priyom.org/station-db"
-debugXml = True
+debugXml = False
 
 class NoneHandlers:
     @staticmethod
@@ -11,27 +11,28 @@ class NoneHandlers:
         return ""
         
 class XMLStorm(object):
-    def loadProperty(self, tagName, data, element):
+    def loadProperty(self, tagName, data, element, context):
         if debugXml:
-            print("Failed to map property: %s" % (tagName))
-        self.loadDomElement(element)
+            context.log("Failed to map property: %s" % (tagName))
+            # print()
+        self.loadDomElement(element, context)
         
-    def loadDomElement(self, element):
+    def loadDomElement(self, element, context):
         pass
     
-    def loadProperties(self, node):
+    def loadProperties(self, node, context):
         for child in node.childNodes:
             if child.nodeType == dom.Node.ELEMENT_NODE:
                 if len(child.childNodes) == 1 and child.childNodes[0].nodeType == dom.Node.TEXT_NODE:
                     if child.tagName in self.xmlMapping:
                         setattr(self, self.xmlMapping[child.tagName], child.childNodes[0].data)
                     else:
-                        self.loadProperty(child.tagName, child.childNodes[0].data, child)
+                        self.loadProperty(child.tagName, child.childNodes[0].data, child, context)
                 else:
-                    self.loadDomElement(child)
+                    self.loadDomElement(child, context)
                     
-    def fromDom(self, node):
-        self.loadProperties(node)
+    def fromDom(self, node, context):
+        self.loadProperties(node, context)
     
 def buildTextElementNS(doc, name, value, namespace):
     node = doc.createElementNS(namespace, name)

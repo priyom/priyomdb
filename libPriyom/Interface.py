@@ -68,25 +68,5 @@ class PriyomInterface:
             obj.toDom(doc.documentElement, flags)
         return doc
         
-    def _importFromDomSimple(self, cls, node):
-        Imports.importSimple(self.store, cls, node)
-        
-    def importTransmissionFromDom(self, node):
-        return self._importFromDomSimple(Transmission, node)
-        
-    def importStationFromDom(self, node):
-        return self._importFromDomSimple(Station, node)
-        
-    def importScheduleFromDom(self, node):
-        return self._importFromDomSimple(Schedule, node)
-        
-    def importBroadcastFromDom(self, node):
-        return self._importFromDomSimple(Broadcast, node)
-        
-    def importFromDom(self, node):
-        return {
-            "transmission": self.importTransmissionFromDom,
-            "schedule": self.importScheduleFromDom,
-            "station": self.importStationFromDom,
-            "broadcast": self.importBroadcastFromDom
-        }[node.tagName](node)
+    def getImportContext(self):
+        return Imports.ImportContext(self.store)

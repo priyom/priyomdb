@@ -121,7 +121,7 @@ class ScheduleLeafFrequency(object):
     ModulationID = Int()
     Modulation = Reference(ModulationID, Modulation.ID)
     
-    def fromDom(self, node):
+    def fromDom(self, node, context):
         self.Frequency = int(XMLIntf.getText(node))
         self.Modulation = Store.of(self).find(Modulation, Modulation.Name == node.getAttribute("modulation")).any()
         if self.Modulation is None:

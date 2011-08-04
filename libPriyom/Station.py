@@ -46,38 +46,40 @@ class Station(XMLIntf.XMLStorm):
             metadata.appendChild(doc.createElementNS(XMLIntf.namespace, "on-air"))
         parentNode.appendChild(metadata)
         
-    def _broadcastsFromDom(self, node):
+    def _broadcastsFromDom(self, node, context):
         for child in node.childNodes:
             if child.nodeType != dom.Node.ELEMENT_NODE:
                 continue
             if child.tagName == "broadcast":
-                broadcast = Imports.importSimple(Store.of(self), Broadcast, child)
+                broadcast = context.importFromDomNode(child, Broadcast)
+                if broadcast is None:
+                    continue
                 if broadcast.Station != self and broadcast.ScheduleLeaf is not None and broadcast.ScheduleLeaf.Station != self:
-                    print("Cannot reassign a broadcast which is bound to a schedule leaf which is not assigned to target station.")
+                    context.log("Cannot reassign a broadcast which is bound to a schedule leaf which is not assigned to target station.")
                 else:
                     broadcast.Station = self
         
-    def _transmissionsFromDom(self, node):
-        print("Cannot import transmissions using station import. Please import transmissions directly or as part of broadcast imports.")
+    def _transmissionsFromDom(self, node, context):
+        context.log("Cannot import transmissions using station import. Please import transmissions directly or as part of broadcast imports.")
         pass
         
-    def _scheduleFromDom(self, node):
-        self.Schedule = Imports.importSimple(Store.of(self), Schedule, node)
+    def _scheduleFromDom(self, node, context):
+        self.Schedule = context.importFromDomNode(node, Schedule)
         self.ScheduleConfirmed = node.getAttribute("confirmed") == "true"
         
-    def loadDomElement(self, node):
+    def loadDomElement(self, node, context):
         try:
             {
                 "station-metadata": self.loadProperties,
                 "broadcasts": self._broadcastsFromDom,
                 "transmissions": self._transmissionsFromDom,
                 "schedule": self._scheduleFromDom
-            }[node.tagName](node)
+            }[node.tagName](node, context)
         except KeyError:
             pass
         
-    def fromDom(self, node):
-        self.loadProperties(node)
+    def fromDom(self, node, context):
+        self.loadProperties(node, context)
         
     def getIsOnAir(self):
         return False

@@ -9,9 +9,9 @@ class Resource(object):
         
     def setupModel(self):
         if "flags" in self.query:
-            self.model.setCurrentFlags(frozenset((flag for flag in self.query["flags"].split(",") if len(flag) == 0)))
+            self.model.setCurrentFlags((flag for flag in self.query["flags"].split(",") if len(flag) != 0))
         else:
-            self.model.setCurrentFlags(frozenset())
+            self.model.setCurrentFlags([])
         if "distinct" in self.query:
             self.model.setDistinct(True)
         else:

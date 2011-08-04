@@ -16,7 +16,7 @@ class BroadcastFrequency(object):
         self.ModulationID = 0
     
     @staticmethod
-    def importFromDom(store, node, broadcast):
+    def importFromDom(store, node, broadcast, context):
         frequency = int(XMLIntf.getText(node))
         modname = node.getAttribute("modulation")
         checklist = store.find(BroadcastFrequency, 
@@ -29,10 +29,10 @@ class BroadcastFrequency(object):
         obj = BroadcastFrequency()
         store.add(obj)
         obj.Broadcast = broadcast
-        obj.fromDom(node)
+        obj.fromDom(node, context)
         return obj
     
-    def fromDom(self, node):
+    def fromDom(self, node, context):
         self.Frequency = int(XMLIntf.getText(node))
         self.Modulation = Store.of(self).find(Modulation, Modulation.Name == node.getAttribute("modulation")).any()
         if self.Modulation is None:
@@ -77,22 +77,22 @@ class Broadcast(XMLIntf.XMLStorm):
     def _dummy(self, element):
         pass
         
-    def _loadStart(self, element):
+    def _loadStart(self, element, context):
         time = long(element.getAttribute("unix"))
         self.BroadcastStart = time
         
-    def _loadEnd(self, element):
+    def _loadEnd(self, element, context):
         time = long(element.getAttribute("unix"))
         self.BroadcastEnd = time
         
-    def _loadConfirmed(self, element):
+    def _loadConfirmed(self, element, context):
         if element.hasAttribute("delete"):
             self.Confirmed = False
         else:
             self.Confirmed = True
     
-    def _loadFrequency(self, element):
-        broadcastFrequency = BroadcastFrequency.importFromDom(Store.of(self), element, self)
+    def _loadFrequency(self, element, context):
+        broadcastFrequency = BroadcastFrequency.importFromDom(Store.of(self), element, self, context)
         if element.hasAttribute("delete"):
             Store.of(self).remove(broadcastFrequency)
     
@@ -135,7 +135,7 @@ class Broadcast(XMLIntf.XMLStorm):
         
         parentNode.appendChild(broadcast)
         
-    def loadDomElement(self, node):
+    def loadDomElement(self, node, context):
         print("loading %s" % node.tagName)
         try:
             {
@@ -145,6 +145,9 @@ class Broadcast(XMLIntf.XMLStorm):
                 u"on-air": self._dummy,
                 u"has-transmissions": self._dummy,
                 u"frequency": self._loadFrequency
-            }[node.tagName](node)
+            }[node.tagName](node, context)
         except KeyError:
             pass
+            
+    def __str__(self):
+        return "%s broadcast from %s until %s" % (self.Type, repr(self.BroadcastStart), repr(self.BroadcastEnd))

@@ -1,5 +1,8 @@
+import xml.dom.minidom as dom
 import time
+import json
 from datetime import datetime, timedelta
+from libPriyom import Transmission, Station, Broadcast, Schedule
 
 weekdayname = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 monthname = [None, 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
@@ -54,3 +57,33 @@ class WebModel(object):
         
     def toTimestamp(self, dateTime):
         return time.mktime(dateTime.timetuple())
+        
+    def importFromXml(self, doc, context = None, flags = None):
+        context = context if context is not None else self.priyomInterface.getImportContext()
+        for node in (node for node in doc.documentElement.childNodes if node.nodeType == dom.Node.ELEMENT_NODE):
+            if node.tagName == "delete":
+                context.log("Delete not implemented yet.")
+                continue
+            try:
+                cls = {
+                    "transmission": Transmission,
+                    "broadcast": Broadcast,
+                    "station": Station,
+                    "schedule": Schedule
+                }[node.tagName]
+            except KeyError:
+                context.log("Invalid transaction node: %s" % node.tagName)
+                continue
+            context.importFromDomNode(node, cls)
+        return context
+        
+    def importFromXmlStr(self, data, context = None, flags = None):
+        doc = dom.parseString(data)
+        return self.importFromXml(doc, context, flags)
+        
+    def importFromJson(self, tree, context = None, flags = None):
+        raise Exception('JSON import not supported yet.')
+        
+    def importFromJsonStr(self, data, context = None, flags = None):
+        tree = json.loads(data)
+        return self.importFromJson(tree, context, flags)
