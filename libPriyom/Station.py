@@ -17,7 +17,7 @@ class Station(XMLIntf.XMLStorm):
     ScheduleID = Int()
     Schedule = Reference(ScheduleID, Schedule.ID)
     ScheduleConfirmed = Bool()
-    ScheduleUpToDateUntil = Int()
+    ScheduleUpToDateUntil = Int(default=AutoReload)
     
     xmlMapping = {
         u"enigma-id": "EnigmaIdentifier",
@@ -58,7 +58,7 @@ class Station(XMLIntf.XMLStorm):
                     broadcast.Station = self
         
     def _transmissionsFromDom(self, node):
-        print("Cannot import transmissions using station import. Please import transmissions directly or as part of broadcast Imports.")
+        print("Cannot import transmissions using station import. Please import transmissions directly or as part of broadcast imports.")
         pass
         
     def _scheduleFromDom(self, node):

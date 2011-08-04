@@ -206,6 +206,7 @@ class ScheduleMaintainer(object):
         if limit is not None and (until - start) > limit:
             until = start + limit
         self._rebuildStationSchedule(station, start, until)
+        self.store.flush()
         return until
     
     def updateSchedules(self, until, limit = None):
@@ -228,5 +229,6 @@ class ScheduleMaintainer(object):
                 validUntil = min(validUntil, start+limit)
             else:
                 self._rebuildStationSchedule(station, start, until)
+        self.store.flush()
         return validUntil
         

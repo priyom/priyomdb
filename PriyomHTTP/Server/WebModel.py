@@ -1,5 +1,5 @@
 import time
-import datetime
+from datetime import datetime, timedelta
 
 weekdayname = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 monthname = [None, 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
@@ -44,4 +44,13 @@ class WebModel(object):
         return dt.strftime("%%s, %d %%s %Y %T UTC") % (weekdayname[dt.weekday()], monthname[dt.month])
         
     def formatHTTPTimestamp(self, timestamp):
-        return self.formatHTTPDate(datetime.datetime.fromtimestamp(timestamp))
+        return self.formatHTTPDate(datetime.fromtimestamp(timestamp))
+        
+    def now(self):
+        return int(time.mktime(datetime.utcnow().timetuple()))
+        
+    def normalizeDate(self, dateTime):
+        return datetime(year=dateTime.year, month=dateTime.month, day=dateTime.day)
+        
+    def toTimestamp(self, dateTime):
+        return time.mktime(dateTime.timetuple())
