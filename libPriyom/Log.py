@@ -10,9 +10,7 @@ class LogEntry(object):
         self.facility = facility
         
     def format(self, format):
-        return format.replace("%t", self.timestamp.strftime(Formatting.priyomdate))
-            .replace("%f", self.facility)
-            .replace("%m", self.message)
+        return format.replace("%t", self.timestamp.strftime(Formatting.priyomdate)).replace("%f", self.facility.name).replace("%m", self.message)
 
 class LogFacility(object):
     def __init__(self, name):
@@ -37,7 +35,7 @@ class Log(object):
     def __init__(self, facilities, defaultFacility):
         self.facilities = {}
         for facility in facilities:
-            self.facilities[facility] = LogFacility()
+            self.facilities[facility] = LogFacility(facility)
         self.defaultFacility = self.facilities[defaultFacility]
         self.format = "[%t] [%f] %m"
         self.buffer = []
@@ -48,6 +46,9 @@ class Log(object):
         else:
             entry = self.facilities[facility].log(obj)
         self.buffer.append(entry)
-            
+        
+    def __call__(self, obj, facility = None):
+        self.log(obj, facility)
+        
     def get(self):
         return "\n".join((entry.format(self.format) for entry in self.buffer))

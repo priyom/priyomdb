@@ -46,7 +46,7 @@ class TransmissionClassBase(object):
             
         parentNode.appendChild(group)
         
-    def fromDom(self, node):
+    def fromDom(self, node, context):
         fields = (field for field in self.fields)
         field = None
         for item in filter(lambda x: (x.nodeType == dom.ELEMENT_NODE) and (x.tagName == u"item"), node.childNodes):

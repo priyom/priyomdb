@@ -7,6 +7,7 @@ from datetime import datetime, timedelta
 
 class UpcomingBroadcastsAPI(API):
     def handle(self, trans):
+        super(UpcomingBroadcastsAPI, self).handle(trans)
         stationId = self.getQueryIntDefault("stationId", None, "must be integer")
         
         maxTimeRange = queryLimits.broadcasts.maxTimeRangeForUpdatingQueries if stationId is None else queryLimits.broadcasts.maxTimeRangeForStationBoundUpdatingQueries

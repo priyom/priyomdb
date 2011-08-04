@@ -1,5 +1,5 @@
 from libPriyom import *
-from WebStack.Generic import ContentType
+from WebStack.Generic import ContentType, EndOfResponse
 from Resource import Resource
 
 class StationResource(Resource):
