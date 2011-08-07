@@ -63,8 +63,8 @@ class Broadcast(XMLIntf.XMLStorm):
     Frequencies = ReferenceSet(ID, BroadcastFrequency.BroadcastID)
     
     xmlMapping = {
-        u"comment": "Comment",
-        u"type": "Type"
+        u"Comment": "Comment",
+        u"Type": "Type"
     }
     
     def __init__(self):
@@ -113,15 +113,15 @@ class Broadcast(XMLIntf.XMLStorm):
         doc = parentNode.ownerDocument
         broadcast = doc.createElementNS(XMLIntf.namespace, "broadcast")
         
-        XMLIntf.appendTextElement(broadcast, "id", unicode(self.ID))
-        XMLIntf.appendDateElement(broadcast, "start", self.BroadcastStart)
+        XMLIntf.appendTextElement(broadcast, "ID", unicode(self.ID))
+        XMLIntf.appendDateElement(broadcast, "Start", self.BroadcastStart)
         if self.BroadcastEnd is not None:
-            XMLIntf.appendDateElement(broadcast, "end", self.BroadcastEnd)
+            XMLIntf.appendDateElement(broadcast, "End", self.BroadcastEnd)
         XMLIntf.appendTextElements(broadcast,
             [
-                ("station-id", unicode(self.StationID)),
-                ("type", self.Type),
-                ("confirmed", "" if self.Confirmed else None),
+                ("StationID", unicode(self.StationID)),
+                ("Type", self.Type),
+                ("Confirmed", "" if self.Confirmed else None),
                 ("on-air", "" if self.getIsOnAir() else None),
                 ("has-transmissions", "" if self.Transmissions.any() is not None else None)
             ]
@@ -139,9 +139,9 @@ class Broadcast(XMLIntf.XMLStorm):
         print("loading %s" % node.tagName)
         try:
             {
-                u"start": self._loadStart,
-                u"end": self._loadEnd,
-                u"confirmed": self._loadConfirmed,
+                u"Start": self._loadStart,
+                u"End": self._loadEnd,
+                u"Confirmed": self._loadConfirmed,
                 u"on-air": self._dummy,
                 u"has-transmissions": self._dummy,
                 u"frequency": self._loadFrequency

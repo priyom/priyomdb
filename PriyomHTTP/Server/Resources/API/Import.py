@@ -11,7 +11,7 @@ class ImportAPI(API):
         if trans.get_request_method() != "POST":
             trans.set_response_code(400)
             return
-            
+        trans.set_content_type(ContentType("text/plain"))
         
         contentType = str(trans.get_content_type()).split(' ', 1)[0].split(';', 1)[0]
         try:
@@ -24,5 +24,4 @@ class ImportAPI(API):
             raise EndOfResponse
         data = trans.get_request_stream().read()
         context = method(data)
-        trans.set_content_type(ContentType("text/plain"))
         print >>self.out, context.log.get()

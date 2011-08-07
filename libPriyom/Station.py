@@ -20,31 +20,31 @@ class Station(XMLIntf.XMLStorm):
     ScheduleUpToDateUntil = Int(default=AutoReload)
     
     xmlMapping = {
-        u"enigma-id": "EnigmaIdentifier",
-        u"priyom-id": "PriyomIdentifier",
-        u"nickname": "Nickname",
-        u"description": "Description",
-        u"status": "Status",
-        u"location": "Location"
+        u"EnigmaIdentifier": "EnigmaIdentifier",
+        u"PriyomIdentifier": "PriyomIdentifier",
+        u"Nickname": "Nickname",
+        u"Description": "Description",
+        u"Status": "Status",
+        u"Location": "Location"
     }
     
     def _metadataToDom(self, doc, parentNode):
-        metadata = doc.createElementNS(XMLIntf.namespace, "station-metadata")
-        XMLIntf.appendTextElements(metadata,
+        #metadata = doc.createElementNS(XMLIntf.namespace, "station-metadata")
+        XMLIntf.appendTextElements(parentNode,
             [
-                ("enigma-id", self.EnigmaIdentifier),
-                ("priyom-id", self.PriyomIdentifier),
-                ("nickname", self.Nickname),
-                ("description", self.Description),
-                ("status", self.Status)
+                ("EnigmaIdentifier", self.EnigmaIdentifier),
+                ("PriyomIdentifier", self.PriyomIdentifier),
+                ("Nickname", self.Nickname),
+                ("Description", self.Description),
+                ("Status", self.Status)
             ],
             noneHandler = lambda name: ""
         )
         if self.Location is not None:
-            XMLIntf.appendTextElement(metadata, "location", self.Location)
+            XMLIntf.appendTextElement(parentNode, "Location", self.Location)
         if self.getIsOnAir():
-            metadata.appendChild(doc.createElementNS(XMLIntf.namespace, "on-air"))
-        parentNode.appendChild(metadata)
+            parentNode.appendChild(doc.createElementNS(XMLIntf.namespace, "on-air"))
+        #parentNode.appendChild(metadata)
         
     def _broadcastsFromDom(self, node, context):
         for child in node.childNodes:
@@ -70,7 +70,6 @@ class Station(XMLIntf.XMLStorm):
     def loadDomElement(self, node, context):
         try:
             {
-                "station-metadata": self.loadProperties,
                 "broadcasts": self._broadcastsFromDom,
                 "transmissions": self._transmissionsFromDom,
                 "schedule": self._scheduleFromDom
@@ -87,7 +86,7 @@ class Station(XMLIntf.XMLStorm):
     def toDom(self, parentNode, flags = None):
         doc = parentNode.ownerDocument
         station = doc.createElementNS(XMLIntf.namespace, "station")
-        XMLIntf.appendTextElement(station, "id", unicode(self.ID))
+        XMLIntf.appendTextElement(station, "ID", unicode(self.ID))
         if flags is None or not "no-metadata" in flags:
             self._metadataToDom(doc, station)
         
@@ -109,11 +108,13 @@ class Station(XMLIntf.XMLStorm):
                 broadcast.toDom(broadcasts, flags)
             station.appendChild(broadcasts)
         
+        """
         if flags is None or ("transmissions" in flags and not ("broadcasts" in flags and "broadcast-transmissions" in flags)):
             transmissions = doc.createElementNS(XMLIntf.namespace, "transmissions")
             for transmission in self.Transmissions:
                 transmission.toDom(transmissions, flags)
             station.appendChild(transmissions)
+        """
         
         parentNode.appendChild(station)
         

@@ -19,7 +19,9 @@ class PriyomInterface:
         Transmission: "priyom-transmission-export",
         Schedule: "priyom-schedule-export",
         Station: "priyom-station-export",
-        Broadcast: "priyom-broadcast-export"
+        Broadcast: "priyom-broadcast-export",
+        TransmissionClass: "priyom-generic-export",
+        TransmissionClassTable: "priyom-generic-export"
     }
     
     def __init__(self, store):
@@ -55,12 +57,14 @@ class PriyomInterface:
         return self._exportToDomSimple(broadcast, "priyom-broadcast-export", flags, doc)
         
     def exportToDom(self, obj, flags = None, doc = None):
-        return {
+        """return {
             Transmission: self.exportTransmissionToDom,
             Schedule: self.exportScheduleToDom,
             Station: self.exportStationToDom,
-            Broadcast: self.exportBroadcastToDom
-        }[type(obj)](obj, flags, doc)
+            Broadcast: self.exportBroadcastToDom,
+            TransmissionClass: self.exportTrans
+        }[type(obj)](obj, flags, doc)"""
+        return self._exportToDomSimple(obj, self.Class2RootNode[type(obj)], flags, doc)
         
     def exportListToDom(self, list, classType, flags = None, doc = None):
         doc = self._getClassDoc(classType, doc)
