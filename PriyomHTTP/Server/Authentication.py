@@ -1,11 +1,10 @@
 from WebStack.Generic import ContentType, EndOfResponse
-from APIDatabase import APIKey
+from APIDatabase import APIKey, APISession
 
 class AuthenticationSelector(object):
-    def __init__(self, store, resource, requiredCapability):
+    def __init__(self, store, resource):
         self.store = store
         self.resource = resource
-        self.requiredCapability = requiredCapability
         
     def getAPIKey(self, keyList):
         if len(keyList) != 1:
@@ -15,15 +14,25 @@ class AuthenticationSelector(object):
             key = unicode(key, "UTF-8")
         return self.store.find(APIKey, APIKey.Key == unicode(key)).any()
         
-    def continueWithAPIKey(self, trans, key):
-        if self.requiredCapability in key.Capabilities:
-            return self.resource.respond(trans)
+    def getAPISession(self, idList):
+        if len(idList) != 1:
+            return None
+        id = idList[0]
+        if type(id) != unicode:
+            id = unicode(id, "UTF-8")
+        session = self.store.find(APISession, APISession.Key == unicode(id)).any()
+        if session is None:
+            return None
+        elif not session.isValid():
+            session.delete()
+            return None
         else:
-            self.authFailed(trans)
-            
-    def authFailed(self, trans):
-        trans.set_response_code(401)
-        raise EndOfResponse
+            return session
+        
+    def continueWithAPICapable(self, trans, capObj):
+        trans.apiAuth = True
+        trans.apiCaps = capObj.getCaps()
+        return self.resource.respond(trans)
         
     def respond(self, trans):
         self.out = trans.get_response_stream()
@@ -32,8 +41,20 @@ class AuthenticationSelector(object):
         if "apikey" in query:
             apiKey = self.getAPIKey(query["apikey"])
         if apiKey is not None:
-            return self.continueWithAPIKey(trans, apiKey)
+            return self.continueWithAPICapable(trans, apiKey)
         apiKey = self.getAPIKey(trans.get_header_values("X-API-Key"))
         if apiKey is not None:
-            return self.continueWithAPIKey(trans, apiKey)
-        self.authFailed(trans)
+            return self.continueWithAPICapable(trans, apiKey)
+            
+        apiSession = None
+        if "sid" in query:
+            apiSession = self.getAPISession(query["sid"])
+        if apiSession is not None:
+            return self.continueWithAPICapable(trans, apiSession)
+        apiSession = self.getAPISession(trans.get_header_values("X-API-Session"))
+        if apiSession is not None:
+            return self.continueWithAPICapable(trans, apiSession)
+        
+        trans.apiAuth = False
+        trans.apiCaps = []
+        return self.resource.respond(trans)

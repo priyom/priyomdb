@@ -90,6 +90,17 @@ class TransmissionClassTableField(object):
         "other": "other"
     })
     MaxLength = Int()
+    
+    def toDom(self, parentNode, flags = None):
+        doc = parentNode.ownerDocument
+        fieldNode = doc.createElementNS(XMLIntf.namespace, "field")
+        XMLIntf.appendTextElements(fieldNode, [
+            ("Number", unicode(self.FieldNumber)),
+            ("Name", self.FieldName),
+            ("Kind", self.Kind),
+            ("MaxLength", unicode(self.MaxLength))
+        ])
+        parentNode.appendChild(fieldNode)
 
 class TransmissionClassTable(object):
     __storm_table__ = "transmissionClassTables"
@@ -102,6 +113,21 @@ class TransmissionClassTable(object):
     
     def __storm_loaded__(self):
         self.PythonClass = NewTransmissionClass(self)
+        
+    def toDom(self, parentNode, flags = None):
+        doc = parentNode.ownerDocument
+        tableNode = doc.createElementNS(XMLIntf.namespace, "table")
+        XMLIntf.appendTextElements(tableNode, [
+            ("TableName", self.TableName),
+            ("DisplayName", self.DisplayName),
+            ("XMLGroupClass", self.XMLGroupClass)
+        ])
+        
+        fieldsNode = doc.createElementNS(XMLIntf.namespace, "fields")
+        for field in self.Fields:
+            field.toDom(fieldsNode, flags)
+        tableNode.appendChild(fieldsNode)
+        parentNode.appendChild(tableNode)
 
 class TransmissionClass(object):
     __storm_table__ = "transmissionClasses"
@@ -111,12 +137,24 @@ class TransmissionClass(object):
     
     def __storm_loaded__(self):
         self.tables = [table for table in self.Tables]
+        
+    def toDom(self, parentNode, flags = None):
+        doc = parentNode.ownerDocument
+        classNode = doc.createElementNS(XMLIntf.namespace, "transmission-class")
+        XMLIntf.appendTextElements(classNode, [
+            ("ID", unicode(self.ID)),
+            ("DisplayName", self.DisplayName)
+        ])
+        
+        tablesNode = doc.createElementNS(XMLIntf.namespace, "tables")
+        for table in self.Tables:
+            table.toDom(tablesNode, flags)
+        classNode.appendChild(tablesNode)
+        parentNode.appendChild(classNode)
 
 class Transmission(object):
     __storm_table__ = "transmissions"
     ID = Int(primary = True)
-    StationID = Int()
-    Station = Reference(StationID, Station.ID)
     BroadcastID = Int()
     Broadcast = Reference(BroadcastID, Broadcast.ID)
     Callsign = Unicode()
@@ -127,11 +165,11 @@ class Transmission(object):
     Remarks = Unicode()
     
     xmlMapping = {
-        u"recording": "RecordingURL",
-        u"remarks": "Remarks",
-        u"station-id": "StationID",
-        u"broadcast-id": "BroadcastID",
-        u"class-id": "ClassID"
+        u"Recording": "RecordingURL",
+        u"Remarks": "Remarks",
+        u"StationID": "StationID",
+        u"BroadcastID": "BroadcastID",
+        u"ClassID": "ClassID"
     }
     
     def updateBlocks(self):
@@ -185,33 +223,30 @@ class Transmission(object):
             block.fromDom(group)
         
     def _metadataToDom(self, doc, parentNode):
-        metadata = doc.createElementNS(XMLIntf.namespace, "transmission-metadata")
-        XMLIntf.appendTextElements(metadata,
+        XMLIntf.appendTextElements(parentNode,
             [
-                ("station-id", unicode(self.Station.ID) if self.Station is not None else None),
-                ("broadcast-id", unicode(self.Broadcast.ID)),
-                ("class-id", unicode(self.Class.ID)),
-                ("callsign", unicode(self.Callsign))
+                ("BroadcastID", unicode(self.Broadcast.ID)),
+                ("ClassID", unicode(self.Class.ID)),
+                ("Callsign", unicode(self.Callsign))
             ]
         )
-        self.ForeignCallsign.toDom(metadata, "callsign")
-        XMLIntf.appendDateElement(metadata, "timestamp", self.Timestamp)
-        XMLIntf.appendTextElements(metadata,
+        self.ForeignCallsign.toDom(parentNode, "Callsign")
+        XMLIntf.appendDateElement(parentNode, "Timestamp", self.Timestamp)
+        XMLIntf.appendTextElements(parentNode,
             [
-                ("recording", self.RecordingURL),
-                ("remarks", self.Remarks)
+                ("Recording", self.RecordingURL),
+                ("Remarks", self.Remarks)
             ]
         )
-        parentNode.appendChild(metadata)
         
     
     def toDom(self, parentNode, flags=None):
         doc = parentNode.ownerDocument
         transmission = doc.createElementNS(XMLIntf.namespace, "transmission")
-        XMLIntf.appendTextElement(transmission, "id", unicode(self.ID))
+        XMLIntf.appendTextElement(transmission, "ID", unicode(self.ID))
         self._metadataToDom(doc, transmission)
         
-        contents = doc.createElementNS(XMLIntf.namespace, "contents")
+        contents = doc.createElementNS(XMLIntf.namespace, "Contents")
         for block in self.blocks:
             block.toDom(contents)
         transmission.appendChild(contents)
@@ -221,9 +256,8 @@ class Transmission(object):
     def loadDomElement(self, node):
         try:
             {
-                u"transmission-metadata": self.loadProperties,
-                u"callsign": self._loadCallsign,
-                u"contents": self._loadContents
+                u"Callsign": self._loadCallsign,
+                u"Contents": self._loadContents
             }[node.tagName](node)
         except KeyError:
             pass
