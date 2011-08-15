@@ -42,6 +42,6 @@ def assignCapability(userName, capabilityName):
     cap = store.find(APICapability, APICapability.Capability == capabilityName).any()
     if cap is None:
         raise Exception('Capability not found: %s' %(capabilityName))
-    user.Capabilities.Add(cap)
+    user.Capabilities.add(cap)
     store.flush()
     return "Capability assigned"
