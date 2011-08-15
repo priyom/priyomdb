@@ -21,3 +21,27 @@ def addUser(userName, eMail, password):
     store.add(user)
     store.flush()
     return "User created: %d" % (user.ID)
+    
+def addCapability(capabilityName):
+    capabilityName = capabilityName if type(capabilityName) == unicode else unicode(capabilityName, "UTF-8")
+    cap = store.find(APICapability, APICapability.Capability == capabilityName).any()
+    if cap is not None:
+        raise Exception('Capability exists: %s' %(capabilityName))
+    cap = APICapability()
+    cap.Capability = capabilityName
+    store.add(cap)
+    store.flush()
+    return "Capability created: %d" % (cap.ID)
+
+def assignCapability(userName, capabilityName):
+    userName = userName if type(userName) == unicode else unicode(userName, "UTF-8")
+    capabilityName = capabilityName if type(capabilityName) == unicode else unicode(capabilityName, "UTF-8")
+    user = store.find(APIUser, APIUser.Name == userName).any()
+    if user is None:
+        raise Exception('User not found: %s' % (userName))
+    cap = store.find(APICapability, APICapability.Capability == capabilityName).any()
+    if cap is None:
+        raise Exception('Capability not found: %s' %(capabilityName))
+    user.Capabilities.Add(cap)
+    store.flush()
+    return "Capability assigned"
