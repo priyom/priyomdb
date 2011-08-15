@@ -2,8 +2,9 @@
 from storm.locals import *
 from libPriyom import *
 from PriyomHTTP.Server.APIDatabase import *
+from cfg_priyomhttpd import userpass, database
 
-db = create_database("mysql://priyom-test:priyom-test@localhost/priyom-test")
+db = create_database("mysql://%s@localhost/%s" % (userpass, database))
 store = Store(db)
 intf = PriyomInterface(store)
 
