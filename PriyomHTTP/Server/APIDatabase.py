@@ -113,6 +113,12 @@ class APISessionCapability(object):
     SessionID = Int()
     CapabilityID = Int()
     
+class Variable(object):
+    __storm_table__ = "variables"
+    
+    Name = Unicode(primary=True)
+    Value = Unicode()
+    
 APIKey.Capabilities = ReferenceSet(
     APIKey.ID, 
     APIKeyCapability.KeyID,

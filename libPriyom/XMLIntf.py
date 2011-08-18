@@ -28,6 +28,11 @@ class XMLStorm(object):
                         setattr(self, self.xmlMapping[child.tagName], child.childNodes[0].data)
                     else:
                         self.loadProperty(child.tagName, child.childNodes[0].data, child, context)
+                elif len(child.childNodes) == 0:
+                    if child.tagName in self.xmlMapping:
+                        setattr(self, self.xmlMapping[child.tagName], u"")
+                    else:
+                        self.loadProperty(child.tagName, child.childNodes[0].data, child, context)
                 else:
                     self.loadDomElement(child, context)
                     
