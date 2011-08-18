@@ -152,7 +152,7 @@ class TransmissionClass(object):
         classNode.appendChild(tablesNode)
         parentNode.appendChild(classNode)
 
-class Transmission(object):
+class Transmission(XMLIntf.XMLStorm):
     __storm_table__ = "transmissions"
     ID = Int(primary = True)
     BroadcastID = Int()
