@@ -60,9 +60,10 @@ class TransmissionClassBase(object):
                 supplement.LangCode = langCode
     
     def deleteForeignSupplements(self):
-        store = Store.of(self)
         for supplement in self.supplements.itervalues():
-            store.remove(supplement.supplement)
+            store = Store.of(supplement.supplement)
+            if store is not None:
+                store.remove(supplement.supplement)
 
 def NewTransmissionClass(table):
     cls = types.ClassType(table.TableName.encode("utf-8"), (TransmissionClassBase, ), {})
