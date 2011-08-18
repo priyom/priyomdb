@@ -8,6 +8,7 @@ from Authentication import AuthenticationSelector
 from Authorization import AuthorizationSelector
 from WebModel import WebModel
 from Documentation import DocumentationSelector
+from Reset import ResetSelector
 import libPriyom
 from Resources import *
 from Resources.API import *
@@ -22,22 +23,24 @@ def get_site_map(priyomInterface):
     apiMap = MapResource({
         "getUpcomingBroadcasts": UpcomingBroadcastsAPI(model),
         "import": AuthorizationSelector(ImportAPI(model), "transaction"),
-        "listStations": AuthorizationSelector(ListAPI(model, libPriyom.Station), "list"),
+        "listStations": ListAPI(model, libPriyom.Station),
         "listBroadcasts": AuthorizationSelector(ListAPI(model, libPriyom.Broadcast), "list"),
-        "listTransmissionClasses": AuthorizationSelector(ListAPI(model, libPriyom.TransmissionClass), "list"),
+        "listTransmissionClasses": ListAPI(model, libPriyom.TransmissionClass),
         "listTransmissions": AuthorizationSelector(ListAPI(model, libPriyom.Transmission), "list"),
+        "listModulations": ListModulationsAPI(model),
         "getSession": SessionAPI(model)
     })
     
-    return EncodingSelector(AuthenticationSelector(model.store,
+    return EncodingSelector(ResetSelector(model, AuthenticationSelector(model.store,
         MapResource({
             "station": StationResource(model),
             "broadcast": IDResource(model, libPriyom.Broadcast),
             "transmission": IDResource(model, libPriyom.Transmission),
+            "transmissionClass": IDResource(model, libPriyom.TransmissionClass),
             "schedule": IDResource(model, libPriyom.Schedule),
             "call": apiMap,
             "doc": DocumentationSelector(apiMap),
             "": EmptyResource(model)
-        })),
+        }))),
         "utf-8"
     )

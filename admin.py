@@ -36,12 +36,12 @@ def addCapability(capabilityName):
 def assignCapability(userName, capabilityName):
     userName = userName if type(userName) == unicode else unicode(userName, "UTF-8")
     capabilityName = capabilityName if type(capabilityName) == unicode else unicode(capabilityName, "UTF-8")
-    user = store.find(APIUser, APIUser.Name == userName).any()
+    user = store.find(APIUser, APIUser.UserName == userName).any()
     if user is None:
         raise Exception('User not found: %s' % (userName))
     cap = store.find(APICapability, APICapability.Capability == capabilityName).any()
     if cap is None:
         raise Exception('Capability not found: %s' %(capabilityName))
-    user.Capabilities.Add(cap)
+    user.Capabilities.add(cap)
     store.flush()
     return "Capability assigned"

@@ -6,19 +6,10 @@ class StationResource(Resource):
     def __init__(self, model):
         super(StationResource, self).__init__(model)
         
-    def handle(self, trans):
-        path = trans.get_virtual_path_info().split('/')
-        if len(path) == 1:
-            trans.set_response_code(404)
-            return
-        elif len(path) > 2:
-            trans.set_response_code(404)
-            return
-        
+    def _getStation(self, trans, path):
         stationDesignator = path[1].decode("utf-8")
         if len(stationDesignator) == 0:
-            trans.set_response_code(404)
-            return
+            return None
         
         try:
             stationId = int(stationDesignator)
@@ -32,10 +23,22 @@ class StationResource(Resource):
             if station is None:
                 resultSet = self.store.find(Station, Station.PriyomIdentifier == stationDesignator)
             station = resultSet.any()
+        return station
         
+    def handle(self, trans):
+        path = trans.get_virtual_path_info().split('/')
+        if len(path) == 1:
+            trans.set_response_code(404)
+            return
+        elif len(path) > 2:
+            trans.set_response_code(404)
+            return
+            
+        station = self._getStation(trans, path)        
         if station is None:
             trans.set_response_code(404)
             return
+        
         
         trans.set_content_type(ContentType("application/xml"))
         print >>self.out, self.model.exportToXml(station)

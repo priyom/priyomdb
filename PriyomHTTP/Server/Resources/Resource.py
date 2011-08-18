@@ -44,8 +44,10 @@ class Resource(object):
         self.query = trans.get_fields_from_path()
         self.normalizeQueryDict()
         self.setupModel()
-        result = self.handle(trans)
-        self.store.flush()
+        try:
+            result = self.handle(trans)
+        finally:
+            self.store.commit()
         return result
         
     def parameterError(self, parameterName, message = None):

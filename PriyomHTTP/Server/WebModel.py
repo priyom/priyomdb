@@ -1,8 +1,10 @@
+from storm.locals import AutoReload
 import xml.dom.minidom as dom
 import time
 import json
 from datetime import datetime, timedelta
 from libPriyom import Transmission, Station, Broadcast, Schedule
+from APIDatabase import Variable
 
 weekdayname = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 monthname = [None, 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
@@ -15,6 +17,7 @@ class WebModel(object):
         self.limit = None
         self.offset = None
         self.distinct = False
+        self.resetStore()
         
     def setCurrentFlags(self, flags):
         self.currentFlags = frozenset(flags)
@@ -27,6 +30,20 @@ class WebModel(object):
     
     def setDistinct(self, distinct):
         self.distinct = distinct
+        
+    def checkReset(self):
+        if self.varLastUpdate is None:
+            self.varLastUpdate = self.store.get(Variable, u"lastImport")
+        if self.varLastUpdate is not None:
+            self.varLastUpdate.Value = AutoReload
+            if self.varLastUpdate.Value is not None:
+                if self.lastReset < int(self.varLastUpdate.Value):
+                    self.resetStore()
+                    
+    def resetStore(self):
+        self.store.reset()
+        self.varLastUpdate = self.store.get(Variable, u"lastImport")
+        self.lastReset = self.now()
     
     def exportToXml(self, obj, flags = None):
         if flags is None:
@@ -37,6 +54,9 @@ class WebModel(object):
         if flags is None:
             flags = self.currentFlags
         return self.priyomInterface.exportListToDom(list, classType, flags).toxml()
+        
+    def getExportDoc(self, rootNodeName):
+        return self.priyomInterface.createDocument(rootNodeName)
         
     def limitResults(self, resultSet):
         resultSet.config(self.distinct, self.offset, self.limit)
@@ -103,6 +123,9 @@ class WebModel(object):
                     context.log("Invalid transaction node: %s" % node.tagName)
                     continue
                 context.importFromDomNode(node, cls)
+        self.varLastUpdate.Value = unicode(self.now())
+        self.store.commit()
+        self.resetStore()
         return context
         
     def importFromXmlStr(self, data, context = None, flags = None):

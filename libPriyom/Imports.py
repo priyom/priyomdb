@@ -35,12 +35,13 @@ class ImportContext(object):
         return obj
     
     def importFromDomNode(self, node, cls):
-        idNode = XMLIntf.getChild(node, "id")
+        idNode = XMLIntf.getChild(node, "ID")
         if idNode is None:
             if node.hasAttribute("id"):
                 return self.resolveId(int(node.getAttribute("id")))
             else:
                 self.log("Found id-less node: %s" % (node.tagName))
+                return None
         id = int(idNode.childNodes[0].data)
         obj = self._getForImport(cls, id)
         if obj is None:

@@ -83,12 +83,8 @@ class PriyomInterface:
     def deleteTransmission(self, obj, force = False):
         store = self.store
         blocks = obj.blocks
-        if force:
-            for block in blocks:
-                self.deleteTransmissionBlock(block, True)
-        else:
-            if len(blocks) > 0:
-                return False
+        for block in blocks:
+            self.deleteTransmissionBlock(block, True)
         if obj.ForeignCallsign is not None:
             store.remove(obj.ForeignCallsign.supplement)
         store.remove(obj)
