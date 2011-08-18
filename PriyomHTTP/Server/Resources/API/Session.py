@@ -16,10 +16,10 @@ class SessionAPI(API):
         
         user = self.store.find(APIUser, APIUser.UserName == userName).any()
         if user is None:
-            print >>self.out, "failed: user not found or password invalid"
+            print >>self.out, "failed: user (%s) not found or password invalid" % userName
             return
         if not user.checkPassword(password):
-            print >>self.out, "failed: user not found or password invalid"
+            print >>self.out, "failed: user (%s) not found or password invalid" % userName
             return
         password = None
         session = user.getSession()
