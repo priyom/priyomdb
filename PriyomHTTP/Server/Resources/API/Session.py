@@ -19,7 +19,7 @@ class SessionAPI(API):
             print >>self.out, "failed: user (%s) not found" % userName
             return
         if not user.checkPassword(password):
-            print >>self.out, "failed: password invalid" % userName
+            print >>self.out, "failed: password invalid"
             return
         password = None
         session = user.getSession()
