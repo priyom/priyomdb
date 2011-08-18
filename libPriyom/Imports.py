@@ -49,7 +49,7 @@ class ImportContext(object):
         obj.fromDom(node, self)
         if id < 0:
             self._addObject(cls, id, obj) # important: use id here, we want to be able to resolve negative ids later!
-        self.store.flush(obj)
+        self.store.flush()
         self.log(u"%s %s with id %d (%s). Assigned id: %d" % ("Imported" if id < 0 else "Updated", unicode(cls), id, unicode(obj), obj.ID))
         return obj
         
