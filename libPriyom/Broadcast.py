@@ -63,6 +63,7 @@ class Broadcast(XMLIntf.XMLStorm):
     Frequencies = ReferenceSet(ID, BroadcastFrequency.BroadcastID)
     
     xmlMapping = {
+        u"StationID": "StationID",
         u"Comment": "Comment",
         u"Type": "Type"
     }
