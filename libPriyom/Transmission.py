@@ -254,7 +254,7 @@ class Transmission(XMLIntf.XMLStorm):
         
         parentNode.appendChild(transmission)
         
-    def loadDomElement(self, node):
+    def loadDomElement(self, node, context):
         try:
             {
                 u"Callsign": self._loadCallsign,
