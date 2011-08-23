@@ -20,13 +20,15 @@ class EmptyResource(Resource):
         <ul>
             <li><a href="https://fedoraproject.org/">Fedora Linux</a> (secured with SELinux) as server and development operating system</li>
             <li><a href="https://www.archlinux.org/">ArchLinux</a> as development operating system</li>
-            <li><a href="https://httpd.apache.org/">Apache</a> (with mod_python) for HTTP communication</li>
+            <li><a href="https://httpd.apache.org/">Apache</a> (with mod_python and mod_php) for HTTP communication</li>
             <li><a href="https://www.mysql.com/">MySQL</a> as database server</li>
-            <li><a href="http://www.python.org/">Python</a> 2.7 for all logic</li>
-            <li><a href="https://storm.canonical.com/">Storm</a> (ORM package for Python) for database access</li>
-            <li><a href="https://pypi.python.org/pypi/WebStack">WebStack</a> as communication layer</li>
+            <li><a href="http://www.phpmyadmin.net/">phpMyAdmin</a> for database management</li>
+            <li><a href="http://www.python.org/">Python</a> 2.7 for all logic
+            <ul>
+                <li><a href="https://storm.canonical.com/">Storm</a> (ORM package for Python) for database access</li>
+                <li><a href="https://pypi.python.org/pypi/WebStack">WebStack</a> as communication layer</li>
+            </ul></li>
             <li><a href="http://www.w3.org/XML/">XML</a> as container format in communications</li>
-            <li><a href="http://www.json.org/">JSON</a> planned as future container format if any need exists</li>
             <li><a href="http://freepascal.org">FreePascal</a> as compiler for the priyom.org desktop application</li>
         </ul>
     </body>
