@@ -18,8 +18,8 @@ class ForeignHelper:
         if self.store is None:
             raise NoStoreError("Store is needed to initialize a ForeignHelper")
         self.supplement = self.store.find(ForeignSupplement, 
-            (ForeignSupplement.LocalID == self.instance.ID) and
-            (ForeignSupplement.FieldName == self.fieldName)).any()
+            And((ForeignSupplement.LocalID == self.instance.ID),
+            (ForeignSupplement.FieldName == self.fieldName))).any()
         if self.supplement is None:
             self.supplement = ForeignSupplement()
             self.supplement.LocalID = self.instance.ID
