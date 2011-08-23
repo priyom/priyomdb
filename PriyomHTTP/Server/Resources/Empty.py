@@ -26,7 +26,7 @@ class EmptyResource(Resource):
             <li><a href="https://storm.canonical.com/">Storm</a> (ORM package for Python) for database access</li>
             <li><a href="https://pypi.python.org/pypi/WebStack">WebStack</a> as communication layer</li>
             <li><a href="http://www.w3.org/XML/">XML</a> as container format in communications</li>
-            <li><a href="http://www.json.org/>JSON</a> planned as future container format if any need exists</li>
+            <li><a href="http://www.json.org/">JSON</a> planned as future container format if any need exists</li>
             <li><a href="http://freepascal.org">FreePascal</a> as compiler for the priyom.org desktop application</li>
         </ul>
     </body>
