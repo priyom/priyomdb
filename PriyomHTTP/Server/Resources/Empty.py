@@ -20,7 +20,7 @@ class EmptyResource(Resource):
         <ul>
             <li><a href="https://fedoraproject.org/">Fedora Linux</a> (secured with SELinux) as server and development operating system</li>
             <li><a href="https://www.archlinux.org/">ArchLinux</a> as development operating system</li>
-            <li><a href="https://httpd.apache.org/">Apache</a> (with mod_python and mod_php) for HTTP communication</li>
+            <li><a href="https://httpd.apache.org/">Apache</a> (with mod_wsgi and mod_php) for HTTP communication</li>
             <li><a href="https://www.mysql.com/">MySQL</a> as database server</li>
             <li><a href="http://www.phpmyadmin.net/">phpMyAdmin</a> for database management</li>
             <li><a href="http://www.python.org/">Python</a> 2.7 for all logic
