@@ -45,3 +45,16 @@ def assignCapability(userName, capabilityName):
     user.Capabilities.add(cap)
     store.flush()
     return "Capability assigned"
+
+def addNews(title, contents):
+    news = APINews()
+    store.add(news)
+    try:
+        news.Title = title
+        news.Contents = contents
+    except:
+        store.remove(news)
+        return
+    news.Timestamp = now()
+    store.flush()
+    return "News added #%d" % news.ID

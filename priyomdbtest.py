@@ -3,8 +3,9 @@ from storm.locals import *
 from libPriyom import *
 from libPriyom.Helpers.ScheduleMaintainer import ScheduleMaintainer
 import xml.dom.minidom as dom
+from cfg_priyomhttpd import userpass, database
 
-db = create_database("mysql://priyom-test:priyom-test@localhost/priyom-test")
+db = create_database("mysql://%s@localhost/%s" % (userpass, database))
 store = Store(db)
 store.autoreload()
 buzzer = store.get(Station, 1)
