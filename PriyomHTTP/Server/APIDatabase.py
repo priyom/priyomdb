@@ -3,6 +3,7 @@ import random
 from hashlib import sha256
 import time
 from datetime import datetime
+from libPriyom.Formatting import priyomdate
 
 def now():
     return int(time.mktime(datetime.utcnow().timetuple()))
@@ -118,6 +119,17 @@ class Variable(object):
     
     Name = Unicode(primary=True)
     Value = Unicode()
+    
+class APINews(object):
+    __storm_table__ = "api-news"
+    
+    ID = Int(primary=True)
+    Title = Unicode()
+    Contents = Unicode()
+    Timestamp = Int()
+    
+    def html_row(self):
+        return u"""<tr><td>%s</td><th>%s</th><td><p>%s</p></td></tr>""" % (datetime.utcfromtimestamp(self.Timestamp).strftime(priyomdate), self.Title, self.Contents)
     
 APIKey.Capabilities = ReferenceSet(
     APIKey.ID, 

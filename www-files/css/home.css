@@ -1,0 +1,17 @@
+.news-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.news-table thead th {
+    background-color: #000;
+    color: #fff;
+    text-align: left;
+    border: 1px solid #cfcfcf;
+}
+
+.news-table tbody th, .news-table tbody td {
+    vertical-align: top;
+    text-align: left;
+    border: 1px solid #cfcfcf;
+}
