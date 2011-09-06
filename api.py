@@ -1,4 +1,4 @@
-from WebStack.Adapters.ModPython import deploy
+from WebStack.Adapters.WSGI import deploy_with_wsgiref
 from PriyomHTTP.Server.WebStackResource import get_site_map
 from libPriyom.Interface import PriyomInterface
 from storm.locals import *
@@ -8,4 +8,4 @@ db = create_database("mysql://%s@localhost/%s" % (userpass, database))
 store = Store(db)
 intf = PriyomInterface(store)
 
-handler, _no_authentication = deploy(get_site_map(intf), handle_errors=0)
+handler = deploy_with_wsgiref(get_site_map(intf), handle_errors=0)
