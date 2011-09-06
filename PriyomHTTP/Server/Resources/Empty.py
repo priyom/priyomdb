@@ -18,7 +18,7 @@ class EmptyResource(Resource):
 <html>
     <head>
         <title>Priyom.org API</title>
-        <link rel="stylesheet" type="text/css" href="style.css" />
+        <link rel="stylesheet" type="text/css" href="css/home.css" />
     </head>
     <body>
         <h1>Welcome!</h1>
@@ -45,8 +45,8 @@ class EmptyResource(Resource):
         <table class="news-table">
             <thead>
                 <tr>
-                    <th>Title</th>
-                    <th>Timestamp</th>
+                    <th width="200pt">Timestamp</th>
+                    <th width="350pt">Title</th>
                     <th>Contents</th>
                 </tr>
             </thead>

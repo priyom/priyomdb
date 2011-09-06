@@ -129,7 +129,7 @@ class APINews(object):
     Timestamp = Int()
     
     def html_row(self):
-        return u"""<tr><th>%s</th><td>%s</td><td><p>%s</p></td></tr>""" % (self.Title, datetime.utcfromtimestamp(self.Timestamp).strftime(priyomdate), self.Contents)
+        return u"""<tr><td>%s</td><th>%s</th><td><p>%s</p></td></tr>""" % (datetime.utcfromtimestamp(self.Timestamp).strftime(priyomdate), self.Title, self.Contents)
     
 APIKey.Capabilities = ReferenceSet(
     APIKey.ID, 
