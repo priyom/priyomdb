@@ -1,7 +1,4 @@
 from WebStack.Resources.ResourceMap import MapResource
-from WebStack.Resources.LoginRedirect import LoginRedirectResource, LoginRedirectAuthenticator
-from WebStack.Resources.Login import LoginResource, LoginAuthenticator
-from WebStack.Resources.Selectors import EncodingSelector, PathSelector
 
 from APIDatabase import APICapability
 from Authentication import AuthenticationSelector
@@ -12,6 +9,7 @@ from Reset import ResetSelector
 import libPriyom
 from Resources import *
 from Resources.API import *
+from Encoding import MyEncodingSelector
 #from Resources.API.FindStations import FindStations
 #from Resources.API.FindBroadcasts import FindBroadcasts
 #from Resources.API.FindTransmissions import FindTransmissions
@@ -31,7 +29,7 @@ def get_site_map(priyomInterface):
         "getSession": SessionAPI(model)
     })
     
-    return EncodingSelector(ResetSelector(model, AuthenticationSelector(model.store,
+    return MyEncodingSelector(ResetSelector(model, AuthenticationSelector(model.store,
         MapResource({
             "station": StationResource(model),
             "broadcast": IDResource(model, libPriyom.Broadcast),
