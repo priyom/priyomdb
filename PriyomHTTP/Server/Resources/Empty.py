@@ -1,14 +1,24 @@
 # encoding=utf-8 
+from storm.locals import *
+from ..APIDatabase import APINews
 from WebStack.Generic import ContentType
 from Resource import Resource
 
 class EmptyResource(Resource):
     def handle(self, trans):
         trans.set_content_type(ContentType("text/html"))
-        print >>self.out, u"""
+        news = self.store.find(APINews)
+        news.order_by(Desc(APINews.Timestamp))
+        news.config(limit=5)
+        
+        newsRows = "\n                ".join((newsItem.html_row() for newsItem in news))
+        if len(newsRows) == 0:
+            newsRows = '<tr><td colspan="3">No news</td></tr>'
+        print >>self.out, (u"""
 <html>
     <head>
         <title>Priyom.org API</title>
+        <link rel="stylesheet" type="text/css" href="style.css" />
     </head>
     <body>
         <h1>Welcome!</h1>
@@ -31,5 +41,18 @@ class EmptyResource(Resource):
             <li><a href="http://www.w3.org/XML/">XML</a> as container format in communications</li>
             <li><a href="http://freepascal.org">FreePascal</a> as compiler for the priyom.org desktop application</li>
         </ul>
+        <h3>News / current information</h3>
+        <table class="news-table">
+            <thead>
+                <tr>
+                    <th>Title</th>
+                    <th>Timestamp</th>
+                    <th>Contents</th>
+                </tr>
+            </thead>
+            <tbody>
+                %s
+            </tbody>
+        </table>
     </body>
-</html>""".encode("utf-8")
+</html>""" % (newsRows)).encode("utf-8")

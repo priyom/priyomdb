@@ -14,4 +14,4 @@ db = create_database("mysql://%s@localhost/%s" % (userpass, database))
 store = Store(db)
 intf = PriyomInterface(store)
 
-application = WSGIAdapter(get_site_map(intf))
+application = WSGIAdapter(get_site_map(intf), handle_errors=0)
