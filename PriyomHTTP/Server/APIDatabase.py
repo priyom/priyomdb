@@ -6,7 +6,7 @@ from datetime import datetime
 from libPriyom.Formatting import priyomdate
 
 def now():
-    return int(time.mktime(datetime.utcnow().timetuple()))
+    return int(time.mktime(datetime.now().timetuple()))
 
 rnd = random.SystemRandom()
 
