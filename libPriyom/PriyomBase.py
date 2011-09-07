@@ -1,6 +1,12 @@
 # encoding=utf-8
 from storm.locals import *
 from storm.exceptions import NoStoreError
+import time
+from datetime import datetime
+
+def AutoSetModified(instance, propertyName, newValue):
+    instance.Modified = int(time.mktime(datetime.utcnow().timetuple()))
+    return newValue
 
 class PriyomBase(object):
     Created = Int()
