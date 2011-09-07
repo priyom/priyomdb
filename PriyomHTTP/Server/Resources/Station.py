@@ -38,6 +38,7 @@ class StationResource(Resource):
         if station is None:
             trans.set_response_code(404)
             return
+        station.validate()
         
         
         trans.set_content_type(ContentType("application/xml"))
