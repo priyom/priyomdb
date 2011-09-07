@@ -22,10 +22,10 @@ class IDResource(Resource):
             trans.set_response_code(404)
             return
         obj = self.store.get(self.classType, objId)
-        
         if obj is None:
             trans.set_response_code(404)
             return
+        obj.validate()
         
         trans.set_content_type(ContentType("application/xml"))
         print >>self.out, self.model.exportToXml(obj)

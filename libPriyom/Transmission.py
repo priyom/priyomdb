@@ -3,6 +3,7 @@ import XMLIntf
 from Foreign import ForeignHelper
 from Broadcast import Broadcast
 from Station import Station
+from PriyomBase import PriyomBase
 import types
     
 class TransmissionClassBase(object):
@@ -130,7 +131,7 @@ class TransmissionClassTable(object):
         tableNode.appendChild(fieldsNode)
         parentNode.appendChild(tableNode)
 
-class TransmissionClass(object):
+class TransmissionClass(PriyomBase):
     __storm_table__ = "transmissionClasses"
     ID = Int(primary = True)
     DisplayName = Unicode()
@@ -153,7 +154,7 @@ class TransmissionClass(object):
         classNode.appendChild(tablesNode)
         parentNode.appendChild(classNode)
 
-class Transmission(XMLIntf.XMLStorm):
+class Transmission(PriyomBase, XMLIntf.XMLStorm):
     __storm_table__ = "transmissions"
     ID = Int(primary = True)
     BroadcastID = Int()
