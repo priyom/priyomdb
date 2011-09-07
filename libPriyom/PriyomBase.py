@@ -4,14 +4,21 @@ from storm.exceptions import NoStoreError
 import time
 from datetime import datetime
 
+def now():
+    return int(time.mktime(datetime.utcnow().timetuple()))
+
 def AutoSetModified(instance, propertyName, newValue):
-    instance.Modified = int(time.mktime(datetime.utcnow().timetuple()))
+    instance.Modified = now()
     return newValue
 
 class PriyomBase(object):
     Created = Int()
     Modified = Int()
     _knownModified = None
+    
+    def __init__(self):
+        self.Created = now()
+        self.Modified = now()
     
     def _forceStore(self, exceptionMessage = None):
         store = Store.of(self)
