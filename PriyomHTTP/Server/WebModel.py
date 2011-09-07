@@ -44,6 +44,9 @@ class WebModel(object):
         self.store.reset()
         self.varLastUpdate = self.store.get(Variable, u"lastImport")
         self.lastReset = self.now()
+        
+    def getLastUpdate(self):
+        return self.varLastUpdate.Value
     
     def exportToXml(self, obj, flags = None):
         if flags is None:

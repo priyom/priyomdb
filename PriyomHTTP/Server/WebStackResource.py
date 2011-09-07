@@ -30,7 +30,8 @@ def get_site_map(priyomInterface, rootPath):
         "listTransmissions": AuthorizationSelector(ListAPI(model, libPriyom.Transmission), "list"),
         "listModulations": ListModulationsAPI(model),
         "getSession": SessionAPI(model),
-        "getTransmissionStats": TransmissionStatsAPI(model)
+        "getTransmissionStats": TransmissionStatsAPI(model),
+        "getTransmissionsByMonth": TransmissionsByMonthAPI(model)
     })
     
     return MyEncodingSelector(ResetSelector(model, AuthenticationSelector(model.store,
