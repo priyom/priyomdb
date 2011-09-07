@@ -9,7 +9,7 @@ class TransmissionStatsAPI(API):
         super(TransmissionStatsAPI, self).handle(trans)
         stationId = self.getQueryInt("stationId", "must be integer")
         
-        lastModified = self.store.execute("SELECT MAX(transmissions.Created) FROM transmissions LEFT JOIN broadcasts ON (transmissions.BroadcastID = broadcasts.ID) WHERE broadcasts.StationID = '%d'" % (stationId)).__iter__().next()[0]
+        lastModified = self.store.execute("SELECT MAX(transmissions.Modified) FROM transmissions LEFT JOIN broadcasts ON (transmissions.BroadcastID = broadcasts.ID) WHERE broadcasts.StationID = '%d'" % (stationId)).__iter__().next()[0]
         trans.set_header_value('Last-Modified', self.model.formatHTTPTimestamp(float(lastModified)))
         
         if trans.get_request_method() == "HEAD":
