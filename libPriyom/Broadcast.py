@@ -2,6 +2,7 @@ from storm.locals import *
 import XMLIntf
 from Modulation import Modulation
 import datetime
+from PriyomBase import PriyomBase
 
 class BroadcastFrequency(object):
     __storm_table__ = "broadcastFrequencies"
@@ -47,7 +48,7 @@ class BroadcastFrequency(object):
         parentNode.appendChild(frequency)
         
 
-class Broadcast(XMLIntf.XMLStorm):
+class Broadcast(PriyomBase, XMLIntf.XMLStorm):
     __storm_table__ = "broadcasts"
     ID = Int(primary = True)
     StationID = Int()

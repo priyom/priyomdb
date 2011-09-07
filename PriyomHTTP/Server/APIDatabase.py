@@ -6,7 +6,7 @@ from datetime import datetime
 from libPriyom.Formatting import priyomdate
 
 def now():
-    return int(time.mktime(datetime.now().timetuple()))
+    return int(time.mktime(datetime.utcnow().timetuple()))
 
 rnd = random.SystemRandom()
 
@@ -129,7 +129,7 @@ class APINews(object):
     Timestamp = Int()
     
     def html_row(self):
-        return u"""<tr><td>%s</td><th>%s</th><td><p>%s</p></td></tr>""" % (datetime.utcfromtimestamp(self.Timestamp).strftime(priyomdate), self.Title, self.Contents)
+        return u"""<tr><td>%s</td><th>%s</th><td><p>%s</p></td></tr>""" % (datetime.fromtimestamp(self.Timestamp).strftime(priyomdate), self.Title, self.Contents)
     
 APIKey.Capabilities = ReferenceSet(
     APIKey.ID, 

@@ -4,8 +4,9 @@ import XMLIntf
 from Modulation import Modulation
 import datetime
 import Formatting
+from PriyomBase import PriyomBase
 
-class Schedule(XMLIntf.XMLStorm):
+class Schedule(PriyomBase, XMLIntf.XMLStorm):
     __storm_table__ = "schedules"
     ID = Int(primary = True)
     ParentID = Int()

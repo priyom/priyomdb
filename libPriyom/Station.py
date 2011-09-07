@@ -4,8 +4,9 @@ from Schedule import Schedule
 import Imports
 from Broadcast import Broadcast
 import xml.dom.minidom as dom
+from PriyomBase import PriyomBase
 
-class Station(XMLIntf.XMLStorm):
+class Station(PriyomBase, XMLIntf.XMLStorm):
     __storm_table__ = "stations"
     ID = Int(primary = True)
     EnigmaIdentifier = Unicode()
