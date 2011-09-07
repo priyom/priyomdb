@@ -13,7 +13,7 @@ class TransmissionStatsAPI(API):
         trans.set_header_value('Last-Modified', self.model.formatHTTPTimestamp(float(lastModified)))
         
         if trans.get_request_method() == "HEAD":
-            trans.set_content_type(ContentType("text/xml"))
+            trans.set_content_type(ContentType("application/xml"))
             return
         
         months = self.store.execute("SELECT YEAR(FROM_UNIXTIME(Timestamp)) as year, MONTH(FROM_UNIXTIME(Timestamp)) as month, COUNT(DATE_FORMAT(FROM_UNIXTIME(Timestamp), '%%Y-%%m')) FROM transmissions LEFT JOIN broadcasts ON (transmissions.BroadcastID = broadcasts.ID) WHERE broadcasts.StationID = '%d' GROUP BY year, month ORDER BY year ASC, month ASC" % (stationId))
@@ -27,5 +27,5 @@ class TransmissionStatsAPI(API):
             node.setAttribute("month", str(month[1]))
             rootNode.appendChild(node)
         
-        trans.set_content_type(ContentType("text/xml"))
+        trans.set_content_type(ContentType("application/xml"))
         print >>self.out, doc.toxml()
