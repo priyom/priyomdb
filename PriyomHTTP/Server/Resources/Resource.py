@@ -47,7 +47,7 @@ class Resource(object):
         try:
             result = self.handle(trans)
         finally:
-            self.store.commit()
+            self.store.flush()
         return result
         
     def parameterError(self, parameterName, message = None):
