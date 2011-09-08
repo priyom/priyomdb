@@ -12,3 +12,4 @@ class API(Resource):
     def handle(self, trans):
         if not (trans.get_request_method() in ["GET", "HEAD"]):
             self.unsupportedMethod()
+        self.head = (trans.get_request_method() == "HEAD")
