@@ -160,6 +160,53 @@ class PriyomInterface:
             raise Exception("Can only delete elementary objects (got object of type %s)." % (str(type(obj))))
         return method(obj, force)
         
+    def importTransaction(self, doc):
+        context = self.getImportContext()
+        for node in (node for node in doc.documentElement.childNodes if node.nodeType == dom.Node.ELEMENT_NODE):
+            if node.tagName == "delete":
+                try:
+                    clsName = node.getAttribute("type")
+                    id = node.getAttribute("id")
+                except:
+                    context.log("Something is wrong -- perhaps a missing attribute?")
+                    continue
+                try:
+                    cls = {
+                        "transmission": Transmission,
+                        "broadcast": Broadcast,
+                        "station": Station,
+                        "schedule": Schedule
+                    }[clsName]
+                except KeyError:
+                    context.log("Attempt to delete unknown type: %s" % node.getAttribute("type"))
+                    continue
+                try:
+                    id = int(id)
+                except ValueError:
+                    context.log("Supplied invalid id to delete: %s" % node.getAttribute("id"))
+                    continue
+                obj = self.store.get(cls, id)
+                if obj is None:
+                    context.log("Cannot delete %s with id %d: Not found" % (str(cls), id))
+                    continue
+                if not self.delete(obj, node.hasAttribute("force") and (node.getAttribute("force") == "true")):
+                    context.log(u"Could not delete %s with id %d (did you check there are no more objects associated with it?)" % (unicode(cls), id))
+                else:
+                    context.log(u"Deleted %s with id %d" % (unicode(cls), id))
+            else:
+                try:
+                    cls = {
+                        "transmission": Transmission,
+                        "broadcast": Broadcast,
+                        "station": Station,
+                        "schedule": Schedule
+                    }[node.tagName]
+                except KeyError:
+                    context.log("Invalid transaction node: %s" % node.tagName)
+                    continue
+                context.importFromDomNode(node, cls)
+        return context
+        
     def getStation(self, stationDesignator, head = False):
         try:
             stationId = int(stationDesignator)
@@ -185,4 +232,13 @@ class PriyomInterface:
             Broadcast.BroadcastStart <= time + jitter,
             Broadcast.BroadcastEnd > time - jitter
         ))
-        return (lastModified, list(broadcasts))
+        return (lastModified, broadcasts)
+        
+    def listObjects(self, cls, limiter = None, head = False):
+        objects = self.store.find(cls)
+        if limiter is not None:
+            objects = limiter(objects)
+        lastModified = objects.max(cls.Modified)
+        if head:
+            return (lastModified, None)
+        return (lastModified, objects)
