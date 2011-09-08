@@ -236,9 +236,9 @@ class PriyomInterface:
         
     def listObjects(self, cls, limiter = None, head = False):
         objects = self.store.find(cls)
+        lastModified = objects.max(cls.Modified)
         if limiter is not None:
             objects = limiter(objects)
-        lastModified = objects.max(cls.Modified)
         if head:
             return (lastModified, None)
         return (lastModified, objects)
@@ -258,7 +258,20 @@ class PriyomInterface:
                 And(Transmission.Timestamp >= startTimestamp,
                     Transmission.Timestamp < endTimestamp)))
         lastModified = transmissions.max(Transmission.Modified)
+        if limiter is not None:
+            transmissions = limiter(transmissions)
         if head:
             return (lastModified, None)
         return (lastModified, (transmission for (transmission, broadcast) in transmissions))
         
+    def getTransmissionStats(self, stationId, head = False):
+        transmissions = self.store.find(Transmission, 
+            Transmission.BroadcastID == Broadcast.ID, 
+            Broadcast.StationID == stationId)
+        lastModified = transmissions.max(Transmission.Modified)
+        if head:
+            return (lastModified, None)
+        
+        months = self.store.execute("SELECT YEAR(FROM_UNIXTIME(Timestamp)) as year, MONTH(FROM_UNIXTIME(Timestamp)) as month, COUNT(DATE_FORMAT(FROM_UNIXTIME(Timestamp), '%%Y-%%m')) FROM transmissions LEFT JOIN broadcasts ON (transmissions.BroadcastID = broadcasts.ID) WHERE broadcasts.StationID = '%d' GROUP BY year, month ORDER BY year ASC, month ASC" % (stationId))
+        
+        return (lastModified, months)
