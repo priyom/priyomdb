@@ -10,20 +10,8 @@ class StationResource(Resource):
         stationDesignator = path[1].decode("utf-8")
         if len(stationDesignator) == 0:
             return None
+        self.priyomInterface.getStation(stationDesignator)
         
-        try:
-            stationId = int(stationDesignator)
-        except ValueError:
-            stationId = None
-        if stationId is not None:
-            station = self.store.get(Station, stationId)
-        else:
-            resultSet = self.store.find(Station, Station.EnigmaIdentifier == stationDesignator)
-            station = resultSet.any()
-            if station is None:
-                resultSet = self.store.find(Station, Station.PriyomIdentifier == stationDesignator)
-            station = resultSet.any()
-        return station
         
     def handle(self, trans):
         path = trans.get_virtual_path_info().split('/')

@@ -159,3 +159,30 @@ class PriyomInterface:
         except KeyError:
             raise Exception("Can only delete elementary objects (got object of type %s)." % (str(type(obj))))
         return method(obj, force)
+        
+    def getStation(self, stationDesignator, head = False):
+        try:
+            stationId = int(stationDesignator)
+        except ValueError:
+            stationId = None
+        if stationId is not None:
+            station = self.store.get(Station, stationId)
+        else:
+            resultSet = self.store.find(Station, Station.EnigmaIdentifier == stationDesignator)
+            station = resultSet.any()
+            if station is None:
+                resultSet = self.store.find(Station, Station.PriyomIdentifier == stationDesignator)
+            station = resultSet.any()
+        return (station.Modified, station)
+        
+    def getCloseBroadcasts(self, stationId, time, jitter, head = False):
+        wideBroadcasts = self.store.find(Broadcast, Broadcast.StationID == stationId)
+        lastModified = wideBroadcasts.max(Broadcast.Modified)
+        if head:
+            return (lastModified, None)
+        
+        broadcasts = wideBroadcasts.find(And(
+            Broadcast.BroadcastStart <= time + jitter,
+            Broadcast.BroadcastEnd > time - jitter
+        ))
+        return (lastModified, list(broadcasts))
