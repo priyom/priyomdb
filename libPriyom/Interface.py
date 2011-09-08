@@ -242,3 +242,23 @@ class PriyomInterface:
         if head:
             return (lastModified, None)
         return (lastModified, objects)
+    
+    def getTransmissionsByMonth(self, stationId, year, month, limiter = None, head = False):
+        startTimestamp = datetime(year, month, 1)
+        if month != 12:
+            endTimestamp = datetime(year, month+1, 1)
+        else:
+            endTimestamp = datetime(year+1, 1, 1)
+        startTimestamp = int(time.mktime(startTimestamp.timetuple()))
+        endTimestamp = int(time.mktime(endTimestamp.timetuple()))
+        
+        transmissions = self.store.find((Transmission, Broadcast), 
+            Transmission.BroadcastID == Broadcast.ID,
+            And(Broadcast.StationID == stationId, 
+                And(Transmission.Timestamp >= startTimestamp,
+                    Transmission.Timestamp < endTimestamp)))
+        lastModified = transmissions.max(Transmission.Modified)
+        if head:
+            return (lastModified, None)
+        return (lastModified, (transmission for (transmission, broadcast) in transmissions))
+        
