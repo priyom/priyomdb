@@ -126,7 +126,7 @@ class Broadcast(PriyomBase, XMLIntf.XMLStorm):
                 ("Type", self.Type),
                 ("Confirmed", "" if self.Confirmed else None),
                 ("on-air", "" if self.getIsOnAir() else None),
-                ("has-transmissions", "" if self.Transmissions.any() is not None else None)
+                ("has-transmissions", "" if self.Transmissions.count() > 0 else None)
             ]
         )
         for frequency in self.Frequencies:
