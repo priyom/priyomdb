@@ -18,11 +18,15 @@ class CloseBroadcastsAPI(API):
         
         wideBroadcasts = self.store.find(Broadcast, Broadcast.StationID == stationId)
         lastModified = wideBroadcasts.max(Broadcast.Modified)
+        trans.set_content_type(ContentType("application/xml"))
+        trans.set_header_value("Last-Modified", self.model.formatHTTPTimestamp(lastModified))
+        if trans.get_request_method() == "HEAD":
+            return
         
-        broadcasts = wideBroadcasts.select(And(
+        broadcasts = wideBroadcasts.find(And(
                     Broadcast.BroadcastStart <= time + jitter,
                     Broadcast.BroadcastEnd > time - jitter
                 ))
-        print(list(broadcasts))
         
+        print >>self.out, self.model.exportListToXml(broadcasts, Broadcast)
         
