@@ -68,6 +68,11 @@ class Resource(object):
         print >>self.out, "Call error: Parameter error: %s%s" % (parameterName, " ("+message+")" if message is not None else "")
         raise EndOfResponse
         
+    def autoNotModified(self, lastModified):
+        if self.ifModifiedSinceUnix is not None and long(lastModified) <= long(self.ifModifiedSinceUnix):
+            self.trans.set_response_code(304)
+            return EndOfResponse
+        
     def getQueryInt(self, name, message = None):
         try:
             return int(self.query[name])
