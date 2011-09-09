@@ -26,7 +26,9 @@ class IDResource(Resource):
             trans.set_response_code(404)
             return
         obj.validate()
+        self.autoNotModified(obj.Modified)
         
+        trans.set_header_value("Last-Modified", self.model.formatHTTPTimestamp(obj.Modified))
         trans.set_content_type(ContentType("application/xml"))
         print >>self.out, self.model.exportToXml(obj)
 

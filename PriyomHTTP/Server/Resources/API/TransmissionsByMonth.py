@@ -14,7 +14,7 @@ class TransmissionsByMonthAPI(API):
             self.parameterError("month", "Month %d out of bounds (1..12)" % (month))
             return
             
-        lastModified, transmissions = self.priyomInterface.getTransmissionsByMonth(stationId, year, month, None, self.head)
+        lastModified, transmissions = self.priyomInterface.getTransmissionsByMonth(stationId, year, month, limiter=None, notModifiedCheck=self.autoNotModified, head=self.head)
         
         trans.set_header_value('Last-Modified', self.model.formatHTTPTimestamp(float(lastModified)))
         trans.set_content_type(ContentType('application/xml'))

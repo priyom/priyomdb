@@ -18,11 +18,10 @@ class StationResource(Resource):
         stationDesignator = path[1].decode("utf-8")
         if len(stationDesignator) == 0:
             return None
-        (lastModified, station) = self.priyomInterface.getStation(stationDesignator)
+        (lastModified, station) = self.priyomInterface.getStation(stationDesignator, notModifiedCheck=self.autoNotModified)
         if station is None:
             trans.set_response_code(404)
             return
-        station.validate()
         
         trans.set_header_value("Last-Modified", self.model.formatHTTPTimestamp(lastModified))
         trans.set_content_type(ContentType("application/xml"))
