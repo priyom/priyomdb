@@ -249,7 +249,7 @@ class PriyomInterface:
                 Broadcast.BroadcastEnd > time - jitter
             ),
             Broadcast.Type == u"data"
-        )
+        ))
         return (lastModified, broadcasts)
         
     def listObjects(self, cls, limiter = None, notModifiedCheck = None, head = False):
