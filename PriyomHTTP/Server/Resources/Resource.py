@@ -44,8 +44,13 @@ class Resource(object):
         self.query = trans.get_fields_from_path()
         ifModifiedSince = trans.get_header_values("If-Modified-Since")
         if len(ifModifiedSince) > 0:
-            self.ifModifiedSince = self.model.parseHTTPTimestamp(ifModifiedSince[-1])
-            self.ifModifiedSinceUnix = self.model.toTimestamp(self.ifModifiedSince)
+            try:
+                self.ifModifiedSince = self.model.parseHTTPTimestamp(ifModifiedSince[-1])
+            except ValueError as e:
+                trans.set_response_code(400)
+                print >>self.out, "If-Modified-Since date given in a invalid format: %s" % str(e)
+                raise EndOfResponse
+            self.ifModifiedSinceUnix = self.priyomInterface.toTimestamp(self.ifModifiedSince)
         else:
             self.ifModifiedSince = None
             self.ifModifiedSinceUnix = None

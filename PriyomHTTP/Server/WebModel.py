@@ -24,7 +24,7 @@ monthname_to_idx = {
     'Dec': 12
 }
 rfc1123 = {
-    "expression": re.compile("[A-Za-z]{3},\s+([0-9]{2})\s+([A-Za-z]{3})\s+([0-9]{4})\s+([0-9]{2}:[0-9]{2}:[0-9]{2})\s+(GMT|UTC)"),
+    "expression": re.compile("[A-Za-z]{3},\s+([0-9]{2})\s+([A-Za-z]{3})\s+([0-9]{4})\s+([0-9]{2}:[0-9]{2}:[0-9]{2})\s+GMT"),
     "year": 2,
     "month": 1,
     "day": 0,
@@ -32,7 +32,7 @@ rfc1123 = {
     "yearmode": "%Y"
 }
 rfc850 = {
-    "expression": re.compile("[A-Za-z]+,\s+([0-9]{2})-([A-Za-z]{3})-([0-9]{2})\s+([0-9]{2}:[0-9]{2}:[0-9]{2})\s+(GMT|UTC)"),
+    "expression": re.compile("[A-Za-z]+,\s+([0-9]{2})-([A-Za-z]{3})-([0-9]{2})\s+([0-9]{2}:[0-9]{2}:[0-9]{2})\s+GMT"),
     "year": 2,
     "month": 1,
     "day": 0,
@@ -110,7 +110,7 @@ class WebModel(object):
         
     def formatHTTPDate(self, dt):
         global weekdayname, monthname
-        return dt.strftime("%%s, %d %%s %Y %T UTC") % (weekdayname[dt.weekday()], monthname[dt.month])
+        return dt.strftime("%%s, %d %%s %Y %T GMT") % (weekdayname[dt.weekday()], monthname[dt.month])
         
     def formatHTTPTimestamp(self, timestamp):
         return self.formatHTTPDate(datetime.fromtimestamp(timestamp))
@@ -126,7 +126,7 @@ class WebModel(object):
             standard = asctime
             match = standard["expression"].match(httpDate)
         if match is None:
-            return None
+            raise ValueError("%r does not match any standard (rfc1123, rfc850 and asctime supported)." % (httpDate))
         
         groups = match.groups()
         year = groups[standard["year"]]
