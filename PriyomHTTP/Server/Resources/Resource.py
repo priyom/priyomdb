@@ -45,8 +45,10 @@ class Resource(object):
         ifModifiedSince = trans.get_header_values("If-Modified-Since")
         if len(ifModifiedSince) > 0:
             self.ifModifiedSince = self.model.parseHTTPTimestamp(ifModifiedSince[-1])
+            self.ifModifiedSinceUnix = self.model.toTimestamp(self.ifModifiedSince)
         else:
             self.ifModifiedSince = None
+            self.ifModifiedSinceUnix = None
         self.normalizeQueryDict()
         self.setupModel()
         self.head = trans.get_request_method() == "HEAD"
