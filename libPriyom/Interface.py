@@ -240,9 +240,12 @@ class PriyomInterface:
             return (lastModified, None)
         
         broadcasts = wideBroadcasts.find(And(
-            Broadcast.BroadcastStart <= time + jitter,
-            Broadcast.BroadcastEnd > time - jitter
-        ))
+            And(
+                Broadcast.BroadcastStart <= time + jitter,
+                Broadcast.BroadcastEnd > time - jitter
+            ),
+            Broadcast.Type == u"data"
+        )
         return (lastModified, broadcasts)
         
     def listObjects(self, cls, limiter = None, head = False):
