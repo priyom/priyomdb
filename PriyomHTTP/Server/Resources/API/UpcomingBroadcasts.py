@@ -22,29 +22,11 @@ class UpcomingBroadcastsAPI(API):
         else:
             station = None
             
-        now = self.model.now()
-        if update:
-            untilDate = datetime.fromtimestamp(now)
-            untilDate += timedelta(seconds=timeLimit)
-            untilDate = self.model.normalizeDate(untilDate)
-            
-            until = self.model.toTimestamp(untilDate)
-            
-            if station is None:
-                validUntil = self.priyomInterface.scheduleMaintainer.updateSchedules(until, maxTimeRange)
-            else:
-                validUntil = self.priyomInterface.scheduleMaintainer.updateSchedule(station, until, maxTimeRange)
-            trans.set_header_value("Expires", self.model.formatHTTPTimestamp(validUntil))
-        
-        where = And(Or(Broadcast.BroadcastEnd > now, Broadcast.BroadcastEnd == None), (Broadcast.BroadcastStart < (now + timeLimit)))
-        if not all:
-            where = And(where, Broadcast.Type == u"data")
-        if stationId is not None:
-            where = And(where, Broadcast.StationID == stationId)
-            
-        resultSet = self.store.find(Broadcast, where)
-        resultSet.order_by(Desc(Broadcast.BroadcastStart))
-        self.model.limitResults(resultSet)
-        
+        lastModified, broadcasts = self.priyomInterface.getUpcomingBroadcasts(station, all, not update, timeLimit, maxTimeRange, self.model, self.head)
         trans.set_content_type(ContentType("application/xml"))
-        print >>self.out, self.model.exportListToXml((broadcast for broadcast in resultSet), Broadcast)
+        trans.set_header_value("Last-Modified", self.model.formatHTTPTimestamp(lastModified))
+        if self.head:
+            return
+        broadcasts.order_by(Asc(Broadcast.BroadcastStart))
+        
+        print >>self.out, self.model.exportListToXml(broadcasts, Broadcast)

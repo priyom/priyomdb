@@ -76,7 +76,7 @@ class WebModel(object):
         return self.formatHTTPDate(datetime.fromtimestamp(timestamp))
         
     def now(self):
-        return int(time.mktime(datetime.utcnow().timetuple()))
+        return self.priyomInterface.now()
         
     def normalizeDate(self, dateTime):
         return datetime(year=dateTime.year, month=dateTime.month, day=dateTime.day)

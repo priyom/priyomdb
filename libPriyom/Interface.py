@@ -9,6 +9,8 @@ from Schedule import Schedule, ScheduleLeaf
 from Station import Station
 from Foreign import ForeignSupplement
 from Helpers.ScheduleMaintainer import ScheduleMaintainer
+import time
+from datetime import datetime, timedelta
 
 class NoPriyomInterfaceError(Exception):
     def __init__(self):
@@ -29,6 +31,9 @@ class PriyomInterface:
             raise ValueError("store must not be None.")
         self.store = store
         self.scheduleMaintainer = ScheduleMaintainer(store)
+        
+    def now(self):
+        return int(time.mktime(datetime.utcnow().timetuple()))
         
     def createDocument(self, rootNodeName):
         return dom.getDOMImplementation().createDocument(XMLIntf.namespace, rootNodeName, None)
@@ -275,3 +280,35 @@ class PriyomInterface:
         months = self.store.execute("SELECT YEAR(FROM_UNIXTIME(Timestamp)) as year, MONTH(FROM_UNIXTIME(Timestamp)) as month, COUNT(DATE_FORMAT(FROM_UNIXTIME(Timestamp), '%%Y-%%m')) FROM transmissions LEFT JOIN broadcasts ON (transmissions.BroadcastID = broadcasts.ID) WHERE broadcasts.StationID = '%d' GROUP BY year, month ORDER BY year ASC, month ASC" % (stationId))
         
         return (lastModified, months)
+        
+    def getUpcomingBroadcasts(self, station, all, noUpdate, timeLimit, maxTimeRange, limiter = None, head = False):
+        where = And(Or(Broadcast.BroadcastEnd > now, Broadcast.BroadcastEnd == None), (Broadcast.BroadcastStart < (now + timeLimit)))
+        if not all:
+            where = And(where, Broadcast.Type == u"data")
+        if station is not None:
+            where = And(where, Broadcast.StationID == stationId)
+        
+        broadcasts = self.store.find(Broadcast, where)
+        lastModified = broadcasts.max(Broadcast.Modified)
+        if station is not None and station.Schedule is not None:
+            lastModified = station.Schedule.Modified if station.Schedule.Modified > lastModified else lastModified
+        if head:
+            return (lastModified, None)
+        
+        now = self.now()
+        if update:
+            untilDate = datetime.fromtimestamp(nowmodel)
+            untilDate += timedelta(seconds=timeLimit)
+            untilDate = self.model.normalizeDate(untilDate)
+            
+            until = self.model.toTimestamp(untilDate)
+            
+            if station is None:
+                validUntil = self.scheduleMaintainer.updateSchedules(until, maxTimeRange)
+            else:
+                validUntil = self.scheduleMaintainer.updateSchedule(station, until, maxTimeRange)
+            # trans.set_header_value("Expires", self.model.formatHTTPTimestamp(validUntil))
+        
+        return (lastModified, broadcasts if limiter is None else limiter(broadcasts))
+        
+        
