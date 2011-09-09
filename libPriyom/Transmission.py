@@ -184,7 +184,7 @@ class Transmission(PriyomBase, XMLIntf.XMLStorm):
         self.blocks = blocks
     
     def __init__(self):
-        super(Transmission, self).__init__(self)
+        super(Transmission, self).__init__()
         self.ForeignCallsign = None
     
     def __storm_invalidated__(self):
