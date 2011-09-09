@@ -44,6 +44,7 @@ class Resource(object):
         self.query = trans.get_fields_from_path()
         self.normalizeQueryDict()
         self.setupModel()
+        self.head = trans.get_request_method() == "HEAD"
         try:
             result = self.handle(trans)
         finally:
