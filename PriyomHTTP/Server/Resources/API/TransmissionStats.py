@@ -11,7 +11,7 @@ class TransmissionStatsAPI(API):
         
         trans.set_content_type(ContentType("application/xml"))
         trans.set_header_value('Last-Modified', self.model.formatHTTPTimestamp(float(lastModified)))
-        lastModified, months = self.priyomInterface.getTransmissionStats(stationId, self.head)
+        lastModified, months = self.priyomInterface.getTransmissionStats(stationId, notModifiedCheck=self.autoNotModified, head=self.head)
         if self.head:
             return
         
