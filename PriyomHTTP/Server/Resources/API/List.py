@@ -14,7 +14,7 @@ class ListAPI(API):
         
         lastModified, items = self.priyomInterface.listObjects(self.cls, self.model, self.head)
         trans.set_content_type(ContentType("application/xml"))
-        trans.set_header_value("Last-Modified", self.model.formatHTTPTimestamp(lastModified)
+        trans.set_header_value("Last-Modified", self.model.formatHTTPTimestamp(float(lastModified)))
         if self.head:
             return
         
