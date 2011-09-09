@@ -45,7 +45,7 @@ class Resource(object):
         ifModifiedSince = trans.get_header_values("If-Modified-Since")
         if len(ifModifiedSince) > 0:
             try:
-                self.ifModifiedSince = self.model.parseHTTPTimestamp(ifModifiedSince[-1])
+                self.ifModifiedSince = self.model.parseHTTPDate(ifModifiedSince[-1])
             except ValueError as e:
                 trans.set_response_code(400)
                 print >>self.out, "If-Modified-Since date given in a invalid format: %s" % str(e)

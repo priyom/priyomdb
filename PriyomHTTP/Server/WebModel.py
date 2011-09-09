@@ -115,7 +115,7 @@ class WebModel(object):
     def formatHTTPTimestamp(self, timestamp):
         return self.formatHTTPDate(datetime.fromtimestamp(timestamp))
         
-    def parseHTTPTimestamp(self, httpDate):
+    def parseHTTPDate(self, httpDate):
         global rfc1123, rfc850, asctime, monthname_to_idx
         standard = rfc1123
         match = standard["expression"].match(httpDate)
