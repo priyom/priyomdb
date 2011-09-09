@@ -31,6 +31,9 @@ class WebModel(object):
     def setDistinct(self, distinct):
         self.distinct = distinct
         
+    def __call__(self, query):
+        return self.limitResults(query)
+        
     def checkReset(self):
         if self.varLastUpdate is None:
             self.varLastUpdate = self.store.get(Variable, u"lastImport")
@@ -73,59 +76,10 @@ class WebModel(object):
         return self.formatHTTPDate(datetime.fromtimestamp(timestamp))
         
     def now(self):
-        return int(time.mktime(datetime.utcnow().timetuple()))
-        
-    def normalizeDate(self, dateTime):
-        return datetime(year=dateTime.year, month=dateTime.month, day=dateTime.day)
-        
-    def toTimestamp(self, dateTime):
-        return time.mktime(dateTime.timetuple())
+        return self.priyomInterface.now()
         
     def importFromXml(self, doc, context = None, flags = None):
-        context = context if context is not None else self.priyomInterface.getImportContext()
-        for node in (node for node in doc.documentElement.childNodes if node.nodeType == dom.Node.ELEMENT_NODE):
-            if node.tagName == "delete":
-                try:
-                    clsName = node.getAttribute("type")
-                    id = node.getAttribute("id")
-                except:
-                    context.log("Something is wrong -- perhaps a missing attribute?")
-                    continue
-                try:
-                    cls = {
-                        "transmission": Transmission,
-                        "broadcast": Broadcast,
-                        "station": Station,
-                        "schedule": Schedule
-                    }[clsName]
-                except KeyError:
-                    context.log("Attempt to delete unknown type: %s" % node.getAttribute("type"))
-                    continue
-                try:
-                    id = int(id)
-                except ValueError:
-                    context.log("Supplied invalid id to delete: %s" % node.getAttribute("id"))
-                    continue
-                obj = self.store.get(cls, id)
-                if obj is None:
-                    context.log("Cannot delete %s with id %d: Not found" % (str(cls), id))
-                    continue
-                if not self.priyomInterface.delete(obj, node.hasAttribute("force") and (node.getAttribute("force") == "true")):
-                    context.log(u"Could not delete %s with id %d (did you check there are no more objects associated with it?)" % (unicode(cls), id))
-                else:
-                    context.log(u"Deleted %s with id %d" % (unicode(cls), id))
-            else:
-                try:
-                    cls = {
-                        "transmission": Transmission,
-                        "broadcast": Broadcast,
-                        "station": Station,
-                        "schedule": Schedule
-                    }[node.tagName]
-                except KeyError:
-                    context.log("Invalid transaction node: %s" % node.tagName)
-                    continue
-                context.importFromDomNode(node, cls)
+        context = self.priyomInterface.importTransaction(doc)
         self.varLastUpdate.Value = unicode(self.now())
         self.store.commit()
         self.resetStore()
