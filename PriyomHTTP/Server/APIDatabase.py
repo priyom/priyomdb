@@ -4,6 +4,7 @@ from hashlib import sha256
 import time
 from datetime import datetime
 from libPriyom.Formatting import priyomdate
+import netaddr
 
 def now():
     return int(time.mktime(datetime.utcnow().timetuple()))
@@ -22,6 +23,22 @@ class APIKey(APICapableObject):
     
     ID = Int(primary=True)
     Key = Unicode()
+    CIDRList = Unicode()
+    
+    def checkCIDR(self, srcIP):
+        if self.CIDRList is None:
+            return True
+        if srcIP is None:
+            return False
+        try:
+            srcIP = netaddr.IPAddress(srcIP)
+        except:
+            return False
+        try:
+            cidrs = [netaddr.IPNetwork(item.rstrip().lstrip()) for item in self.CIDRList.split(",")]
+            return netaddr.smallest_matching_cidr(srcIP, cidrs) is not None
+        except:
+            return True
     
 class APIUser(APICapableObject):
     __storm_table__ = "api-users"
