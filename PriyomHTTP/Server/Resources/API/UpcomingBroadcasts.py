@@ -22,7 +22,7 @@ class UpcomingBroadcastsAPI(API):
         else:
             station = None
             
-        lastModified, broadcasts = self.priyomInterface.getUpcomingBroadcasts(station, all, update, timeLimit, maxTimeRange, self.model, self.head)
+        lastModified, broadcasts = self.priyomInterface.getUpcomingBroadcasts(station, all, update, timeLimit, maxTimeRange, limiter=self.model, notModifiedCheck=self.autoNotModified, head=self.head)
         if lastModified is None:
             lastModified = self.priyomInterface.now()
         trans.set_content_type(ContentType("application/xml"))

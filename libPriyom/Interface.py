@@ -218,7 +218,7 @@ class PriyomInterface:
                 context.importFromDomNode(node, cls)
         return context
         
-    def getStation(self, stationDesignator, head = False):
+    def getStation(self, stationDesignator, notModifiedCheck = None, head = False):
         try:
             stationId = int(stationDesignator)
         except ValueError:
@@ -231,13 +231,17 @@ class PriyomInterface:
             if station is None:
                 resultSet = self.store.find(Station, Station.PriyomIdentifier == stationDesignator)
             station = resultSet.any()
+        if notModifiedCheck is not None:
+            notModifiedCheck(station.Modified)
         return (station.Modified, station)
         
-    def getCloseBroadcasts(self, stationId, time, jitter, head = False):
+    def getCloseBroadcasts(self, stationId, time, jitter, notModifiedCheck = None, head = False):
         wideBroadcasts = self.store.find(Broadcast, Broadcast.StationID == stationId)
         lastModified = wideBroadcasts.max(Broadcast.Modified)
         if head:
             return (lastModified, None)
+        if notModifiedCheck is not None:
+            notModifiedCheck(lastModified)
         
         broadcasts = wideBroadcasts.find(And(
             And(
@@ -248,16 +252,18 @@ class PriyomInterface:
         )
         return (lastModified, broadcasts)
         
-    def listObjects(self, cls, limiter = None, head = False):
+    def listObjects(self, cls, limiter = None, notModifiedCheck = None, head = False):
         objects = self.store.find(cls)
         lastModified = objects.max(cls.Modified)
-        if limiter is not None:
-            objects = limiter(objects)
         if head:
             return (lastModified, None)
+        if notModifiedCheck is not None:
+            notModifiedCheck(lastModified)
+        if limiter is not None:
+            objects = limiter(objects)
         return (lastModified, objects)
     
-    def getTransmissionsByMonth(self, stationId, year, month, limiter = None, head = False):
+    def getTransmissionsByMonth(self, stationId, year, month, limiter = None, notModifiedCheck = None, head = False):
         startTimestamp = datetime(year, month, 1)
         if month != 12:
             endTimestamp = datetime(year, month+1, 1)
@@ -272,25 +278,29 @@ class PriyomInterface:
                 And(Transmission.Timestamp >= startTimestamp,
                     Transmission.Timestamp < endTimestamp)))
         lastModified = transmissions.max(Transmission.Modified)
-        if limiter is not None:
-            transmissions = limiter(transmissions)
         if head:
             return (lastModified, None)
+        if notModifiedCheck is not None:
+            notModifiedCheck(lastModified)
+        if limiter is not None:
+            transmissions = limiter(transmissions)
         return (lastModified, (transmission for (transmission, broadcast) in transmissions))
         
-    def getTransmissionStats(self, stationId, head = False):
+    def getTransmissionStats(self, stationId, notModifiedCheck = None, head = False):
         transmissions = self.store.find(Transmission, 
             Transmission.BroadcastID == Broadcast.ID, 
             Broadcast.StationID == stationId)
         lastModified = transmissions.max(Transmission.Modified)
         if head:
             return (lastModified, None)
+        if notModifiedCheck is not None:
+            notModifiedCheck(lastModified)
         
         months = self.store.execute("SELECT YEAR(FROM_UNIXTIME(Timestamp)) as year, MONTH(FROM_UNIXTIME(Timestamp)) as month, COUNT(DATE_FORMAT(FROM_UNIXTIME(Timestamp), '%%Y-%%m')) FROM transmissions LEFT JOIN broadcasts ON (transmissions.BroadcastID = broadcasts.ID) WHERE broadcasts.StationID = '%d' GROUP BY year, month ORDER BY year ASC, month ASC" % (stationId))
         
         return (lastModified, months)
         
-    def getUpcomingBroadcasts(self, station, all, update, timeLimit, maxTimeRange, limiter = None, head = False):
+    def getUpcomingBroadcasts(self, station, all, update, timeLimit, maxTimeRange, limiter = None, notModifiedCheck = None, head = False):
         now = self.now()
         where = And(Or(Broadcast.BroadcastEnd > now, Broadcast.BroadcastEnd == None), (Broadcast.BroadcastStart < (now + timeLimit)))
         if not all:
@@ -304,6 +314,8 @@ class PriyomInterface:
             lastModified = station.Schedule.Modified if station.Schedule.Modified > lastModified else lastModified
         if head:
             return (lastModified, None)
+        if notModifiedCheck is not None:
+            notModifiedCheck(lastModified)
         
         if update:
             untilDate = datetime.fromtimestamp(now)

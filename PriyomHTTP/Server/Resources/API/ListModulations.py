@@ -9,10 +9,15 @@ class ListModulationsAPI(API):
     def handle(self, trans):
         super(ListModulationsAPI, self).handle(trans)
         
+        lastModified = self.model.getLastUpdate()
+        trans.set_content_type(ContentType("application/xml"))
+        trans.set_header_value("Last-Modified", self.model.formatHTTPTimestamp(float(lastModified)))
+        if self.head:
+            return 
+        self.autoNotModified(lastModified)
+        
         items = self.store.find(Modulation)
         self.model.limitResults(items)
-        
-        trans.set_content_type(ContentType("application/xml"))
         
         doc = self.model.getExportDoc("priyom-modulations")
         rootNode = doc.documentElement

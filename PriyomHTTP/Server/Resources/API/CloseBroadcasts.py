@@ -16,7 +16,7 @@ class CloseBroadcastsAPI(API):
             self.parameterError("jitter", "jitter %d out of bounds (0..600)" % (jitter))
             
         
-        lastModified, broadcasts = self.priyomInterface.getCloseBroadcasts(stationId, time, jitter, self.head)
+        lastModified, broadcasts = self.priyomInterface.getCloseBroadcasts(stationId, time, jitter, notModifiedCheck=self.autoNotModified, head=self.head)
         trans.set_content_type(ContentType("application/xml"))
         trans.set_header_value("Last-Modified", self.model.formatHTTPTimestamp(lastModified))
         if self.head:
