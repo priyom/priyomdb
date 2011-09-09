@@ -138,6 +138,9 @@ class WebModel(object):
         time = groups[standard["time"]]
         
         return datetime.strptime("%s %d %s %s" % (year, month, day, time), "%s %%m %%d %%H:%%M:%%S" % (standard["yearmode"]))
+    
+    def parseHTTPTimestamp(self, httpDate):
+        return self.toTimestamp(self.parseHTTPDate(httpDate))
         
     def now(self):
         return self.priyomInterface.now()
