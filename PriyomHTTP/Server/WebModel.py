@@ -34,6 +34,11 @@ class WebModel(object):
     def __call__(self, query):
         return self.limitResults(query)
         
+    def getVarLastUpdate(self):
+        if self.varLastUpdate is None:
+            self.varLastUpdate = self.store.get(Variable, u"lastImport")
+        return self.varLastUpdate
+        
     def checkReset(self):
         if self.varLastUpdate is None:
             self.varLastUpdate = self.store.get(Variable, u"lastImport")
@@ -49,6 +54,9 @@ class WebModel(object):
         self.lastReset = self.now()
         
     def getLastUpdate(self):
+        self.getVarLastUpdate()
+        if self.varLastUpdate is None:
+            return self.now()
         return self.varLastUpdate.Value
     
     def exportToXml(self, obj, flags = None):
