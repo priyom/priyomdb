@@ -16,17 +16,11 @@ class CloseBroadcastsAPI(API):
             self.parameterError("jitter", "jitter %d out of bounds (0..600)" % (jitter))
             
         
-        wideBroadcasts = self.store.find(Broadcast, Broadcast.StationID == stationId)
-        lastModified = wideBroadcasts.max(Broadcast.Modified)
+        lastModified, broadcasts = self.priyomInterface.getCloseBroadcasts(stationId, time, jitter, self.head)
         trans.set_content_type(ContentType("application/xml"))
         trans.set_header_value("Last-Modified", self.model.formatHTTPTimestamp(lastModified))
-        if trans.get_request_method() == "HEAD":
+        if self.head:
             return
-        
-        broadcasts = wideBroadcasts.find(And(
-                    Broadcast.BroadcastStart <= time + jitter,
-                    Broadcast.BroadcastEnd > time - jitter
-                ))
         
         print >>self.out, self.model.exportListToXml(broadcasts, Broadcast)
         

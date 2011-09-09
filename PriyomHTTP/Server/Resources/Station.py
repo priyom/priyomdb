@@ -6,25 +6,6 @@ class StationResource(Resource):
     def __init__(self, model):
         super(StationResource, self).__init__(model)
         
-    def _getStation(self, trans, path):
-        stationDesignator = path[1].decode("utf-8")
-        if len(stationDesignator) == 0:
-            return None
-        
-        try:
-            stationId = int(stationDesignator)
-        except ValueError:
-            stationId = None
-        if stationId is not None:
-            station = self.store.get(Station, stationId)
-        else:
-            resultSet = self.store.find(Station, Station.EnigmaIdentifier == stationDesignator)
-            station = resultSet.any()
-            if station is None:
-                resultSet = self.store.find(Station, Station.PriyomIdentifier == stationDesignator)
-            station = resultSet.any()
-        return station
-        
     def handle(self, trans):
         path = trans.get_virtual_path_info().split('/')
         if len(path) == 1:
@@ -33,14 +14,17 @@ class StationResource(Resource):
         elif len(path) > 2:
             trans.set_response_code(404)
             return
-            
-        station = self._getStation(trans, path)        
+        
+        stationDesignator = path[1].decode("utf-8")
+        if len(stationDesignator) == 0:
+            return None
+        (lastModified, station) = self.priyomInterface.getStation(stationDesignator)
         if station is None:
             trans.set_response_code(404)
             return
         station.validate()
         
-        
+        trans.set_header_value("Last-Modified", self.model.formatHTTPTimestamp(lastModified))
         trans.set_content_type(ContentType("application/xml"))
         print >>self.out, self.model.exportToXml(station)
 

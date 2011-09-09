@@ -9,6 +9,8 @@ from Schedule import Schedule, ScheduleLeaf
 from Station import Station
 from Foreign import ForeignSupplement
 from Helpers.ScheduleMaintainer import ScheduleMaintainer
+import time
+from datetime import datetime, timedelta
 
 class NoPriyomInterfaceError(Exception):
     def __init__(self):
@@ -29,6 +31,9 @@ class PriyomInterface:
             raise ValueError("store must not be None.")
         self.store = store
         self.scheduleMaintainer = ScheduleMaintainer(store)
+        
+    def now(self):
+        return int(time.mktime(datetime.utcnow().timetuple()))
         
     def createDocument(self, rootNodeName):
         return dom.getDOMImplementation().createDocument(XMLIntf.namespace, rootNodeName, None)
@@ -159,3 +164,157 @@ class PriyomInterface:
         except KeyError:
             raise Exception("Can only delete elementary objects (got object of type %s)." % (str(type(obj))))
         return method(obj, force)
+        
+    def normalizeDate(self, dateTime):
+        return datetime(year=dateTime.year, month=dateTime.month, day=dateTime.day)
+        
+    def toTimestamp(self, dateTime):
+        return time.mktime(dateTime.timetuple())
+        
+    def importTransaction(self, doc):
+        context = self.getImportContext()
+        for node in (node for node in doc.documentElement.childNodes if node.nodeType == dom.Node.ELEMENT_NODE):
+            if node.tagName == "delete":
+                try:
+                    clsName = node.getAttribute("type")
+                    id = node.getAttribute("id")
+                except:
+                    context.log("Something is wrong -- perhaps a missing attribute?")
+                    continue
+                try:
+                    cls = {
+                        "transmission": Transmission,
+                        "broadcast": Broadcast,
+                        "station": Station,
+                        "schedule": Schedule
+                    }[clsName]
+                except KeyError:
+                    context.log("Attempt to delete unknown type: %s" % node.getAttribute("type"))
+                    continue
+                try:
+                    id = int(id)
+                except ValueError:
+                    context.log("Supplied invalid id to delete: %s" % node.getAttribute("id"))
+                    continue
+                obj = self.store.get(cls, id)
+                if obj is None:
+                    context.log("Cannot delete %s with id %d: Not found" % (str(cls), id))
+                    continue
+                if not self.delete(obj, node.hasAttribute("force") and (node.getAttribute("force") == "true")):
+                    context.log(u"Could not delete %s with id %d (did you check there are no more objects associated with it?)" % (unicode(cls), id))
+                else:
+                    context.log(u"Deleted %s with id %d" % (unicode(cls), id))
+            else:
+                try:
+                    cls = {
+                        "transmission": Transmission,
+                        "broadcast": Broadcast,
+                        "station": Station,
+                        "schedule": Schedule
+                    }[node.tagName]
+                except KeyError:
+                    context.log("Invalid transaction node: %s" % node.tagName)
+                    continue
+                context.importFromDomNode(node, cls)
+        return context
+        
+    def getStation(self, stationDesignator, head = False):
+        try:
+            stationId = int(stationDesignator)
+        except ValueError:
+            stationId = None
+        if stationId is not None:
+            station = self.store.get(Station, stationId)
+        else:
+            resultSet = self.store.find(Station, Station.EnigmaIdentifier == stationDesignator)
+            station = resultSet.any()
+            if station is None:
+                resultSet = self.store.find(Station, Station.PriyomIdentifier == stationDesignator)
+            station = resultSet.any()
+        return (station.Modified, station)
+        
+    def getCloseBroadcasts(self, stationId, time, jitter, head = False):
+        wideBroadcasts = self.store.find(Broadcast, Broadcast.StationID == stationId)
+        lastModified = wideBroadcasts.max(Broadcast.Modified)
+        if head:
+            return (lastModified, None)
+        
+        broadcasts = wideBroadcasts.find(And(
+            Broadcast.BroadcastStart <= time + jitter,
+            Broadcast.BroadcastEnd > time - jitter
+        ))
+        return (lastModified, broadcasts)
+        
+    def listObjects(self, cls, limiter = None, head = False):
+        objects = self.store.find(cls)
+        lastModified = objects.max(cls.Modified)
+        if limiter is not None:
+            objects = limiter(objects)
+        if head:
+            return (lastModified, None)
+        return (lastModified, objects)
+    
+    def getTransmissionsByMonth(self, stationId, year, month, limiter = None, head = False):
+        startTimestamp = datetime(year, month, 1)
+        if month != 12:
+            endTimestamp = datetime(year, month+1, 1)
+        else:
+            endTimestamp = datetime(year+1, 1, 1)
+        startTimestamp = int(time.mktime(startTimestamp.timetuple()))
+        endTimestamp = int(time.mktime(endTimestamp.timetuple()))
+        
+        transmissions = self.store.find((Transmission, Broadcast), 
+            Transmission.BroadcastID == Broadcast.ID,
+            And(Broadcast.StationID == stationId, 
+                And(Transmission.Timestamp >= startTimestamp,
+                    Transmission.Timestamp < endTimestamp)))
+        lastModified = transmissions.max(Transmission.Modified)
+        if limiter is not None:
+            transmissions = limiter(transmissions)
+        if head:
+            return (lastModified, None)
+        return (lastModified, (transmission for (transmission, broadcast) in transmissions))
+        
+    def getTransmissionStats(self, stationId, head = False):
+        transmissions = self.store.find(Transmission, 
+            Transmission.BroadcastID == Broadcast.ID, 
+            Broadcast.StationID == stationId)
+        lastModified = transmissions.max(Transmission.Modified)
+        if head:
+            return (lastModified, None)
+        
+        months = self.store.execute("SELECT YEAR(FROM_UNIXTIME(Timestamp)) as year, MONTH(FROM_UNIXTIME(Timestamp)) as month, COUNT(DATE_FORMAT(FROM_UNIXTIME(Timestamp), '%%Y-%%m')) FROM transmissions LEFT JOIN broadcasts ON (transmissions.BroadcastID = broadcasts.ID) WHERE broadcasts.StationID = '%d' GROUP BY year, month ORDER BY year ASC, month ASC" % (stationId))
+        
+        return (lastModified, months)
+        
+    def getUpcomingBroadcasts(self, station, all, update, timeLimit, maxTimeRange, limiter = None, head = False):
+        now = self.now()
+        where = And(Or(Broadcast.BroadcastEnd > now, Broadcast.BroadcastEnd == None), (Broadcast.BroadcastStart < (now + timeLimit)))
+        if not all:
+            where = And(where, Broadcast.Type == u"data")
+        if station is not None:
+            where = And(where, Broadcast.StationID == stationId)
+        
+        broadcasts = self.store.find(Broadcast, where)
+        lastModified = broadcasts.max(Broadcast.Modified)
+        if station is not None and station.Schedule is not None:
+            lastModified = station.Schedule.Modified if station.Schedule.Modified > lastModified else lastModified
+        if head:
+            return (lastModified, None)
+        
+        if update:
+            untilDate = datetime.fromtimestamp(now)
+            untilDate += timedelta(seconds=timeLimit)
+            untilDate = self.normalizeDate(untilDate)
+            
+            until = self.toTimestamp(untilDate)
+            
+            if station is None:
+                validUntil = self.scheduleMaintainer.updateSchedules(until, maxTimeRange)
+            else:
+                validUntil = self.scheduleMaintainer.updateSchedule(station, until, maxTimeRange)
+            # trans.set_header_value("Expires", self.model.formatHTTPTimestamp(validUntil))
+        
+        return (lastModified, broadcasts if limiter is None else limiter(broadcasts))
+        
+        

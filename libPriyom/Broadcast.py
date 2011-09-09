@@ -70,7 +70,7 @@ class Broadcast(PriyomBase, XMLIntf.XMLStorm):
     }
     
     def __init__(self):
-        super(Broadcast, self).__init__(self)
+        super(Broadcast, self).__init__()
         self.Confirmed = False
         self.BroadcastStart = 0
         self.BroadcastEnd = None

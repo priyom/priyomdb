@@ -9,14 +9,11 @@ class TransmissionStatsAPI(API):
         super(TransmissionStatsAPI, self).handle(trans)
         stationId = self.getQueryInt("stationId", "must be integer")
         
-        lastModified = self.store.execute("SELECT MAX(transmissions.Modified) FROM transmissions LEFT JOIN broadcasts ON (transmissions.BroadcastID = broadcasts.ID) WHERE broadcasts.StationID = '%d'" % (stationId)).__iter__().next()[0]
+        trans.set_content_type(ContentType("application/xml"))
         trans.set_header_value('Last-Modified', self.model.formatHTTPTimestamp(float(lastModified)))
-        
-        if trans.get_request_method() == "HEAD":
-            trans.set_content_type(ContentType("application/xml"))
+        lastModified, months = self.priyomInterface.getTransmissionStats(stationId, self.head)
+        if self.head:
             return
-        
-        months = self.store.execute("SELECT YEAR(FROM_UNIXTIME(Timestamp)) as year, MONTH(FROM_UNIXTIME(Timestamp)) as month, COUNT(DATE_FORMAT(FROM_UNIXTIME(Timestamp), '%%Y-%%m')) FROM transmissions LEFT JOIN broadcasts ON (transmissions.BroadcastID = broadcasts.ID) WHERE broadcasts.StationID = '%d' GROUP BY year, month ORDER BY year ASC, month ASC" % (stationId))
         
         doc = self.model.getExportDoc("transmission-stats")
         rootNode = doc.documentElement
@@ -27,5 +24,4 @@ class TransmissionStatsAPI(API):
             node.setAttribute("month", str(month[1]))
             rootNode.appendChild(node)
         
-        trans.set_content_type(ContentType("application/xml"))
         print >>self.out, doc.toxml()
