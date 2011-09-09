@@ -12,4 +12,11 @@ class AuthorizationSelector(object):
         
     def authFailed(self, trans):
         trans.set_response_code(401)
+        if not trans.apiAuth:
+            if trans.apiAuthError is not None:
+                print >>trans.get_response_stream(), trans.apiAuthError
+            else:
+                print >>trans.get_response_stream(), "Not authenticated."
+        else:
+            print >>trans.get_response_stream(), "Missing capabilities."
         raise EndOfResponse
