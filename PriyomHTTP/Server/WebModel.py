@@ -78,12 +78,6 @@ class WebModel(object):
     def now(self):
         return self.priyomInterface.now()
         
-    def normalizeDate(self, dateTime):
-        return datetime(year=dateTime.year, month=dateTime.month, day=dateTime.day)
-        
-    def toTimestamp(self, dateTime):
-        return time.mktime(dateTime.timetuple())
-        
     def importFromXml(self, doc, context = None, flags = None):
         context = self.priyomInterface.importTransaction(doc)
         self.varLastUpdate.Value = unicode(self.now())

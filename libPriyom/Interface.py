@@ -165,6 +165,12 @@ class PriyomInterface:
             raise Exception("Can only delete elementary objects (got object of type %s)." % (str(type(obj))))
         return method(obj, force)
         
+    def normalizeDate(self, dateTime):
+        return datetime(year=dateTime.year, month=dateTime.month, day=dateTime.day)
+        
+    def toTimestamp(self, dateTime):
+        return time.mktime(dateTime.timetuple())
+        
     def importTransaction(self, doc):
         context = self.getImportContext()
         for node in (node for node in doc.documentElement.childNodes if node.nodeType == dom.Node.ELEMENT_NODE):
@@ -281,7 +287,8 @@ class PriyomInterface:
         
         return (lastModified, months)
         
-    def getUpcomingBroadcasts(self, station, all, noUpdate, timeLimit, maxTimeRange, limiter = None, head = False):
+    def getUpcomingBroadcasts(self, station, all, update, timeLimit, maxTimeRange, limiter = None, head = False):
+        now = self.now()
         where = And(Or(Broadcast.BroadcastEnd > now, Broadcast.BroadcastEnd == None), (Broadcast.BroadcastStart < (now + timeLimit)))
         if not all:
             where = And(where, Broadcast.Type == u"data")
@@ -295,13 +302,12 @@ class PriyomInterface:
         if head:
             return (lastModified, None)
         
-        now = self.now()
         if update:
-            untilDate = datetime.fromtimestamp(nowmodel)
+            untilDate = datetime.fromtimestamp(now)
             untilDate += timedelta(seconds=timeLimit)
-            untilDate = self.model.normalizeDate(untilDate)
+            untilDate = self.normalizeDate(untilDate)
             
-            until = self.model.toTimestamp(untilDate)
+            until = self.toTimestamp(untilDate)
             
             if station is None:
                 validUntil = self.scheduleMaintainer.updateSchedules(until, maxTimeRange)
