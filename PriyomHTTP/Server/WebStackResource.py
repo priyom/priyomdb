@@ -7,6 +7,7 @@ from Authentication import AuthenticationSelector
 from Authorization import AuthorizationSelector
 from WebModel import WebModel
 from Documentation import DocumentationSelector
+from Exceptions import ExceptionSelector
 from Reset import ResetSelector
 import libPriyom
 from Resources import *
@@ -36,7 +37,7 @@ def get_site_map(priyomInterface, rootPath):
         "getStationFrequencies": StationFrequenciesAPI(model)
     })
     
-    return MyEncodingSelector(ResetSelector(model, AuthenticationSelector(model.store,
+    return MyEncodingSelector(ExceptionSelector(ResetSelector(model, AuthenticationSelector(model.store,
         MapResource({
             "station": StationResource(model),
             "broadcast": IDResource(model, libPriyom.Broadcast),
@@ -49,6 +50,6 @@ def get_site_map(priyomInterface, rootPath):
             "css": MapResource({
                 "home.css": FileResource(os.path.join(rootPath, "www-files/css/home.css"), ContentType("text/css", "utf-8"))
             })
-        }))),
+        })))),
         "utf-8"
     )
