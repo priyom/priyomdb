@@ -32,7 +32,8 @@ def get_site_map(priyomInterface, rootPath):
         "getSession": SessionAPI(model),
         "getTransmissionStats": TransmissionStatsAPI(model),
         "getTransmissionsByMonth": TransmissionsByMonthAPI(model),
-        "getCloseBroadcasts": CloseBroadcastsAPI(model)
+        "getCloseBroadcasts": CloseBroadcastsAPI(model),
+        "getStationFrequencies": StationFrequenciesAPI(model)
     })
     
     return MyEncodingSelector(ResetSelector(model, AuthenticationSelector(model.store,
