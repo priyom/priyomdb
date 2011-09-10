@@ -6,3 +6,4 @@ from ListModulations import ListModulationsAPI
 from TransmissionStats import TransmissionStatsAPI
 from TransmissionsByMonth import TransmissionsByMonthAPI
 from CloseBroadcasts import CloseBroadcastsAPI
+from StationFrequencies import StationFrequenciesAPI
