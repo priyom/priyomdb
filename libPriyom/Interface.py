@@ -1,4 +1,5 @@
 from storm.locals import *
+from storm.expr import Func
 import Imports
 import XMLIntf
 import xml.dom.minidom as dom
@@ -11,6 +12,16 @@ from Foreign import ForeignSupplement
 from Helpers.ScheduleMaintainer import ScheduleMaintainer
 import time
 from datetime import datetime, timedelta
+
+PAST = u"past"
+ONAIR = u"on-air"
+UPCOMING = u"upcoming"
+
+def longOrNone(s):
+    try:
+        return long(s)
+    except:
+        return None
 
 class NoPriyomInterfaceError(Exception):
     def __init__(self):
@@ -244,8 +255,11 @@ class PriyomInterface:
             notModifiedCheck(lastModified)
         
         broadcasts = wideBroadcasts.find(And(
-            Broadcast.BroadcastStart <= time + jitter,
-            Broadcast.BroadcastEnd > time - jitter
+            And(
+                Broadcast.BroadcastStart <= time + jitter,
+                Broadcast.BroadcastEnd > time - jitter
+            ),
+            Broadcast.Type == u"data"
         ))
         return (lastModified, broadcasts)
         
@@ -329,4 +343,27 @@ class PriyomInterface:
         
         return (lastModified, broadcasts if limiter is None else limiter(broadcasts))
         
+    def getStationFrequencies(self, station, notModifiedCheck = None, head = False):
+        global UPCOMING, PAST, ONAIR
+        broadcasts = self.store.find(Broadcast,
+            Broadcast.StationID == station.ID)
+        lastModified = broadcasts.max(Broadcast.Modified)
+        if station.Schedule is not None:
+            scheduleLeafs = self.store.find(ScheduleLeaf,
+                ScheduleLeaf.StationID == station.ID)
+            lastModified = lastModified if station.Schedule.Modified < lastModified else station.Schedule.Modified
+        if head:
+            return (lastModified, None)
+        if notModifiedCheck is not None:
+            notModifiedCheck(lastModified)
         
+        if station.Schedule is None:
+            now = self.now()
+            frequencies = self.store.find(
+                (Max(Broadcast.BroadcastEnd), Min(Broadcast.BroadcastStart), Broadcast.BroadcastStart > now, BroadcastFrequency.Frequency, Modulation.Name), 
+                BroadcastFrequency.ModulationID == Modulation.ID,
+                BroadcastFrequency.BroadcastID == Broadcast.ID,
+                Broadcast.StationID == station.ID)
+            frequencies.group_by(Or(Func("ISNULL", Broadcast.BroadcastEnd), And(Broadcast.BroadcastEnd >= now, Broadcast.BroadcastStart <= now)), Broadcast.BroadcastStart > now, BroadcastFrequency.Frequency, Modulation.Name)
+            
+            return (lastModified, ((freq, modulation, UPCOMING if isUpcoming == 1 else (ONAIR if lastUse is None else PAST), nextUse if isUpcoming else lastUse) for (lastUse, nextUse, isUpcoming, freq, modulation) in frequencies))
