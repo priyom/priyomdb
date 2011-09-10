@@ -1,0 +1,18 @@
+.tb-file, .tb-lineno, .tb-func {
+    font-weight: bold;
+}
+
+.tb-item-code {
+    font-family: mono;
+    padding-left: 1em;
+    font-size: 10pt;
+}
+
+.exc-info dt {
+    font-weight: bold;
+}
+
+.exc-info dd {
+    font-family: mono;
+    font-size: 10pt;
+}
