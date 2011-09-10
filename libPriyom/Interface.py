@@ -1,4 +1,5 @@
 from storm.locals import *
+from storm.expr import Func
 import Imports
 import XMLIntf
 import xml.dom.minidom as dom
@@ -11,6 +12,15 @@ from Foreign import ForeignSupplement
 from Helpers.ScheduleMaintainer import ScheduleMaintainer
 import time
 from datetime import datetime, timedelta
+
+SCHEDULED = u"scheduled"
+ONAIR = u"on-air"
+
+def longOrNone(s):
+    try:
+        return long(s)
+    except:
+        return None
 
 class NoPriyomInterfaceError(Exception):
     def __init__(self):
@@ -331,5 +341,39 @@ class PriyomInterface:
             # trans.set_header_value("Expires", self.model.formatHTTPTimestamp(validUntil))
         
         return (lastModified, broadcasts if limiter is None else limiter(broadcasts))
+        
+    def getStationFrequencies(self, station, notModifiedCheck = None, head = False):
+        global SCHEDULED, ONAIR
+        if station.Schedule is not None:
+            scheduleLeafs = self.store.find(ScheduleLeaf,
+                ScheduleLeaf.StationID == station.ID)
+            lastModified = lastModified if station.Schedule.Modified < lastModified else station.Schedule.Modified
+        else:
+            broadcasts = self.store.find(Broadcast,
+                Broadcast.StationID == station.ID)
+            lastModified = broadcasts.max(Broadcast.Modified)
+        if head:
+            return (lastModified, None)
+        if notModifiedCheck is not None:
+            notModifiedCheck(lastModified)
+        
+        if station.Schedule is None:
+            frequencies = self.store.find(
+                (Max(Broadcast.BroadcastEnd), BroadcastFrequency.Frequency, Modulation.Name), 
+                BroadcastFrequency.ModulationID == Modulation.ID,
+                BroadcastFrequency.BroadcastID == Broadcast.ID,
+                Broadcast.StationID == station.ID)
+            frequencies.group_by(Func("ISNULL", Broadcast.BroadcastEnd), BroadcastFrequency.Frequency, Modulation.Name)
+            
+            return dict((((freq, modulation), lastUse if lastUse is not None else ONAIR) for (lastUse, freq, modulation) in frequencies))
+        else:
+            scheduleLeafs = self.store.find(
+                (ScheduleLeafFrequency.Frequency, Modulation.Name),
+                ScheduleLeaf.StationID == station.ID,
+                ScheduleLeafFrequency.ScheduleLeafID == ScheduleLeaf.ID,
+                ScheduleLeafFrequency.ModulationID == Modulation.ID)
+            scheduleLeafs.group_by(ScheduleLeafFrequency.Frequency, Modulation.Name)
+            
+            return dict((((freq, modulation), SCHEDULED) for (freq, modulation) in scheduleLeafs))
         
         
