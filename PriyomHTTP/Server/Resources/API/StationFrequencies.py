@@ -1,6 +1,7 @@
 from WebStack.Generic import ContentType
 from libPriyom import *
 from API import API
+from libPriyom.Interface import PAST, ONAIR, UPCOMING
 
 class StationFrequenciesAPI(API):
     def __init__(self, model):
@@ -19,6 +20,17 @@ class StationFrequenciesAPI(API):
         if self.head:
             return
         
-        print >>self.out, self.model.exportListToXml(broadcasts, Broadcast)
+        doc = self.model.getExportDoc("station-frequencies")
+        rootNode = doc.documentElement
+        
+        for (freq, modulation, state, timestamp) in frequencies:
+            node = XMLIntf.buildTextElementNS(doc, "station-frequency", unicode(freq), XMLIntf.namespace)
+            node.setAttribute("modulation", modulation)
+            node.setAttribute("state", state)
+            if state != ONAIR:
+                node.setAttribute("unix", unicode(timestamp))
+            rootNode.appendChild(node)
+        
+        print >>self.out, doc.toxml()
 
 
