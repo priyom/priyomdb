@@ -48,7 +48,8 @@ def get_site_map(priyomInterface, rootPath):
             "doc": DocumentationSelector(apiMap),
             "": EmptyResource(model),
             "css": MapResource({
-                "home.css": FileResource(os.path.join(rootPath, "www-files/css/home.css"), ContentType("text/css", "utf-8"))
+                "home.css": FileResource(os.path.join(rootPath, "www-files/css/home.css"), ContentType("text/css", "utf-8")),
+                "error.css": FileResource(os.path.join(rootPath, "www-files/css/error.css"), ContentType("text/css", "utf-8"))
             })
         })))),
         "utf-8"
