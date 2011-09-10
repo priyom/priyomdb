@@ -13,7 +13,6 @@ class ExceptionSelector(object):
     def respond(self, trans):
         try:
             self.resource.respond(trans)
-            
         except:
             trans.rollback()
             trans.set_response_code(500)
