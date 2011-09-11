@@ -46,7 +46,7 @@ class ExceptionSelector(object):
             u"\n".join((u"""<li><div class="tb-item-head">File &quot;<span class="tb-file">{0}</span>&quot;, line <span class="tb-lineno">{1:d}</span>, in <span class="tb-func">{2}</span></div><div class="tb-item-code">{3}</div>""".format(escape(os.path.relpath(filename, approot)), lineno, escape(funcname), escape(text)) for (filename, lineno, funcname, text) in traceback.extract_tb(tb))), 
             
             escape(unicode(eType)),
-            escape(unicode(e)))
+            escape(unicode(e)).replace("\n", "<br/>"))
                 
             else:
                 s += u"""
