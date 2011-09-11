@@ -21,7 +21,7 @@ class UpcomingBroadcastsAPI(API):
         else:
             station = None
             
-        lastModified, broadcasts, upToDate = self.priyomInterface.getUpcomingBroadcasts(station, all, update, timeLimit, maxTimeRange, limiter=self.model, notModifiedCheck=self.autoNotModified, head=self.head)
+        lastModified, broadcasts, upToDate, validUntil = self.priyomInterface.getUpcomingBroadcasts(station, all, update, timeLimit, maxTimeRange, limiter=self.model, notModifiedCheck=self.autoNotModified, head=self.head)
         trans.set_content_type(ContentType("application/xml"))
         if lastModified is not None:
             trans.set_header_value("Last-Modified", self.model.formatHTTPTimestamp(float(lastModified)))
@@ -31,4 +31,6 @@ class UpcomingBroadcastsAPI(API):
             trans.set_header_value("Warning", """199 api.priyom.org "Currently not all upcoming broadcasts from all affected schedules are instanciated up to date. Maybe your timeLimit is too high for this to ever happen" """)
         broadcasts.order_by(Asc(Broadcast.BroadcastStart))
         
-        print >>self.out, self.model.exportListToXml(broadcasts, Broadcast)
+        doc = self.model.exportListToDom(broadcasts, Broadcast, flags=frozenset())
+        doc.documentElement.setAttribute("valid-until", unicode(long(validUntil)))
+        print >>self.out, doc.toxml("utf-8")
