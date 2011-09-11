@@ -8,7 +8,7 @@ class CompressionStream(io.IOBase):
 
 class DeflateCompressionStream(CompressionStream):
     def __init__(self, target, level = 6):
-        super(GZipCompressionStream, self).__init__(target)
+        super(DeflateCompressionStream, self).__init__(target)
         self.zipper = zlib.compressobj(level)
         
     def write(self, b):
@@ -18,7 +18,7 @@ class DeflateCompressionStream(CompressionStream):
         self.target.write(self.zipper.flush(zlib.Z_FINISH if closing else zlib.Z_SYNC_FLUSH))
         
     def close(self):
-        super(GZipCompressionStream, self).close()
+        super(DeflateCompressionStream, self).close()
         self.flush(True)
         return self.target
 
