@@ -70,7 +70,6 @@ class Resource(object):
         
     def autoNotModified(self, lastModified):
         if self.ifModifiedSinceUnix is not None and long(lastModified) == long(self.ifModifiedSinceUnix):
-            self.trans.rollback()
             self.trans.set_response_code(304)
             raise EndOfResponse
         
