@@ -7,6 +7,6 @@ class MyEncodingSelector(object):
     def respond(self, trans):
         trans.default_charset = self.encoding
         self.resource.respond(trans)
-        if not ("charset" in trans.content_type.attributes):
+        if trans.content_type is not None and not ("charset" in trans.content_type.attributes):
             trans.content_type.attributes["charset"] = self.encoding
 
