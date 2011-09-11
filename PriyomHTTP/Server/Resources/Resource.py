@@ -1,7 +1,7 @@
 from WebStack.Generic import EndOfResponse
 
 class Resource(object):
-    allowedMethods = set("HEAD", "GET")
+    allowedMethods = set(("HEAD", "GET"))
     
     def __init__(self, model):
         self.model = model
