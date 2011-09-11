@@ -7,7 +7,6 @@ from PriyomBase import PriyomBase, now
 class BroadcastFrequency(object):
     __storm_table__ = "broadcastFrequencies"
     ID = Int(primary = True)
-    TransmissionDeleted = Int()
     BroadcastID = Int()
     Frequency = Int()
     ModulationID = Int()
@@ -52,6 +51,7 @@ class BroadcastFrequency(object):
 class Broadcast(PriyomBase, XMLIntf.XMLStorm):
     __storm_table__ = "broadcasts"
     ID = Int(primary = True)
+    TransmissionDeleted = Int()
     StationID = Int()
     Type = Enum(map={
         "data": "data",
