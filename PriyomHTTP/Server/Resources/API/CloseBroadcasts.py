@@ -3,12 +3,7 @@ from libPriyom import *
 from API import API
 
 class CloseBroadcastsAPI(API):
-    def __init__(self, model):
-        super(CloseBroadcastsAPI, self).__init__(model)
-    
     def handle(self, trans):
-        super(CloseBroadcastsAPI, self).handle(trans)
-        
         stationId = self.getQueryInt("stationId", "int; id of the station")
         time = self.getQueryInt("time", "int; unix timestamp at which to look")
         jitter = self.getQueryIntDefault("jitter", 600, "int; jitter in seconds")

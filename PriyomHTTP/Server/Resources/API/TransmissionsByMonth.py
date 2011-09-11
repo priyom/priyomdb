@@ -6,7 +6,6 @@ from datetime import datetime, timedelta
 
 class TransmissionsByMonthAPI(API):
     def handle(self, trans):
-        super(TransmissionsByMonthAPI, self).handle(trans)
         stationId = self.getQueryInt("stationId", "must be integer")
         year = self.getQueryInt("year", "must be integer")
         month = self.getQueryInt("month", "must be integer")

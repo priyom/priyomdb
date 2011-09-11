@@ -1,6 +1,8 @@
 from WebStack.Generic import EndOfResponse
 
 class Resource(object):
+    allowedMethods = frozenset(["HEAD", "GET"])
+    
     def __init__(self, model):
         self.model = model
         self.priyomInterface = self.model.priyomInterface
@@ -38,6 +40,11 @@ class Resource(object):
             self.query[key] = self.query[key][0]
         
     def respond(self, trans):
+        if not trans.get_request_method() in self.allowedMethods:
+            trans.set_response_code(405)
+            trans.set_header_value("Allow", ", ".join(self.allowedMethods))
+            print >>trans.get_response_stream(), "Request method {0} is not allowed on this resource.".format(trans.get_request_method())
+            raise EndOfResponse
         self.store.autoreload() # to make sure we get current data
         self.trans = trans
         self.out = trans.get_response_stream()

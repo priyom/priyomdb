@@ -4,11 +4,7 @@ from API import API
 from libPriyom.Interface import PAST, ONAIR, UPCOMING
 
 class StationFrequenciesAPI(API):
-    def __init__(self, model):
-        super(StationFrequenciesAPI, self).__init__(model)
-    
     def handle(self, trans):
-        super(StationFrequenciesAPI, self).handle(trans)
         stationId = self.getQueryInt("stationId", "must be integer")
         station = self.store.get(Station, stationId)
         if station is None:

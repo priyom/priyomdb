@@ -6,7 +6,6 @@ from datetime import datetime, timedelta
 
 class TransmissionStatsAPI(API):
     def handle(self, trans):
-        super(TransmissionStatsAPI, self).handle(trans)
         stationId = self.getQueryInt("stationId", "must be integer")
         
         lastModified, months = self.priyomInterface.getTransmissionStats(stationId, notModifiedCheck=self.autoNotModified, head=self.head)
