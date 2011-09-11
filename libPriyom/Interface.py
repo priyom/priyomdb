@@ -254,7 +254,10 @@ class PriyomInterface:
         
     def getCloseBroadcasts(self, stationId, time, jitter, notModifiedCheck = None, head = False):
         wideBroadcasts = self.store.find(Broadcast, Broadcast.StationID == stationId)
-        lastModified = max(wideBroadcasts.max(Broadcast.Modified), self.store.get(stationId).BroadcastDeleted)
+        lastModified = max(
+            wideBroadcasts.max(Broadcast.Modified), 
+            self.store.get(stationId).BroadcastDeleted
+        )
         if head:
             return (lastModified, None)
         if notModifiedCheck is not None:
@@ -298,10 +301,11 @@ class PriyomInterface:
             And(Broadcast.StationID == stationId, 
                 And(Transmission.Timestamp >= startTimestamp,
                     Transmission.Timestamp < endTimestamp)))
-        lastModified = transmissions.max(Transmission.Modified)
-        lastModified = max(lastModified, 
+        lastModified = max(
+            transmissions.max(Transmission.Modified), 
             self.store.find(Broadcast, Broadcast.StationID == stationId).max(Broadcast.TransmissionDeleted),
-            self.store.get(Station, stationId).BroadcastDeleted)
+            self.store.get(Station, stationId).BroadcastDeleted
+        )
         if head:
             return (lastModified, None)
         if notModifiedCheck is not None:
@@ -315,9 +319,10 @@ class PriyomInterface:
             Transmission.BroadcastID == Broadcast.ID, 
             Broadcast.StationID == stationId)
         lastModified = max(
-            transmissions.max(Transmission.Modified)
+            transmissions.max(Transmission.Modified),
             self.store.find(Broadcast, Broadcast.StationID == stationId).max(Broadcast.TransmissionDeleted),
-            self.store.get(Station, stationId).BroadcastDeleted)
+            self.store.get(Station, stationId).BroadcastDeleted
+        )
         if head:
             return (lastModified, None)
         if notModifiedCheck is not None:
