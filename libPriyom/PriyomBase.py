@@ -41,3 +41,9 @@ class PriyomBase(object):
         if self._knownModified != self.Modified:
             store.autoreload(self)
             self._knownModified = self.Modified
+            
+    def touch(self, newModified = None):
+        if newModified is None:
+            self.Modified = now()
+        else:
+            self.Modified = newModified
