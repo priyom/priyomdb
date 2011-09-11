@@ -9,6 +9,7 @@ from PriyomBase import PriyomBase
 class Station(PriyomBase, XMLIntf.XMLStorm):
     __storm_table__ = "stations"
     ID = Int(primary = True)
+    BroadcastDeleted = Int()
     EnigmaIdentifier = Unicode()
     PriyomIdentifier = Unicode()
     Nickname = Unicode()

@@ -7,6 +7,7 @@ from PriyomBase import PriyomBase
 class BroadcastFrequency(object):
     __storm_table__ = "broadcastFrequencies"
     ID = Int(primary = True)
+    TransmissionDeleted = Int()
     BroadcastID = Int()
     Frequency = Int()
     ModulationID = Int()
