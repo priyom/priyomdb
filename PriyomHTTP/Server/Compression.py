@@ -35,10 +35,12 @@ class CompressionSelector(object):
         exc = None
         try:
             retval = self.resource.respond(trans)
-            # it is possible that a rollback has been made inbetween;
-            # our stream will get killed in that case
-            if issubclass(type(trans.content), CompressionStream):
-                trans.content = trans.content.close()
         except EndOfResponse as e:
             exc = e
+        # it is possible that a rollback has been made inbetween;
+        # our stream will get killed in that case
+        if issubclass(type(trans.content), CompressionStream):
+            trans.content = trans.content.close()
+        if exc is not None:
+            raise exc
         
