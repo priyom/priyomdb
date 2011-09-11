@@ -2,7 +2,7 @@ from storm.locals import *
 import XMLIntf
 from Modulation import Modulation
 import datetime
-from PriyomBase import PriyomBase
+from PriyomBase import PriyomBase, now
 
 class BroadcastFrequency(object):
     __storm_table__ = "broadcastFrequencies"
@@ -155,3 +155,6 @@ class Broadcast(PriyomBase, XMLIntf.XMLStorm):
         
     def __str__(self):
         return "%s broadcast from %s until %s" % (self.Type, repr(self.BroadcastStart), repr(self.BroadcastEnd))
+        
+    def transmissionDeleted(self):
+        self.TransmissionDeleted = now()
