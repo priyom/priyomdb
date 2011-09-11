@@ -104,16 +104,16 @@ class WebModel(object):
             flags = self.currentFlags
         return self.priyomInterface.exportToDom(obj, flags)
     
-    def exportToXml(self, obj, flags = None):
-        self.exportToDom(obj, flags).toxml()
+    def exportToXml(self, obj, flags = None, encoding=None):
+        self.exportToDom(obj, flags).toxml(encoding=encoding)
         
     def exportListToDom(self, list, classType, flags = None):
         if flags is None:
             flags = self.currentFlags
         return self.priyomInterface.exportListToDom(list, classType, flags)
         
-    def exportListToXml(self, list, classType, flags = None):
-        self.exportListToXml(list, classType, flags).toxml()
+    def exportListToXml(self, list, classType, flags = None, encoding=None):
+        self.exportListToXml(list, classType, flags).toxml(encoding=encoding)
         
     def getExportDoc(self, rootNodeName):
         return self.priyomInterface.createDocument(rootNodeName)
