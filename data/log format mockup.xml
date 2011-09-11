@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<priyom-log-import>
+    <log>
+        <StationID>404</StationID>
+        <ClassID>10</ClassID>
+        <BroadcastID>100</BroadcastID>
+        <Timestamp unix="0" />
+        <Duration>100</Duration>
+        <frequencies>
+            <frequency modulation="USB">4625000</frequency>
+        </frequencies>
+        <Callsign>UVB-76</Callsign>
+        <Callsign lang="ru">УВБ-76</Callsign>
+        <Contents>
+            <!-- normal transmission contents follow here -->
+        </Contents>
+        <Recording encoding="base64" type="audio/vorbis">
+            <!-- recording follows here -->
+        </Recording>
+    </log>
+<!--
+    Server handling specification
+    =============================
+    
+    The server should look for a broadcast which matches the given time, 
+    including a certain error range (like 5 or 10 minutes). If a match
+    is found, ask the user whether to extend the existing broadcast and
+    add the new transmission (huh, this requires user interaction! need
+    a solution. client could ask before and add a broadcast id. server
+    may still deny adding a transmission to a broadcast if the timely
+    distance is too large)
+    Otherwise we add a new broadcast using the given specifications.
+    
+    Note that only transmissions may be merged, a merge of frequencies
+    is *not* allowed. If frequencies mismatch, a new broadcast *must*
+    be created (server must enforce this). But the referenced broadcast
+    may be used as a template.
+    
+    Recordings are forwarded by the script to a yet-to-be-specified
+    upload interface to the main server, whilist being formatted 
+    correctly according to priyom standards. Automatic re-encoding if
+    the encoding mismatches may be a possible feature for the future.
+    
+-->
+</priyom-log-import>

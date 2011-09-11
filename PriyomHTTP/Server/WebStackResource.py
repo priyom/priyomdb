@@ -7,12 +7,15 @@ from Authentication import AuthenticationSelector
 from Authorization import AuthorizationSelector
 from WebModel import WebModel
 from Documentation import DocumentationSelector
+from Exceptions import ExceptionSelector
 from Reset import ResetSelector
 import libPriyom
 from Resources import *
 from Resources.API import *
 from Encoding import MyEncodingSelector
 import os.path
+
+from cfg_priyomhttpd import showExceptions
 #from Resources.API.FindStations import FindStations
 #from Resources.API.FindBroadcasts import FindBroadcasts
 #from Resources.API.FindTransmissions import FindTransmissions
@@ -29,22 +32,30 @@ def get_site_map(priyomInterface, rootPath):
         "listTransmissionClasses": ListAPI(model, libPriyom.TransmissionClass),
         "listTransmissions": AuthorizationSelector(ListAPI(model, libPriyom.Transmission), "list"),
         "listModulations": ListModulationsAPI(model),
-        "getSession": SessionAPI(model)
+        "getSession": SessionAPI(model),
+        "getTransmissionStats": TransmissionStatsAPI(model),
+        "getTransmissionsByMonth": TransmissionsByMonthAPI(model),
+        "getCloseBroadcasts": CloseBroadcastsAPI(model),
+        "getStationFrequencies": StationFrequenciesAPI(model)
     })
     
-    return MyEncodingSelector(ResetSelector(model, AuthenticationSelector(model.store,
-        MapResource({
-            "station": StationResource(model),
-            "broadcast": IDResource(model, libPriyom.Broadcast),
-            "transmission": IDResource(model, libPriyom.Transmission),
-            "transmissionClass": IDResource(model, libPriyom.TransmissionClass),
-            "schedule": IDResource(model, libPriyom.Schedule),
-            "call": apiMap,
-            "doc": DocumentationSelector(apiMap),
-            "": EmptyResource(model),
-            "css": MapResource({
-                "home.css": FileResource(os.path.join(rootPath, "www-files/css/home.css"), ContentType("text/css", "utf-8"))
-            })
-        }))),
+    return MyEncodingSelector(
+        ExceptionSelector(
+            ResetSelector(model, AuthenticationSelector(model.store, MapResource({
+                "station": StationResource(model),
+                "broadcast": IDResource(model, libPriyom.Broadcast),
+                "transmission": IDResource(model, libPriyom.Transmission),
+                "transmissionClass": IDResource(model, libPriyom.TransmissionClass),
+                "schedule": IDResource(model, libPriyom.Schedule),
+                "call": apiMap,
+                "doc": DocumentationSelector(apiMap),
+                "": EmptyResource(model),
+                "css": MapResource({
+                    "home.css": FileResource(os.path.join(rootPath, "www-files/css/home.css"), ContentType("text/css", "utf-8")),
+                    "error.css": FileResource(os.path.join(rootPath, "www-files/css/error.css"), ContentType("text/css", "utf-8"))
+                })
+            }))),
+            show = showExceptions
+        ),
         "utf-8"
     )

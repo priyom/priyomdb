@@ -5,9 +5,49 @@ import json
 from datetime import datetime, timedelta
 from libPriyom import Transmission, Station, Broadcast, Schedule
 from APIDatabase import Variable
+import re
 
 weekdayname = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 monthname = [None, 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+monthname_to_idx = {
+    'Jan': 1,
+    'Feb': 2,
+    'Mar': 3,
+    'Apr': 4,
+    'May': 5,
+    'Jun': 6,
+    'Jul': 7,
+    'Aug': 8,
+    'Sep': 9,
+    'Oct': 10,
+    'Nov': 11,
+    'Dec': 12
+}
+rfc1123 = {
+    "expression": re.compile("[A-Za-z]{3},\s+([0-9]{2})\s+([A-Za-z]{3})\s+([0-9]{4})\s+([0-9]{2}:[0-9]{2}:[0-9]{2})\s+GMT"),
+    "year": 2,
+    "month": 1,
+    "day": 0,
+    "time": 3,
+    "yearmode": "%Y"
+}
+rfc850 = {
+    "expression": re.compile("[A-Za-z]+,\s+([0-9]{2})-([A-Za-z]{3})-([0-9]{2})\s+([0-9]{2}:[0-9]{2}:[0-9]{2})\s+GMT"),
+    "year": 2,
+    "month": 1,
+    "day": 0,
+    "time": 3,
+    "yearmode": "%y"
+}
+asctime = {
+    "expression": re.compile("[A-Za-z]{3}\s+([A-Za-z]{3})\s+([0-9]{1,2})\s+([0-9]{2}:[0-9]{2}:[0-9]{2})\s+([0-9]{4})"),
+    "year": 3,
+    "month": 0,
+    "day": 1,
+    "time": 2,
+    "yearmode": "%Y"
+}
+
 
 class WebModel(object):
     def __init__(self, priyomInterface):
@@ -31,6 +71,14 @@ class WebModel(object):
     def setDistinct(self, distinct):
         self.distinct = distinct
         
+    def __call__(self, query):
+        return self.limitResults(query)
+        
+    def getVarLastUpdate(self):
+        if self.varLastUpdate is None:
+            self.varLastUpdate = self.store.get(Variable, u"lastImport")
+        return self.varLastUpdate
+        
     def checkReset(self):
         if self.varLastUpdate is None:
             self.varLastUpdate = self.store.get(Variable, u"lastImport")
@@ -44,6 +92,12 @@ class WebModel(object):
         self.store.reset()
         self.varLastUpdate = self.store.get(Variable, u"lastImport")
         self.lastReset = self.now()
+        
+    def getLastUpdate(self):
+        self.getVarLastUpdate()
+        if self.varLastUpdate is None:
+            return self.now()
+        return self.varLastUpdate.Value
     
     def exportToXml(self, obj, flags = None):
         if flags is None:
@@ -64,65 +118,43 @@ class WebModel(object):
         
     def formatHTTPDate(self, dt):
         global weekdayname, monthname
-        return dt.strftime("%%s, %d %%s %Y %T UTC") % (weekdayname[dt.weekday()], monthname[dt.month])
+        return dt.strftime("%%s, %d %%s %Y %T GMT") % (weekdayname[dt.weekday()], monthname[dt.month])
         
     def formatHTTPTimestamp(self, timestamp):
         return self.formatHTTPDate(datetime.fromtimestamp(timestamp))
         
+    def parseHTTPDate(self, httpDate):
+        global rfc1123, rfc850, asctime, monthname_to_idx
+        standard = rfc1123
+        match = standard["expression"].match(httpDate)
+        if match is None:
+            standard = rfc850
+            match = standard["expression"].match(httpDate)
+        if match is None:
+            standard = asctime
+            match = standard["expression"].match(httpDate)
+        if match is None:
+            raise ValueError("%r does not match any standard (rfc1123, rfc850 and asctime supported)." % (httpDate))
+        
+        groups = match.groups()
+        year = groups[standard["year"]]
+        try:
+            month = monthname_to_idx[groups[standard["month"]]]
+        except KeyError:
+            return None
+        day = groups[standard["day"]]
+        time = groups[standard["time"]]
+        
+        return datetime.strptime("%s %d %s %s" % (year, month, day, time), "%s %%m %%d %%H:%%M:%%S" % (standard["yearmode"]))
+    
+    def parseHTTPTimestamp(self, httpDate):
+        return self.toTimestamp(self.parseHTTPDate(httpDate))
+        
     def now(self):
-        return int(time.mktime(datetime.utcnow().timetuple()))
-        
-    def normalizeDate(self, dateTime):
-        return datetime(year=dateTime.year, month=dateTime.month, day=dateTime.day)
-        
-    def toTimestamp(self, dateTime):
-        return time.mktime(dateTime.timetuple())
+        return self.priyomInterface.now()
         
     def importFromXml(self, doc, context = None, flags = None):
-        context = context if context is not None else self.priyomInterface.getImportContext()
-        for node in (node for node in doc.documentElement.childNodes if node.nodeType == dom.Node.ELEMENT_NODE):
-            if node.tagName == "delete":
-                try:
-                    clsName = node.getAttribute("type")
-                    id = node.getAttribute("id")
-                except:
-                    context.log("Something is wrong -- perhaps a missing attribute?")
-                    continue
-                try:
-                    cls = {
-                        "transmission": Transmission,
-                        "broadcast": Broadcast,
-                        "station": Station,
-                        "schedule": Schedule
-                    }[clsName]
-                except KeyError:
-                    context.log("Attempt to delete unknown type: %s" % node.getAttribute("type"))
-                    continue
-                try:
-                    id = int(id)
-                except ValueError:
-                    context.log("Supplied invalid id to delete: %s" % node.getAttribute("id"))
-                    continue
-                obj = self.store.get(cls, id)
-                if obj is None:
-                    context.log("Cannot delete %s with id %d: Not found" % (str(cls), id))
-                    continue
-                if not self.priyomInterface.delete(obj, node.hasAttribute("force") and (node.getAttribute("force") == "true")):
-                    context.log(u"Could not delete %s with id %d (did you check there are no more objects associated with it?)" % (unicode(cls), id))
-                else:
-                    context.log(u"Deleted %s with id %d" % (unicode(cls), id))
-            else:
-                try:
-                    cls = {
-                        "transmission": Transmission,
-                        "broadcast": Broadcast,
-                        "station": Station,
-                        "schedule": Schedule
-                    }[node.tagName]
-                except KeyError:
-                    context.log("Invalid transaction node: %s" % node.tagName)
-                    continue
-                context.importFromDomNode(node, cls)
+        context = self.priyomInterface.importTransaction(doc)
         self.varLastUpdate.Value = unicode(self.now())
         self.store.commit()
         self.resetStore()

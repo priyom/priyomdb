@@ -42,18 +42,36 @@ class Resource(object):
         self.trans = trans
         self.out = trans.get_response_stream()
         self.query = trans.get_fields_from_path()
+        ifModifiedSince = trans.get_header_values("If-Modified-Since")
+        if len(ifModifiedSince) > 0:
+            try:
+                self.ifModifiedSince = self.model.parseHTTPDate(ifModifiedSince[-1])
+            except ValueError as e:
+                trans.set_response_code(400)
+                print >>self.out, "If-Modified-Since date given in a invalid format: %s" % str(e)
+                raise EndOfResponse
+            self.ifModifiedSinceUnix = self.priyomInterface.toTimestamp(self.ifModifiedSince)
+        else:
+            self.ifModifiedSince = None
+            self.ifModifiedSinceUnix = None
         self.normalizeQueryDict()
         self.setupModel()
+        self.head = trans.get_request_method() == "HEAD"
         try:
             result = self.handle(trans)
         finally:
-            self.store.commit()
+            self.store.flush()
         return result
         
     def parameterError(self, parameterName, message = None):
         self.trans.set_response_code(400)
         print >>self.out, "Call error: Parameter error: %s%s" % (parameterName, " ("+message+")" if message is not None else "")
         raise EndOfResponse
+        
+    def autoNotModified(self, lastModified):
+        if self.ifModifiedSinceUnix is not None and long(lastModified) != long(self.ifModifiedSinceUnix):
+            self.trans.set_response_code(304)
+            return EndOfResponse
         
     def getQueryInt(self, name, message = None):
         try:

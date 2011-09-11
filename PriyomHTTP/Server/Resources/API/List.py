@@ -10,9 +10,14 @@ class ListAPI(API):
     def handle(self, trans):
         super(ListAPI, self).handle(trans)
         
-        items = self.store.find(self.cls)
-        self.model.limitResults(items)
         
+        
+        lastModified, items = self.priyomInterface.listObjects(self.cls, limiter=self.model, notModifiedCheck=self.autoNotModified, head=self.head)
         trans.set_content_type(ContentType("application/xml"))
+        trans.set_header_value("Last-Modified", self.model.formatHTTPTimestamp(float(lastModified)))
+        if self.head:
+            return
+        
+        
         print >>self.out, self.model.exportListToXml(items, self.cls)
 

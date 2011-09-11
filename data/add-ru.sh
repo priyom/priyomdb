@@ -1,0 +1,2 @@
+#!/bin/bash
+sed -r "s/([0-9?]{2} [0-9?]{3}) ([^ ]+)/\1 \nkeyword \2\nru \2\n/;s/(([0-9?]{2} ){4})([^ ]+)/\1\nkeyword \3\nru \3\n/;" | sed -r "/ru /{;s/Ts/Ц/;s/Ch/Ч/;s/Shch/Щ/;s/Sh/Ш/;s/Yu/Ю/;s/Ya/Я/;s/Ye/Е/;s/A/А/;s/B/Б/;s/V/В/;s/G/Г/;s/D/Д/;s/E/Е/;s/Z/З/;s/I/И/;s/J/Й/;s/K/К/;s/L/Л/;s/M/М/;s/N/Н/;s/O/О/;s/P/П/;s/R/Р/;s/S/С/;s/T/Т/;s/U/У/;s/F/Ф/;s/H/Х/;s/C/Ц/;s/\"/Ъ/;s/Y/Ы/;s/'/Ь/;};" | sed -r "/transmission/{;N;: next-keyword;s/\nkeyword //;N;s/\nru / ru /;N;s/\n(( [0-9?]{2}){4})/\1/;N;/keyword/b next-keyword;P;D;};"
