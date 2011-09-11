@@ -69,6 +69,8 @@ class Resource(object):
         raise EndOfResponse
         
     def autoNotModified(self, lastModified):
+        if lastModified is None:
+            return
         if self.ifModifiedSinceUnix is not None and long(lastModified) == long(self.ifModifiedSinceUnix):
             self.trans.set_response_code(304)
             raise EndOfResponse

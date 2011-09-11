@@ -343,10 +343,9 @@ class PriyomInterface:
         broadcasts = self.store.find(Broadcast, where)
         lastModified = max(
             broadcasts.max(Broadcast.Modified),
-            station.BroadcastDeleted
+            station.BroadcastDeleted,
+            station.Schedule.Modified if (station is not None and station.Schedule is not None) else None
         )
-        if station is not None and station.Schedule is not None:
-            lastModified = station.Schedule.Modified if station.Schedule.Modified > lastModified else lastModified
         if head:
             return (lastModified, None)
         if notModifiedCheck is not None:
