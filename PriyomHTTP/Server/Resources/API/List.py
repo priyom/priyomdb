@@ -14,6 +14,7 @@ class ListAPI(API):
         if self.head:
             return
         
-        
-        print >>self.out, self.model.exportListToXml(items, self.cls)
+        # flags must not be enabled here; otherwise a permission leak
+        # is possible.
+        print >>self.out, self.model.exportListToXml(items, self.cls, flags = frozenset())
 
