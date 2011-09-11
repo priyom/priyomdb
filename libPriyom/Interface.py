@@ -363,8 +363,7 @@ class PriyomInterface:
             else:
                 validUntil = self.scheduleMaintainer.updateSchedule(station, until, maxTimeRange)
             # trans.set_header_value("Expires", self.model.formatHTTPTimestamp(validUntil))
-        
-        return (lastModified, broadcasts if limiter is None else limiter(broadcasts), validUntil < until)
+        return (lastModified, broadcasts if limiter is None else limiter(broadcasts), validUntil >= until)
         
     def getStationFrequencies(self, station, notModifiedCheck = None, head = False):
         global UPCOMING, PAST, ONAIR
