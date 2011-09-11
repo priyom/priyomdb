@@ -3,13 +3,16 @@ from libPriyom import *
 from API import API
 
 class ImportAPI(API):
+    def __init__(self, model):
+        super(ImportAPI, self).__init__(model)
+        self.allowedMethods = set("GET", "POST")
+    
     def handle(self, trans):
         if trans.get_request_method() == "GET":
+            trans.set_response_code(405)
+            trans.set_header_value("Allow", "POST")
             trans.set_content_type(ContentType("text/plain"))
             print >>self.out, "POST your transaction data either as application/xml or as application/json according to priyom.org transaction specification"
-            return
-        if trans.get_request_method() != "POST":
-            trans.set_response_code(400)
             return
         trans.set_content_type(ContentType("text/plain"))
         
