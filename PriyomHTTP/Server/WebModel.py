@@ -98,16 +98,22 @@ class WebModel(object):
         if self.varLastUpdate is None:
             return self.now()
         return self.varLastUpdate.Value
+        
+    def exportToDom(self, obj, flags = None):
+        if flags is None:
+            flags = self.currentFlags
+        return self.priyomInterface.exportToDom(obj, flags)
     
     def exportToXml(self, obj, flags = None):
+        self.exportToDom(obj, flags).toxml()
+        
+    def exportListToDom(self, list, classType, flags = None):
         if flags is None:
             flags = self.currentFlags
-        return self.priyomInterface.exportToDom(obj, flags).toxml()
+        return self.priyomInterface.exportListToDom(list, classType, flags)
         
     def exportListToXml(self, list, classType, flags = None):
-        if flags is None:
-            flags = self.currentFlags
-        return self.priyomInterface.exportListToDom(list, classType, flags).toxml()
+        self.exportListToXml(list, classType, flags).toxml()
         
     def getExportDoc(self, rootNodeName):
         return self.priyomInterface.createDocument(rootNodeName)
