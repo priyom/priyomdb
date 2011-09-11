@@ -103,6 +103,8 @@ class PriyomInterface:
             self.deleteTransmissionBlock(block, True)
         if obj.ForeignCallsign is not None:
             Store.of(obj.ForeignCallsign.supplement).remove(obj.ForeignCallsign.supplement)
+        if obj.Broadcast is not None:
+            obj.Broadcast.transmissionDeleted()
         store.remove(obj)
         return True
         
@@ -136,6 +138,8 @@ class PriyomInterface:
                 return False
             if leaves.count() > 0:
                 return False
+        if self.Parent is not None:
+            self.Parent.touch()
         store.remove(Schedule)
         return True
     
@@ -161,6 +165,8 @@ class PriyomInterface:
             if transmissions.count() > 0:
                 return False
         store.find(BroadcastFrequency, BroadcastFrequency.BroadcastID == obj.ID).remove()
+        if self.Station is not None:
+            self.Station.broadcastDeleted()
         store.remove(obj)
         return True
         
