@@ -5,7 +5,7 @@ from API import API
 class ImportAPI(API):
     def __init__(self, model):
         super(ImportAPI, self).__init__(model)
-        self.allowedMethods = set(("GET", "POST"))
+        self.allowedMethods = frozenset(["GET", "POST"])
     
     def handle(self, trans):
         if trans.get_request_method() == "GET":
