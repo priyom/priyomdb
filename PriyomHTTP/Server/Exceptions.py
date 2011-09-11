@@ -14,7 +14,7 @@ class ExceptionSelector(object):
         try:
             self.resource.respond(trans)
         except EndOfResponse:
-            pass
+            raise
         except:
             trans.rollback()
             trans.set_response_code(500)
