@@ -8,7 +8,7 @@ def now():
     return int(time.mktime(datetime.utcnow().timetuple()))
 
 def AutoSetModified(instance, propertyName, newValue):
-    instance.Modified = now()
+    instance.touch()
     return newValue
 
 class PriyomBase(object):
