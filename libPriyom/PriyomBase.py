@@ -8,7 +8,7 @@ def now():
     return int(time.mktime(datetime.utcnow().timetuple()))
 
 def AutoSetModified(instance, propertyName, newValue):
-    instance.Modified = now()
+    instance.touch()
     return newValue
 
 class PriyomBase(object):
@@ -41,3 +41,9 @@ class PriyomBase(object):
         if self._knownModified != self.Modified:
             store.autoreload(self)
             self._knownModified = self.Modified
+            
+    def touch(self, newModified = None):
+        if newModified is None:
+            self.Modified = now()
+        else:
+            self.Modified = newModified

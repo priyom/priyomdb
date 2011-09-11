@@ -4,11 +4,12 @@ from Schedule import Schedule
 import Imports
 from Broadcast import Broadcast
 import xml.dom.minidom as dom
-from PriyomBase import PriyomBase
+from PriyomBase import PriyomBase, now
 
 class Station(PriyomBase, XMLIntf.XMLStorm):
     __storm_table__ = "stations"
     ID = Int(primary = True)
+    BroadcastDeleted = Int()
     EnigmaIdentifier = Unicode()
     PriyomIdentifier = Unicode()
     Nickname = Unicode()
@@ -121,3 +122,6 @@ class Station(PriyomBase, XMLIntf.XMLStorm):
         
     def __str__(self):
         return "Station: %s/%s \"%s\"" % (self.EnigmaIdentifier, self.PriyomIdentifier, self.Nickname)
+        
+    def broadcastDeleted(self):
+        self.BroadcastDeleted = now()

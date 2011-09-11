@@ -4,9 +4,11 @@ from API import API
 
 
 class SessionAPI(API):
+    def __init__(self, model):
+        super(SessionAPI, self).__init__(model)
+        self.allowedMethods = frozenset(["GET"])
+    
     def handle(self, trans):
-        super(SessionAPI, self).handle(trans)
-        
         trans.set_content_type(ContentType("text/plain"))
         if (not "user" in self.query) or (not "pass" in self.query):
             print >>self.out, "failed: need user and pass arguments"

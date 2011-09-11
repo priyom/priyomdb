@@ -7,7 +7,6 @@ from datetime import datetime, timedelta
 
 class UpcomingBroadcastsAPI(API):
     def handle(self, trans):
-        super(UpcomingBroadcastsAPI, self).handle(trans)
         stationId = self.getQueryIntDefault("stationId", None, "must be integer")
         
         maxTimeRange = queryLimits.broadcasts.maxTimeRangeForUpdatingQueries if stationId is None else queryLimits.broadcasts.maxTimeRangeForStationBoundUpdatingQueries
@@ -23,10 +22,9 @@ class UpcomingBroadcastsAPI(API):
             station = None
             
         lastModified, broadcasts = self.priyomInterface.getUpcomingBroadcasts(station, all, update, timeLimit, maxTimeRange, limiter=self.model, notModifiedCheck=self.autoNotModified, head=self.head)
-        if lastModified is None:
-            lastModified = self.priyomInterface.now()
         trans.set_content_type(ContentType("application/xml"))
-        trans.set_header_value("Last-Modified", self.model.formatHTTPTimestamp(float(lastModified)))
+        if lastModified is not None:
+            trans.set_header_value("Last-Modified", self.model.formatHTTPTimestamp(float(lastModified)))
         if self.head:
             return
         broadcasts.order_by(Asc(Broadcast.BroadcastStart))
