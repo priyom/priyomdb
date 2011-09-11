@@ -9,6 +9,7 @@ from WebModel import WebModel
 from Documentation import DocumentationSelector
 from Exceptions import ExceptionSelector
 from Reset import ResetSelector
+from Compression import CompressionSelector
 import libPriyom
 from Resources import *
 from Resources.API import *
@@ -39,7 +40,7 @@ def get_site_map(priyomInterface, rootPath):
         "getStationFrequencies": StationFrequenciesAPI(model)
     })
     
-    return MyEncodingSelector(
+    return CompressionSelector(MyEncodingSelector(
         ExceptionSelector(
             ResetSelector(model, AuthenticationSelector(model.store, MapResource({
                 "station": StationResource(model),
@@ -58,4 +59,4 @@ def get_site_map(priyomInterface, rootPath):
             show = showExceptions
         ),
         "utf-8"
-    )
+    ))
