@@ -42,7 +42,7 @@ class Resource(object):
     def respond(self, trans):
         if not trans.get_request_method() in self.allowedMethods:
             trans.set_response_code(405)
-            trans.set_response_header("Allow", ", ".join(self.allowedMethods))
+            trans.set_header_value("Allow", ", ".join(self.allowedMethods))
             print >>trans.get_response_stream(), "Request method {0} is not allowed on this resource.".format(trans.get_request_method())
             raise EndOfResponse
         self.store.autoreload() # to make sure we get current data
