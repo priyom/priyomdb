@@ -10,7 +10,6 @@ class EmptyResource(Resource):
         news = self.store.find(APINews)
         news.order_by(Desc(APINews.Timestamp))
         news.config(limit=5)
-        
         newsRows = "\n                ".join((newsItem.html_row() for newsItem in news))
         if len(newsRows) == 0:
             newsRows = '<tr><td colspan="3">No news</td></tr>'
