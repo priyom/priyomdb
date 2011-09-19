@@ -13,7 +13,6 @@ from Compression import CompressionSelector
 import libPriyom
 from Resources import *
 from Resources.API import *
-from Encoding import MyEncodingSelector
 import os.path
 
 from cfg_priyomhttpd import application, response
