@@ -22,7 +22,7 @@ class UpcomingBroadcastsAPI(API):
             station = None
             
         lastModified, broadcasts, upToDate, validUntil = self.priyomInterface.getUpcomingBroadcasts(station, all, update, timeLimit, maxTimeRange, limiter=self.model, notModifiedCheck=self.autoNotModified, head=self.head)
-        trans.set_content_type(ContentType("application/xml"))
+        trans.set_content_type(ContentType("application/xml", self.encoding))
         if lastModified is not None:
             trans.set_header_value("Last-Modified", self.model.formatHTTPTimestamp(float(lastModified)))
         if self.head:
@@ -33,4 +33,4 @@ class UpcomingBroadcastsAPI(API):
         
         doc = self.model.exportListToDom(broadcasts, Broadcast, flags=frozenset())
         doc.documentElement.setAttribute("valid-until", unicode(long(validUntil)))
-        print >>self.out, doc.toxml("utf-8")
+        print >>self.out, doc.toxml(self.encoding)

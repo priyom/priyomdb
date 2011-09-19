@@ -1,3 +1,4 @@
+from WebStack.Generic import EndOfResponse
 import zlib
 import cStringIO
 import io

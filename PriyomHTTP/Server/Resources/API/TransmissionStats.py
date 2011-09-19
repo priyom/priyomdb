@@ -9,7 +9,7 @@ class TransmissionStatsAPI(API):
         stationId = self.getQueryInt("stationId", "must be integer")
         
         lastModified, months = self.priyomInterface.getTransmissionStats(stationId, notModifiedCheck=self.autoNotModified, head=self.head)
-        trans.set_content_type(ContentType("application/xml"))
+        trans.set_content_type(ContentType("application/xml", self.encoding))
         trans.set_header_value('Last-Modified', self.model.formatHTTPTimestamp(float(lastModified)))
         if self.head:
             return
@@ -23,4 +23,4 @@ class TransmissionStatsAPI(API):
             node.setAttribute("month", str(month[1]))
             rootNode.appendChild(node)
         
-        print >>self.out, doc.toxml()
+        print >>self.out, doc.toxml(encoding=self.encoding)
