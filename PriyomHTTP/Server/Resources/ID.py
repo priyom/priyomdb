@@ -29,7 +29,7 @@ class IDResource(Resource):
         self.autoNotModified(obj.Modified)
         
         trans.set_header_value("Last-Modified", self.model.formatHTTPTimestamp(obj.Modified))
-        trans.set_content_type(ContentType("application/xml"))
-        print >>self.out, self.model.exportToXml(obj)
+        trans.set_content_type(ContentType("application/xml", self.encoding))
+        print >>self.out, self.model.exportToXml(obj, encoding=self.encoding)
 
 

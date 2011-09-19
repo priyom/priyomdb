@@ -6,7 +6,7 @@ from Resource import Resource
 
 class EmptyResource(Resource):
     def handle(self, trans):
-        trans.set_content_type(ContentType("text/html"))
+        trans.set_content_type(ContentType("text/html", self.encoding))
         news = self.store.find(APINews)
         news.order_by(Desc(APINews.Timestamp))
         news.config(limit=5)
@@ -54,4 +54,4 @@ class EmptyResource(Resource):
             </tbody>
         </table>
     </body>
-</html>""" % (newsRows)).encode("utf-8")
+</html>""" % (newsRows)).encode(self.encoding)
