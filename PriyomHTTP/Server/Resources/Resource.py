@@ -32,6 +32,8 @@ class Resource(object):
     def getCharsetToUse(self, prefList, ownPreferences):
         use = None
         q = None
+        if len(prefList) == 0:
+            return ownPreference[0]
         for item in prefList:
             if q is None:
                 q = item.q
@@ -48,6 +50,11 @@ class Resource(object):
     def parsePreferences(self, trans):
         prefs = self.parseCharsetPreferences(", ".join(trans.get_header_values("Accept-Charset")))
         charset = self.getCharsetToUse(prefs, ["utf-8", "utf8"])
+        if charset is None:
+            trans.rollback()
+            trans.set_response_code(400)
+            print >>trans.get_response_stream(), "user agent does not support any charsets"
+        self.encoding = charset
         
     def setupModel(self):
         if "flags" in self.query:

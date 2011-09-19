@@ -42,7 +42,7 @@ def get_site_map(priyomInterface):
         "getStationFrequencies": StationFrequenciesAPI(model)
     })
     
-    return CompressionSelector(MyEncodingSelector(
+    return CompressionSelector(
         ExceptionSelector(
             ResetSelector(model, AuthenticationSelector(model.store, MapResource({
                 "station": StationResource(model),
@@ -59,6 +59,5 @@ def get_site_map(priyomInterface):
                 })
             }))),
             show = response["showExceptions"]
-        ),
-        "utf-8"
-    ))
+        )
+    )
