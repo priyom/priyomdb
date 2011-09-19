@@ -113,7 +113,7 @@ class WebModel(object):
         return self.priyomInterface.exportListToDom(list, classType, flags)
         
     def exportListToXml(self, list, classType, flags = None, encoding=None):
-        self.exportListToXml(list, classType, flags).toxml(encoding=encoding)
+        self.exportListToDom(list, classType, flags).toxml(encoding=encoding)
         
     def getExportDoc(self, rootNodeName):
         return self.priyomInterface.createDocument(rootNodeName)
