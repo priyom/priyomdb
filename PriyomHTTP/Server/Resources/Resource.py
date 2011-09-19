@@ -92,7 +92,7 @@ class Resource(object):
             trans.set_header_value("Allow", ", ".join(self.allowedMethods))
             print >>trans.get_response_stream(), "Request method {0} is not allowed on this resource.".format(trans.get_request_method())
             raise EndOfResponse
-        self.parsePreferences()
+        self.parsePreferences(trans)
         self.store.autoreload() # to make sure we get current data
         self.trans = trans
         self.out = trans.get_response_stream()
