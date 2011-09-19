@@ -38,7 +38,7 @@ class Resource(object):
             if q is None:
                 q = item.q
             if use is None:
-                use = item
+                use = item.value
             if item.q < q:
                 break
             if item.value in ownPreferences:
