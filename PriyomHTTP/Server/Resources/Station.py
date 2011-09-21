@@ -24,6 +24,6 @@ class StationResource(Resource):
             return
         
         trans.set_header_value("Last-Modified", self.model.formatHTTPTimestamp(lastModified))
-        trans.set_content_type(ContentType("application/xml"))
-        print >>self.out, self.model.exportToXml(station)
+        trans.set_content_type(ContentType("application/xml", self.encoding))
+        print >>self.out, self.model.exportToXml(station, encoding=self.encoding)
 
