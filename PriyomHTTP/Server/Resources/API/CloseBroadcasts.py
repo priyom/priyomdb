@@ -11,7 +11,7 @@ class CloseBroadcastsAPI(API):
         Argument(u"time", u"unix timestamp", u"center of the time area which to take into account", metavar=u"timestamp"),
         Argument(u"jitter", u"seconds", u"amount of seconds to look around the given timestamp. defaults to 600 seconds", metavar=u"seconds", optional=True)
     ]
-    docCallSyntax = CallSyntax(docArgs, "?{0}&{1}&{2}")
+    docCallSyntax = CallSyntax(docArgs, u"?{0}&{1}&{2}")
     
     def handle(self, trans):
         stationId = self.getQueryInt("stationId", "int; id of the station")

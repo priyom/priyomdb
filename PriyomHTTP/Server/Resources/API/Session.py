@@ -12,7 +12,7 @@ class SessionAPI(API):
         Argument(u"user", u"string", u"user name", metavar=u"username"),
         Argument(u"pass", u"string", u"password", metavar=u"password")
     ]
-    docCallSyntax = CallSyntax(docArgs, "?{0}&{1}")
+    docCallSyntax = CallSyntax(docArgs, u"?{0}&{1}")
     docReturnValue = u"Returns the session id on success or “failed: message” in case of an error, whereas message will be replaced by the error message."
     
     def __init__(self, model):
