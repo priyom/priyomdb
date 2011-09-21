@@ -3,3 +3,5 @@ from Authentication import AuthenticationSelector
 from Authorization import AuthorizationSelector
 from Reset import ResetSelector
 from Documentation import DocumentationSelector
+from Exceptions import ExceptionSelector
+
