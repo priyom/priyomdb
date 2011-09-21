@@ -9,12 +9,6 @@ class DocumentationSelector(object):
     
     def respond(self, trans):
         if hasattr(self.resource, "doc"):
-            parts = trans.get_virtual_path_info(self.path_encoding).split("/")
-
-            new_path = parts[0:1] + parts[2:]
-            new_path_info = "/".join(new_path)
-            trans.set_virtual_path_info(new_path_info)
-
             trans.encoding = "utf-8"
             breadcrumbs = None
             if doc.get("breadcrumbs", {}).get("enabled", False):
