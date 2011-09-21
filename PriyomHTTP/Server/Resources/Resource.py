@@ -218,6 +218,12 @@ class Resource(object):
                 "\n".join((arg.htmlRow() for arg in self.docArgs)),
                 unicode(self.docReturnValue) if hasReturnValue else None
             )
+        if hasattr(self, "docRequiredPrivilegues"):
+            result = result + (u"""
+<h3>Required privilegues</h3>
+<p>{0}</p>""").format(
+                unicode(self.docRequiredPrivilegues)
+            )
         if len(result) == 0:
             return None
         return result
