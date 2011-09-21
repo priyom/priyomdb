@@ -34,7 +34,7 @@ class MapSelector(object):
         return resource, name
         
     def formatListing(self):
-        items = [(name, resource) for name, resource in self.mapping.iteritems() if name is not None]
+        items = [(name, resource) for name, resource in self.mapping.iteritems() if len(name) > 0]
         items.sort(lambda a,b: cmp(a[0], b[0]))
         return u"\n".join(
                 (
@@ -70,16 +70,34 @@ class MapSelector(object):
         else:
             return resource.respond(trans)
             
-    def docListing(self, trans):
-        print >>trans.get_response_stream(), u"""<p>Directory listing</p>
-<ul>
-{0}
-</ul>""".format(self.formatListing()).encode(trans.encoding)
+    def docListing(self, trans, breadcrumbs):
+        self.out = trans.get_response_stream()
+        trans.set_response_code(200)
+        trans.set_content_type(ContentType("text/html", "utf-8"))
+        print >>self.out, (u"""<html>
+    <head>
+        <title>{0}{1}{2}</title>
+    </head>
+    <body>
+        <h1>Documentation</h1>"""+(u"""
+        <div class="doc-breadcrumbs">{3}</div>""" if breadcrumbs is not None else u"")+u"""
+        <h2>{0}</h2>
+        <ul>
+            {4}
+        </ul>
+    </body>
+</html>""").format(
+            self.title,
+            (misc.get("titleSeparator", u" ") + application["name"] + u" documentation") if "name" in application else u"",
+            (misc.get("titleSeparator", u" ") + application["host"]) if "host" in application else u"",
+            u"",
+            self.formatListing()
+        ).encode("utf-8")
     
     def doc(self, trans, breadcrumbs):
         resource, name = self.findResource(trans)
         if resource == self:
-            self.docListing(trans)
+            self.docListing(trans, breadcrumbs)
         else:
             breadcrumbs.append((resource, name))
             return resource.doc(trans, breadcrumbs)
