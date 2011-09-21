@@ -36,22 +36,24 @@ def get_site_map(priyomInterface):
         "getStationFrequencies": StationFrequenciesAPI(model)
     })
     
-    return CompressionSelector(
-        ExceptionSelector(
-            ResetSelector(model, AuthenticationSelector(model.store, MapResource({
-                "station": StationResource(model),
-                "broadcast": IDResource(model, libPriyom.Broadcast),
-                "transmission": IDResource(model, libPriyom.Transmission),
-                "transmissionClass": IDResource(model, libPriyom.TransmissionClass),
-                "schedule": IDResource(model, libPriyom.Schedule),
-                "call": apiMap,
-                "doc": DocumentationSelector(apiMap),
-                "": EmptyResource(model),
-                "css": MapResource({
-                    "home.css": FileResource(os.path.join(rootPath, "www-files/css/home.css"), ContentType("text/css", "utf-8")),
-                    "error.css": FileResource(os.path.join(rootPath, "www-files/css/error.css"), ContentType("text/css", "utf-8"))
-                })
-            }))),
-            show = response["showExceptions"]
+    return ContinueSelector(
+        CompressionSelector(
+            ExceptionSelector(
+                ResetSelector(model, AuthenticationSelector(model.store, MapResource({
+                    "station": StationResource(model),
+                    "broadcast": IDResource(model, libPriyom.Broadcast),
+                    "transmission": IDResource(model, libPriyom.Transmission),
+                    "transmissionClass": IDResource(model, libPriyom.TransmissionClass),
+                    "schedule": IDResource(model, libPriyom.Schedule),
+                    "call": apiMap,
+                    "doc": DocumentationSelector(apiMap),
+                    "": EmptyResource(model),
+                    "css": MapResource({
+                        "home.css": FileResource(os.path.join(rootPath, "www-files/css/home.css"), ContentType("text/css", "utf-8")),
+                        "error.css": FileResource(os.path.join(rootPath, "www-files/css/error.css"), ContentType("text/css", "utf-8"))
+                    })
+                }))),
+                show = response["showExceptions"]
+            )
         )
     )
