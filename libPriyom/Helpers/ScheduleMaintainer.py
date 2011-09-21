@@ -41,8 +41,9 @@ class UpdateContext(object):
         self.intervalEnd = intervalEnd
 
 class ScheduleMaintainer(object):
-    def __init__(self, store):
-        self.store = store
+    def __init__(self, interface):
+        self.interface = interface
+        self.store = self.interface.store
         
     @staticmethod
     def now():
@@ -170,7 +171,8 @@ class ScheduleMaintainer(object):
         return context.leafList.items
         
     def _rebuildStationSchedule(self, station, start, end):
-        self.store.find(Broadcast, Broadcast.StationID == station.ID, Broadcast.ScheduleLeaf != None, Broadcast.BroadcastStart > start).remove()
+        for broadcast in self.store.find(Broadcast, Broadcast.StationID == station.ID, Broadcast.ScheduleLeaf != None, Broadcast.BroadcastStart > start):
+            self.interface.deleteBroadcast(broadcast)
         leaves = self.getLeavesInIntervalFromRoot(station, start, end)
         for leaf in leaves:
             newBroadcast = Broadcast()

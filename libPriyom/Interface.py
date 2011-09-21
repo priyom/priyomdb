@@ -41,7 +41,7 @@ class PriyomInterface:
         if store is None:
             raise ValueError("store must not be None.")
         self.store = store
-        self.scheduleMaintainer = ScheduleMaintainer(store)
+        self.scheduleMaintainer = ScheduleMaintainer(self)
         
     def now(self):
         return int(time.mktime(datetime.utcnow().timetuple()))
