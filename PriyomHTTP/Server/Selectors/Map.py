@@ -1,9 +1,12 @@
+# encoding=utf-8
 from WebStack.Generic import EndOfResponse, ContentType
+from cfg_priyomhttpd import application
 
 class MapSelector(object):
     path_encoding = "utf-8"
     
-    def __init__(self, mapping, path_encoding=None, urlencoding=None):
+    def __init__(self, title, mapping, path_encoding=None, urlencoding=None):
+        self.title = title
         self.mapping = mapping
         self.path_encoding = path_encoding or urlencoding or self.path_encoding
         
@@ -33,9 +36,24 @@ class MapSelector(object):
         
         return resource
         
+    def listing(self, trans):
+        self.out = trans.get_response_stream()
+        trans.set_response_code(200)
+        trans.set_content_type(ContentType("text/html", "utf-8"))
+        print >>self.out, u"""<html>
+    <head>
+        <title>{0}</title>
+    </head>
+</html>""".format(
+            self.title
+        )
+        
     def respond(self, trans):
         resource = self.findResource(trans)
-        return resource.respond(trans)
+        if resource == self:
+            self.listing(trans)
+        else:
+            return resource.respond(trans)
     
     def doc(self, trans):
         resource = self.findResource(trans)

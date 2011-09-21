@@ -21,7 +21,7 @@ def get_site_map(priyomInterface):
     
     model = WebModel(priyomInterface)
     
-    apiMap = MapSelector({
+    apiMap = MapSelector("calls", {
         "getUpcomingBroadcasts": UpcomingBroadcastsAPI(model),
         "import": AuthorizationSelector(ImportAPI(model), "transaction"),
         "listStations": ListAPI(model, libPriyom.Station),
@@ -40,7 +40,7 @@ def get_site_map(priyomInterface):
     return ContinueSelector(
         CompressionSelector(
             ExceptionSelector(
-                ResetSelector(model, AuthenticationSelector(model.store, MapSelector({
+                ResetSelector(model, AuthenticationSelector(model.store, MapSelector("API root", {
                     "station": StationResource(model),
                     "broadcast": IDResource(model, libPriyom.Broadcast),
                     "transmission": IDResource(model, libPriyom.Transmission),
