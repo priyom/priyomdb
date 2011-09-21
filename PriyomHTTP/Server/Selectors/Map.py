@@ -15,11 +15,8 @@ class MapSelector(object):
         
         if len(parts) > 1:
             name = parts[1]
-        elif self.directory_redirects:
-            self.send_redirect(trans)
         else:
-            self.send_error(trans)
-            return
+            self.send_redirect(trans)
         
         resource = self.mapping.get(name)
         catch_all = False
