@@ -195,7 +195,7 @@ class ScheduleMaintainer(object):
         now = ScheduleMaintainer.now()
         if station.Schedule is None:
             return until
-        if (until - now) > limits.schedule.maxLookahead:
+        if until is None or (until - now) > limits.schedule.maxLookahead:
             until = now + limits.schedule.maxLookahead
         if station.ScheduleUpToDateUntil is None:
             start = now
@@ -213,7 +213,7 @@ class ScheduleMaintainer(object):
         now = ScheduleMaintainer.now()
         if until < now:
             return now
-        if (until - now) > limits.schedule.maxLookahead:
+        if until is None or (until - now) > limits.schedule.maxLookahead:
             until = now + limits.schedule.maxLookahead
         validUntil = until
         if limit is None:
