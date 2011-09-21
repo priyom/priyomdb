@@ -45,6 +45,8 @@ class Resource(object):
                 return item.value
             if item.value == "*" and use is None:
                 use = ownPreferences[0]
+        if use is None:
+            use = ownPreferences[0]
         return use
         
     def parsePreferences(self, trans):
