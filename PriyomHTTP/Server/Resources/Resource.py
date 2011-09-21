@@ -1,6 +1,38 @@
 from WebStack.Generic import EndOfResponse, ContentType
 from cfg_priyomhttpd import response, doc, misc, application
 
+class Argument(object):
+    def __init__(self, name, type, description, optional = False):
+        self.name = name
+        self.type = type
+        self.description = description
+        self.optional = optional
+    
+    def htmlSynopsis(self):
+        return (u"""<em>{0}</em>""" if self.optional else u"""{0}""").format(self.name)
+    
+    def htmlRow(self):
+        return u"""<tr>
+    <td>{0}</td>
+    <td>{1}</td>
+    <td>{2}</td>
+</tr>""".format(
+            u"""<em>"""+self.name+u"""</em>""" if self.optional else self.name,
+            unicode(self.type),
+            self.description
+        )
+        
+    def __unicode__(self):
+        return u"""{0}: {1}""".format(self.type, self.description)
+        
+class CallSyntax(object):
+    def __init__(self, args, format):
+        self.format = format
+        self.args = args
+    
+    def __unicode__(self):
+        return self.format.format((arg.htmlSynopsis() for arg in self.args))
+
 class Preference(object):
     def __init__(self, value, q):
         self.value = value
@@ -173,7 +205,7 @@ class Resource(object):
 <h3>Return value</h3>
 {2}""".format(
                 unicode(self.callSyntax),
-                "\n".join((arg.docRowUnicode() for arg in self.docArgs)),
+                "\n".join((arg.htmlRow() for arg in self.docArgs)),
                 unicode(self.returnValue)
             )
         if len(result) == 0:
