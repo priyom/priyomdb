@@ -2,14 +2,18 @@ from WebStack.Generic import EndOfResponse, ContentType
 from cfg_priyomhttpd import response, doc, misc, application
 
 class Argument(object):
-    def __init__(self, name, type, description, optional = False):
+    def __init__(self, name, type, description, metavar = None, optional = False):
         self.name = name
         self.type = type
         self.description = description
         self.optional = optional
+        self.metavar = metavar
     
     def htmlSynopsis(self):
-        return (u"""<em>{0}</em>""" if self.optional else u"""{0}""").format(self.name)
+        if self.metavar:
+            return (u"""<em>{0}=<u>{1}</u></em>""" if self.optional else u"""{0}=<u>{1}</u>""").format(self.name, self.metavar)
+        else:
+            return (u"""<em>{0}</em>""" if self.optional else u"""{0}""").format(self.name)
     
     def htmlRow(self):
         return u"""<tr>
@@ -31,7 +35,8 @@ class CallSyntax(object):
         self.args = args
     
     def __unicode__(self):
-        return self.format.format((arg.htmlSynopsis() for arg in self.args))
+        args = [arg.htmlSynopsis() for arg in self.args]
+        return self.format.format(*args)
 
 class Preference(object):
     def __init__(self, value, q):
@@ -163,7 +168,7 @@ class Resource(object):
         
         trans.set_response_code(200)
         trans.set_content_type(ContentType("text/html", "utf-8"))
-        print >>self.out, u"""<html>
+        print >>self.out, (u"""<html>
     <head>
         <title>{0}{1}{2}</title>
     </head>
@@ -174,7 +179,7 @@ class Resource(object):
         <p>{4}</p>
         {5}
     </body>
-</html>""".format(
+</html>""").format(
             self.title,
             (misc.get("titleSeparator", u" ") + application["name"] + u" documentation") if "name" in application else u"",
             (misc.get("titleSeparator", u" ") + application["host"]) if "host" in application else u"",
@@ -185,8 +190,9 @@ class Resource(object):
         
     def handleDoc(self):
         result = u""
-        if hasattr(self, "docArgs") and hasattr(self, "docCallSyntax") and hasattr(self, "docReturnValue"):
-            result = result + u"""
+        if hasattr(self, "docArgs") and hasattr(self, "docCallSyntax"):
+            hasReturnValue = hasattr(self, "docReturnValue")
+            result = result + (u"""
 <h3>Call syntax</h3>
 <p>{0}</p>
 <h3>Arguments</h3>
@@ -201,12 +207,12 @@ class Resource(object):
     <tbody>
 {1}
     </tbody>
-</table>
+</table>"""+(u"""
 <h3>Return value</h3>
-{2}""".format(
-                unicode(self.callSyntax),
+{2}""" if hasReturnValue else u"")).format(
+                unicode(self.docCallSyntax),
                 "\n".join((arg.htmlRow() for arg in self.docArgs)),
-                unicode(self.returnValue)
+                unicode(self.docReturnValue) if hasReturnValue else None
             )
         if len(result) == 0:
             return None
