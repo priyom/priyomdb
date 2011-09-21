@@ -1,0 +1,1 @@
+from Compression import CompressionSelector
