@@ -4,18 +4,14 @@ from API import API
 from libPriyom.Interface import PAST, ONAIR, UPCOMING
 
 class StationFrequenciesAPI(API):
-    def __init__(self, model):
-        super(StationFrequenciesAPI, self).__init__(model)
-    
     def handle(self, trans):
-        super(StationFrequenciesAPI, self).handle(trans)
         stationId = self.getQueryInt("stationId", "must be integer")
         station = self.store.get(Station, stationId)
         if station is None:
             self.parameterError("stationId", "Station does not exist")
         
         lastModified, frequencies = self.priyomInterface.getStationFrequencies(station, notModifiedCheck=self.autoNotModified, head=self.head)
-        trans.set_content_type(ContentType("application/xml"))
+        trans.set_content_type(ContentType("application/xml", self.encoding))
         trans.set_header_value("Last-Modified", self.model.formatHTTPTimestamp(lastModified))
         if self.head:
             return
@@ -31,6 +27,6 @@ class StationFrequenciesAPI(API):
                 node.setAttribute("unix", unicode(timestamp))
             rootNode.appendChild(node)
         
-        print >>self.out, doc.toxml()
+        print >>self.out, doc.toxml(encoding=self.encoding)
 
 

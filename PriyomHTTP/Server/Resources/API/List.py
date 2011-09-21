@@ -8,16 +8,13 @@ class ListAPI(API):
         self.cls = cls
     
     def handle(self, trans):
-        super(ListAPI, self).handle(trans)
-        
-        
-        
         lastModified, items = self.priyomInterface.listObjects(self.cls, limiter=self.model, notModifiedCheck=self.autoNotModified, head=self.head)
-        trans.set_content_type(ContentType("application/xml"))
+        trans.set_content_type(ContentType("application/xml", self.encoding))
         trans.set_header_value("Last-Modified", self.model.formatHTTPTimestamp(float(lastModified)))
         if self.head:
             return
         
-        
-        print >>self.out, self.model.exportListToXml(items, self.cls)
+        # flags must not be enabled here; otherwise a permission leak
+        # is possible.
+        print >>self.out, self.model.exportListToXml(items, self.cls, flags = frozenset(), encoding=self.encoding)
 

@@ -1,5 +1,5 @@
 from WebStack.Generic import ContentType, EndOfResponse
-from APIDatabase import APIKey, APISession
+from ..APIDatabase import APIKey, APISession
 
 class AuthenticationFailed(Exception):
     pass

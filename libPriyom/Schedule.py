@@ -172,6 +172,13 @@ class Schedule(PriyomBase, XMLIntf.XMLStorm):
             for schedule in list(self.Children):
                 schedule.Parent = None
             self._schedulesFromDom(node, context)
+            
+    def touch(self, newModified = None):
+        super(Schedule, self).touch(newModified)
+        if self.Parent is None:
+            return
+        if self.Modified > self.Parent.Modified:
+            self.Parent.touch(self.Modified)
         
     def __repr__(self):
         return '<Schedule id="%d" kind="%s" start-offset="%d" end-offset="%r">%s</Schedule>' % (self.ID, self.ScheduleKind, self.StartTimeOffset, self.EndTimeOffset, self.Name)
