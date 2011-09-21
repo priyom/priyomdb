@@ -41,7 +41,7 @@ class PriyomInterface:
         if store is None:
             raise ValueError("store must not be None.")
         self.store = store
-        self.scheduleMaintainer = ScheduleMaintainer(store)
+        self.scheduleMaintainer = ScheduleMaintainer(self)
         
     def now(self):
         return int(time.mktime(datetime.utcnow().timetuple()))
@@ -347,7 +347,7 @@ class PriyomInterface:
             station.Schedule.Modified if (station is not None and station.Schedule is not None) else None
         )
         if head:
-            return (lastModified, None, None)
+            return (lastModified, None, None, None)
         if notModifiedCheck is not None:
             notModifiedCheck(lastModified)
         
@@ -363,7 +363,7 @@ class PriyomInterface:
             else:
                 validUntil = self.scheduleMaintainer.updateSchedule(station, until, maxTimeRange)
             # trans.set_header_value("Expires", self.model.formatHTTPTimestamp(validUntil))
-        return (lastModified, broadcasts if limiter is None else limiter(broadcasts), validUntil >= until)
+        return (lastModified, broadcasts if limiter is None else limiter(broadcasts), validUntil >= until, validUntil)
         
     def getStationFrequencies(self, station, notModifiedCheck = None, head = False):
         global UPCOMING, PAST, ONAIR

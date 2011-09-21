@@ -16,9 +16,9 @@ class TransmissionsByMonthAPI(API):
         lastModified, transmissions = self.priyomInterface.getTransmissionsByMonth(stationId, year, month, limiter=None, notModifiedCheck=self.autoNotModified, head=self.head)
         
         trans.set_header_value('Last-Modified', self.model.formatHTTPTimestamp(float(lastModified)))
-        trans.set_content_type(ContentType('application/xml'))
+        trans.set_content_type(ContentType('application/xml', self.encoding))
         if self.head:
             return
         
-        print >>self.out, self.model.exportListToXml(transmissions, Transmission)
+        print >>self.out, self.model.exportListToXml(transmissions, Transmission, encoding=self.encoding)
 

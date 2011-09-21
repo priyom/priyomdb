@@ -1,5 +1,19 @@
 from WebStack.Generic import EndOfResponse
 
+class Preference(object):
+    def __init__(self, value, q):
+        self.value = value
+        self.q = q
+    
+    def __cmp__(self, other):
+        if issubclass(type(other), Preference):
+            return cmp(self.q, other.q)
+        else:
+            raise TypeError("Cannot compare {0} and {1}.".format(type(self), type(other)))
+            
+    def __str__(self):
+        return "{0};q={1:.2f}".format(self.value, self.q)
+
 class Resource(object):
     allowedMethods = frozenset(["HEAD", "GET"])
     
@@ -8,6 +22,41 @@ class Resource(object):
         self.priyomInterface = self.model.priyomInterface
         self.store = self.priyomInterface.store
         self.modelAutoSetup = True
+        
+    def parseCharsetPreferences(self, charsetPreferences):
+        prefs = (s.lstrip().rstrip().lower().partition(';') for s in charsetPreferences.split(","))
+        prefs = [Preference(charset, float(q[2:]) if len(q) > 0 else 1.0) for (charset, sep, q) in prefs if not (len(q) > 0 and float(q[2:])==0) and len(charset) > 0]
+        prefs.sort(reverse=True)        
+        return prefs
+        
+    def getCharsetToUse(self, prefList, ownPreferences):
+        use = None
+        q = None
+        if len(prefList) == 0:
+            return ownPreferences[0]
+        for item in prefList:
+            if q is None:
+                q = item.q
+            if use is None:
+                use = item.value
+            if item.q < q:
+                break
+            if item.value in ownPreferences:
+                return item.value
+            if item.value == "*" and use is None:
+                use = ownPreferences[0]
+        if use is None:
+            use = ownPreferences[0]
+        return use
+        
+    def parsePreferences(self, trans):
+        prefs = self.parseCharsetPreferences(", ".join(trans.get_header_values("Accept-Charset")))
+        charset = self.getCharsetToUse(prefs, ["utf-8", "utf8"])
+        if charset is None:
+            trans.rollback()
+            trans.set_response_code(400)
+            print >>trans.get_response_stream(), "user agent does not support any charsets"
+        self.encoding = charset
         
     def setupModel(self):
         if "flags" in self.query:
@@ -45,6 +94,7 @@ class Resource(object):
             trans.set_header_value("Allow", ", ".join(self.allowedMethods))
             print >>trans.get_response_stream(), "Request method {0} is not allowed on this resource.".format(trans.get_request_method())
             raise EndOfResponse
+        self.parsePreferences(trans)
         self.store.autoreload() # to make sure we get current data
         self.trans = trans
         self.out = trans.get_response_stream()

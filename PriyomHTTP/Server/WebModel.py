@@ -6,6 +6,8 @@ from datetime import datetime, timedelta
 from libPriyom import Transmission, Station, Broadcast, Schedule
 from APIDatabase import Variable
 import re
+import cStringIO
+import io
 
 weekdayname = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 monthname = [None, 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
@@ -47,7 +49,19 @@ asctime = {
     "time": 2,
     "yearmode": "%Y"
 }
-
+class Encoder(io.IOBase):
+    def __init__(self, targetEncoding):
+        self.buffer = cStringIO.StringIO()
+        self.targetEncoding = targetEncoding
+        
+    def write(self, buf):
+        self.buffer.write(buf.encode(self.targetEncoding, errors='xmlcharrefreplace'))
+        
+    def getvalue(self):
+        return self.buffer.getvalue()
+    
+    def close(self):
+        self.buffer.close()
 
 class WebModel(object):
     def __init__(self, priyomInterface):
@@ -98,16 +112,29 @@ class WebModel(object):
         if self.varLastUpdate is None:
             return self.now()
         return self.varLastUpdate.Value
-    
-    def exportToXml(self, obj, flags = None):
-        if flags is None:
-            flags = self.currentFlags
-        return self.priyomInterface.exportToDom(obj, flags).toxml()
         
-    def exportListToXml(self, list, classType, flags = None):
+    def domToXml(self, dom, encoding):
+        writer = Encoder(encoding)
+        dom.writexml(writer)
+        str = writer.getvalue()
+        writer.close()
+        return str
+        
+    def exportToDom(self, obj, flags = None):
         if flags is None:
             flags = self.currentFlags
-        return self.priyomInterface.exportListToDom(list, classType, flags).toxml()
+        return self.priyomInterface.exportToDom(obj, flags)
+    
+    def exportToXml(self, obj, flags = None, encoding=None):
+        return self.domToXml(self.exportToDom(obj, flags), encoding)
+        
+    def exportListToDom(self, list, classType, flags = None):
+        if flags is None:
+            flags = self.currentFlags
+        return self.priyomInterface.exportListToDom(list, classType, flags)
+        
+    def exportListToXml(self, list, classType, flags = None, encoding=None):
+        return self.domToXml(self.exportListToDom(list, classType, flags), encoding)
         
     def getExportDoc(self, rootNodeName):
         return self.priyomInterface.createDocument(rootNodeName)
