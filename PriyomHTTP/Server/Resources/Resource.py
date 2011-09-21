@@ -21,9 +21,9 @@ class Argument(object):
     <td>{1}</td>
     <td>{2}</td>
 </tr>""".format(
-            u"""<em>"""+self.name+u"""</em>""" if self.optional else self.name,
+            self.name,
             unicode(self.type),
-            self.description
+            (u"""(optional) """ if self.optional else u"")+self.description
         )
         
     def __unicode__(self):
@@ -195,6 +195,7 @@ class Resource(object):
             result = result + (u"""
 <h3>Call syntax</h3>
 <p>{0}</p>
+<p><strong>Legend: </strong><em>optional arguments</em>, <u>part which is to be replaced with a value of your choice</u></p>
 <h3>Arguments</h3>
 <table class="doc-arguments">
     <thead>
