@@ -25,7 +25,7 @@ class Resource(object):
         
     def parseCharsetPreferences(self, charsetPreferences):
         prefs = (s.lstrip().rstrip().lower().partition(';') for s in charsetPreferences.split(","))
-        prefs = [Preference(charset, float(q[2:]) if len(q) > 0 else 1.0) for (charset, sep, q) in prefs if not (len(q) > 0 and float(q[2:])==0)]
+        prefs = [Preference(charset, float(q[2:]) if len(q) > 0 else 1.0) for (charset, sep, q) in prefs if not (len(q) > 0 and float(q[2:])==0) and len(charset) > 0]
         prefs.sort(reverse=True)        
         return prefs
         
@@ -33,7 +33,7 @@ class Resource(object):
         use = None
         q = None
         if len(prefList) == 0:
-            return ownPreference[0]
+            return ownPreferences[0]
         for item in prefList:
             if q is None:
                 q = item.q
@@ -45,6 +45,8 @@ class Resource(object):
                 return item.value
             if item.value == "*" and use is None:
                 use = ownPreferences[0]
+        if use is None:
+            use = ownPreferences[0]
         return use
         
     def parsePreferences(self, trans):
