@@ -213,8 +213,6 @@ class ScheduleMaintainer(object):
     
     def updateSchedules(self, until, limit = None):
         now = ScheduleMaintainer.now()
-        if until < now:
-            return now
         if until is None or (until - now) > limits.schedule.maxLookahead:
             until = now + limits.schedule.maxLookahead
         validUntil = until
