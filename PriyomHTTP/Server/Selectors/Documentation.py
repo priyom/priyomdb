@@ -6,6 +6,7 @@ class DocumentationSelector(object):
     
     def respond(self, trans):
         if hasattr(self.resource, "doc"):
+            trans.encoding = "utf-8"
             return self.resource.doc(trans)
         else:
             trans.rollback()

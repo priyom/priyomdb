@@ -1,6 +1,6 @@
 # encoding=utf-8
 from WebStack.Generic import EndOfResponse, ContentType
-from cfg_priyomhttpd import application
+from cfg_priyomhttpd import application, misc, doc
 
 class MapSelector(object):
     path_encoding = "utf-8"
@@ -36,17 +36,35 @@ class MapSelector(object):
         
         return resource
         
+    def formatListing(self):
+        items = [(name, resource) for name, resource in self.mapping.iteritems() if name is not None]
+        items.sort(lambda a,b: cmp(a[0], b[0]))
+        return u"\n".join(
+                (
+                    u"""<li><a href="{0}">/{0}</a> ({1})</li>""".format(name, resource.shortDescription) if hasattr(resource, "shortDescription") else 
+                    u"""<li><a href="{0}">/{0}</a></li>""".format(name) for name, resource in items
+                ))
+        
     def listing(self, trans):
         self.out = trans.get_response_stream()
         trans.set_response_code(200)
         trans.set_content_type(ContentType("text/html", "utf-8"))
         print >>self.out, u"""<html>
     <head>
-        <title>{0}</title>
+        <title>{0}{1}{2}</title>
     </head>
+    <body>
+        <h1>Index of {0}</h1>
+        <ul>
+            {3}
+        </ul>
+    </body>
 </html>""".format(
-            self.title
-        )
+            self.title,
+            (misc.get("titleSeparator", u" ") + application["name"]) if "name" in application else "",
+            (misc.get("titleSeparator", u" ") + application["host"]) if "host" in application else "",
+            self.formatListing()
+        ).encode("utf-8")
         
     def respond(self, trans):
         resource = self.findResource(trans)
@@ -54,10 +72,19 @@ class MapSelector(object):
             self.listing(trans)
         else:
             return resource.respond(trans)
+            
+    def docListing(self, trans):
+        print >>trans.get_response_stream(), u"""<p>Directory listing</p>
+<ul>
+{0}
+</ul>""".format(self.formatListing()).encode(trans.encoding)
     
     def doc(self, trans):
         resource = self.findResource(trans)
-        return resource.doc(trans)
+        if resource == self:
+            self.docListing(trans)
+        else:
+            return resource.doc(trans)
         
     def send_error(self, trans):
         trans.rollback()
