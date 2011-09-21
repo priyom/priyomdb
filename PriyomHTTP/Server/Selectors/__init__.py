@@ -1,3 +1,4 @@
 from Compression import CompressionSelector
 from Authentication import AuthenticationSelector
 from Authorization import AuthorizationSelector
+from Exceptions import ExceptionSelector
