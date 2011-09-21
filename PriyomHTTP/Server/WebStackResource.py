@@ -33,7 +33,8 @@ def get_site_map(priyomInterface):
         "getTransmissionStats": TransmissionStatsAPI(model),
         "getTransmissionsByMonth": TransmissionsByMonthAPI(model),
         "getCloseBroadcasts": CloseBroadcastsAPI(model),
-        "getStationFrequencies": StationFrequenciesAPI(model)
+        "getStationFrequencies": StationFrequenciesAPI(model),
+        "instanciateSchedules": AuthorizationSelector(InstanciateSchedulesAPI(model), "instanciate")
     })
     
     return ContinueSelector(
