@@ -43,6 +43,7 @@ class CompressionSelector(object):
         if issubclass(type(trans.content), CompressionStream):
             trans.content = trans.content.close()
         elif "deflate" in accepted:
+            trans.set_header_value("Content-Encoding", "deflate")
             tmp = trans.content.getvalue()
             trans.content.truncate(0)
             compressor = DeflateCompressionStream(trans.content)
