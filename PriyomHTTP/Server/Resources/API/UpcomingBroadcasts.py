@@ -6,6 +6,9 @@ import time
 from datetime import datetime, timedelta
 
 class UpcomingBroadcastsAPI(API):
+    title = u"getUpcomingBroadcasts"
+    shortDescription = u"Returns a list of upcoming broadcasts"
+    
     def handle(self, trans):
         stationId = self.getQueryIntDefault("stationId", None, "must be integer")
         

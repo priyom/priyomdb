@@ -127,6 +127,8 @@ class Resource(object):
         
         breadcrumbs = None
         
+        docSubstitute = self.handleDocSubstitute if hasattr(self, "handleDocSubstitute") else u"No further documentation available."
+        
         trans.set_response_code(200)
         trans.set_content_type(ContentType("text/html", "utf-8"))
         print >>self.out, u"""<html>
@@ -146,8 +148,37 @@ class Resource(object):
             (misc.get("titleSeparator", u" ") + application["host"]) if "host" in application else u"",
             u"",
             self.shortDescription if hasattr(self, "shortDescription") else u"",
-            self.handleDoc(trans) if hasattr(self, "handleDoc") else (self.handleDocSubstitute if hasattr(self, "handleDocSubstitute") else u"No further documentation available.")
+            self.handleDoc() or docSubstitute if hasattr(self, "handleDoc") else docSubstitute
         ).encode("utf-8")
+        
+    def handleDoc(self):
+        result = u""
+        if hasattr(self, "docArgs") and hasattr(self, "docCallSyntax") and hasattr(self, "docReturnValue"):
+            result = result + u"""
+<h3>Call syntax</h3>
+<p>{0}</p>
+<h3>Arguments</h3>
+<table class="doc-arguments">
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+        </tr>
+    </thead>
+    <tbody>
+{1}
+    </tbody>
+</table>
+<h3>Return value</h3>
+{2}""".format(
+                unicode(self.callSyntax),
+                "\n".join((arg.docRowUnicode() for arg in self.docArgs)),
+                unicode(self.returnValue)
+            )
+        if len(result) == 0:
+            return None
+        return result
         
     def parameterError(self, parameterName, message = None):
         self.trans.set_response_code(400)
