@@ -1,10 +1,21 @@
 from WebStack.Generic import ContentType
 from libPriyom import *
-from API import API
+from API import API, CallSyntax, Argument
 import time
 from datetime import datetime, timedelta
 
 class TransmissionsByMonthAPI(API):
+    title = u"getTransmissionsByMonth"
+    shortDescription = u"list the transmissions of a given calendar month"
+    
+    docArgs = [
+        Argument(u"stationId", u"station id", u"select the station at which to look", metavar="stationid"),
+        Argument(u"year", u"integer year", u"year to look at", metavar="year"),
+        Argument(u"month", u"integer month (1-12)", u"month of year to look at", metavar="month")
+    ]
+    docCallSyntax = CallSyntax(docArgs, u"?{0}&{1}&{2}")
+    
+
     def handle(self, trans):
         stationId = self.getQueryInt("stationId", "must be integer")
         year = self.getQueryInt("year", "must be integer")
