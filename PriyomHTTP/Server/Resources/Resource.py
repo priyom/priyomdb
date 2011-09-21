@@ -224,6 +224,12 @@ class Resource(object):
 <p>{0}</p>""").format(
                 unicode(self.docRequiredPrivilegues)
             )
+        if hasattr(self, "docRemarks"):
+            result = result + (u"""
+<h3>Remarks</h3>
+<p>{0}</p>""").format(
+                unicode(self.docRemarks)
+            )
         if len(result) == 0:
             return None
         return result
