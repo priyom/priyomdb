@@ -4,6 +4,7 @@ from API import API
 from ...limits import queryLimits
 import time
 from datetime import datetime, timedelta
+from libPriyom.Formatting import priyomdate
 
 class InstanciateSchedulesAPI(API):
     def __init__(self, model):
@@ -17,7 +18,7 @@ class InstanciateSchedulesAPI(API):
         if self.head:
             return
         if trans.get_request_method() == "GET":
-            print >>self.out, u"Call this resource with POST to perform instanciation.".encode(self.encoding)
+            print >>self.out, u"failed: Call this resource with POST to perform instanciation.".encode(self.encoding)
             return
         
         generatedUntil = 0
@@ -26,5 +27,5 @@ class InstanciateSchedulesAPI(API):
         else:
             generatedUntil = self.priyomInterface.scheduleMaintainer.updateSchedule(self.store.get(Station, stationId), None)
         
-        print >>self.out, u"Schedules generated until {0}".format(datetime.fromtimestamp(self.priyomInterface.now())).encode(self.encoding)
+        print >>self.out, u"success: valid until {0}".format(datetime.fromtimestamp(generatedUntil).strftime(priyomdate)).encode(self.encoding)
 
