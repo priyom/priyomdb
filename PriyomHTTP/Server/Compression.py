@@ -9,7 +9,7 @@ class CompressionStream(io.IOBase):
 
 class DeflateCompressionStream(CompressionStream):
     def __init__(self, target, level = 6):
-        super(GZipCompressionStream, self).__init__(target)
+        super(DeflateCompressionStream, self).__init__(target)
         self.zipper = zlib.compressobj(level)
         
     def write(self, b):
@@ -19,7 +19,7 @@ class DeflateCompressionStream(CompressionStream):
         self.target.write(self.zipper.flush(zlib.Z_FINISH if closing else zlib.Z_SYNC_FLUSH))
         
     def close(self):
-        super(GZipCompressionStream, self).close()
+        super(DeflateCompressionStream, self).close()
         self.flush(True)
         return self.target
 
@@ -42,6 +42,13 @@ class CompressionSelector(object):
         # our stream will get killed in that case
         if issubclass(type(trans.content), CompressionStream):
             trans.content = trans.content.close()
+        elif "deflate" in accepted:
+            tmp = trans.content.getvalue()
+            trans.content.truncate(0)
+            compressor = DeflateCompressionStream(trans.content)
+            compressor.write(tmp)
+            compressor.close()
+            
         if exc is not None:
             raise exc
         
