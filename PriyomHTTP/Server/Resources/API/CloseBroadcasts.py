@@ -3,12 +3,7 @@ from libPriyom import *
 from API import API
 
 class CloseBroadcastsAPI(API):
-    def __init__(self, model):
-        super(CloseBroadcastsAPI, self).__init__(model)
-    
     def handle(self, trans):
-        super(CloseBroadcastsAPI, self).handle(trans)
-        
         stationId = self.getQueryInt("stationId", "int; id of the station")
         time = self.getQueryInt("time", "int; unix timestamp at which to look")
         jitter = self.getQueryIntDefault("jitter", 600, "int; jitter in seconds")
@@ -17,10 +12,10 @@ class CloseBroadcastsAPI(API):
             
         
         lastModified, broadcasts = self.priyomInterface.getCloseBroadcasts(stationId, time, jitter, notModifiedCheck=self.autoNotModified, head=self.head)
-        trans.set_content_type(ContentType("application/xml"))
+        trans.set_content_type(ContentType("application/xml", self.encoding))
         trans.set_header_value("Last-Modified", self.model.formatHTTPTimestamp(lastModified))
         if self.head:
             return
         
-        print >>self.out, self.model.exportListToXml(broadcasts, Broadcast)
+        print >>self.out, self.model.exportListToXml(broadcasts, Broadcast, encoding=self.encoding)
         

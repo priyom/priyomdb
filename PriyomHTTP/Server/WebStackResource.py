@@ -13,16 +13,17 @@ from Compression import CompressionSelector
 import libPriyom
 from Resources import *
 from Resources.API import *
-from Encoding import MyEncodingSelector
 import os.path
 
-from cfg_priyomhttpd import showExceptions
+from cfg_priyomhttpd import application, response
 #from Resources.API.FindStations import FindStations
 #from Resources.API.FindBroadcasts import FindBroadcasts
 #from Resources.API.FindTransmissions import FindTransmissions
 #from Resources.API.UpcomingBroadcasts import UpcomingBroadcasts
 
-def get_site_map(priyomInterface, rootPath):
+def get_site_map(priyomInterface):
+    rootPath = application["root"]
+    
     model = WebModel(priyomInterface)
     
     apiMap = MapResource({
@@ -40,7 +41,7 @@ def get_site_map(priyomInterface, rootPath):
         "getStationFrequencies": StationFrequenciesAPI(model)
     })
     
-    return CompressionSelector(MyEncodingSelector(
+    return CompressionSelector(
         ExceptionSelector(
             ResetSelector(model, AuthenticationSelector(model.store, MapResource({
                 "station": StationResource(model),
@@ -56,7 +57,6 @@ def get_site_map(priyomInterface, rootPath):
                     "error.css": FileResource(os.path.join(rootPath, "www-files/css/error.css"), ContentType("text/css", "utf-8"))
                 })
             }))),
-            show = showExceptions
-        ),
-        "utf-8"
-    ))
+            show = response["showExceptions"]
+        )
+    )
