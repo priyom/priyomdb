@@ -9,6 +9,7 @@ class ImportAPI(API):
     docArgs = []
     docCallSyntax = u""
     docRemarks = u"Must be called in POST mode, the transaction must be sent as request body with Content-Type set to application/xml."
+    docRequiredPrivilegues = u"transaction"
     
     def __init__(self, model):
         super(ImportAPI, self).__init__(model)
