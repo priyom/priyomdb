@@ -3,7 +3,6 @@ from WebStack.Resources.Static import FileResource
 from WebStack.Generic import ContentType
 
 from APIDatabase import APICapability
-from Authentication import AuthenticationSelector
 from Authorization import AuthorizationSelector
 from WebModel import WebModel
 from Documentation import DocumentationSelector
