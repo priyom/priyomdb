@@ -4,7 +4,6 @@ from WebStack.Generic import ContentType
 
 from APIDatabase import APICapability
 from WebModel import WebModel
-from Documentation import DocumentationSelector
 from Exceptions import ExceptionSelector
 import libPriyom
 from Resources import *
