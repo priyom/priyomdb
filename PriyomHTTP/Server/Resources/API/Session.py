@@ -1,9 +1,20 @@
+# encoding=utf-8
 from WebStack.Generic import ContentType
 from ...APIDatabase import APIUser
-from API import API
+from API import API, CallSyntax, Argument
 
 
 class SessionAPI(API):
+    title = u"getSession"
+    shortDescription = u"Login and get a session id"
+    
+    docArgs = [
+        Argument(u"user", u"string", u"user name", metavar=u"username"),
+        Argument(u"pass", u"string", u"password", metavar=u"password")
+    ]
+    docCallSyntax = CallSyntax(docArgs, u"?{0}&{1}")
+    docReturnValue = u"Returns the session id on success or “failed: message” in case of an error, whereas message will be replaced by the error message."
+    
     def __init__(self, model):
         super(SessionAPI, self).__init__(model)
         self.allowedMethods = frozenset(["GET"])

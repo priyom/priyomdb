@@ -1,8 +1,15 @@
 from WebStack.Generic import ContentType
 from libPriyom import *
-from API import API
+from API import API, CallSyntax, Argument
 
 class ListModulationsAPI(API):
+    title = u"listModulations"
+    shortDescription = u"return a list of modulations known to the database"
+    
+    docArgs = []
+    docCallSyntax = CallSyntax(docArgs, u"")
+    
+    
     def handle(self, trans):
         lastModified = self.model.getLastUpdate()
         trans.set_content_type(ContentType("application/xml", self.encoding))
