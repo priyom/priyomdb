@@ -16,7 +16,7 @@ class AuthorizationSelector(object):
         
     def doc(self, trans, breadcrumbs):
         # transparently pass this through
-        return self.resource(trans, breadcrumbs)
+        return self.resource.doc(trans, breadcrumbs)
         
     def authFailed(self, trans):
         trans.set_response_code(401)
