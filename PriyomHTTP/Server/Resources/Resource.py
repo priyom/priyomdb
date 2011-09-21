@@ -1,5 +1,44 @@
-from WebStack.Generic import EndOfResponse
-from cfg_priyomhttpd import response
+from WebStack.Generic import EndOfResponse, ContentType
+from cfg_priyomhttpd import response, doc, misc, application
+
+class Argument(object):
+    def __init__(self, name, type, description, metavar = None, optional = False):
+        self.name = name
+        self.type = type
+        self.description = description
+        self.optional = optional
+        self.metavar = metavar
+    
+    def htmlSynopsis(self):
+        if self.metavar:
+            return (u"""<em>{0}=<u>{1}</u></em>""" if self.optional else u"""{0}=<u>{1}</u>""").format(self.name, self.metavar)
+        else:
+            return (u"""<em>{0}</em>""" if self.optional else u"""{0}""").format(self.name)
+    
+    def htmlRow(self):
+        return u"""<tr>
+    <td>{0}</td>
+    <td>{1}</td>
+    <td>{3}</td>
+    <td>{2}</td>
+</tr>""".format(
+            self.name,
+            unicode(self.type),
+            self.description,
+            (u"""(optional) """ if self.optional else u"")
+        )
+        
+    def __unicode__(self):
+        return u"""{0}: {1}""".format(self.type, self.description)
+        
+class CallSyntax(object):
+    def __init__(self, args, format):
+        self.format = format
+        self.args = args
+    
+    def __unicode__(self):
+        args = [arg.htmlSynopsis() for arg in self.args]
+        return self.format.format(*args)
 
 class Preference(object):
     def __init__(self, value, q):
@@ -17,6 +56,7 @@ class Preference(object):
 
 class Resource(object):
     allowedMethods = frozenset(["HEAD", "GET"])
+    title = u"untitled"
     
     def __init__(self, model):
         self.model = model
@@ -119,6 +159,79 @@ class Resource(object):
             result = self.handle(trans)
         finally:
             self.store.flush()
+        return result
+        
+    def doc(self, trans, breadcrumbs):
+        self.out = trans.get_response_stream()
+        
+        breadcrumbs = None
+        
+        docSubstitute = self.handleDocSubstitute if hasattr(self, "handleDocSubstitute") else u"No further documentation available."
+        
+        trans.set_response_code(200)
+        trans.set_content_type(ContentType("text/html", "utf-8"))
+        print >>self.out, (u"""<html>
+    <head>
+        <title>{0}{1}{2}</title>
+    </head>
+    <body>
+        <h1>Documentation</h1>"""+(u"""
+        <div class="doc-breadcrumbs">{3}</div>""" if breadcrumbs is not None else u"")+u"""
+        <h2>{0}</h2>
+        <p>{4}</p>
+        {5}
+    </body>
+</html>""").format(
+            self.title,
+            (misc.get("titleSeparator", u" ") + application["name"] + u" documentation") if "name" in application else u"",
+            (misc.get("titleSeparator", u" ") + application["host"]) if "host" in application else u"",
+            u"",
+            self.shortDescription if hasattr(self, "shortDescription") else u"",
+            self.handleDoc() or docSubstitute if hasattr(self, "handleDoc") else docSubstitute
+        ).encode("utf-8")
+        
+    def handleDoc(self):
+        result = u""
+        if hasattr(self, "docArgs") and hasattr(self, "docCallSyntax"):
+            hasReturnValue = hasattr(self, "docReturnValue")
+            result = result + (u"""
+<h3>Call syntax</h3>
+<p>{0}</p>
+<p><strong>Legend: </strong><em>optional arguments</em>, <u>part which is to be replaced with a value of your choice</u></p>
+<h3>Arguments</h3>
+<table class="doc-arguments">
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th></th>
+            <th>Description</th>
+        </tr>
+    </thead>
+    <tbody>
+{1}
+    </tbody>
+</table>"""+(u"""
+<h3>Return value</h3>
+{2}""" if hasReturnValue else u"")).format(
+                unicode(self.docCallSyntax),
+                "\n".join((arg.htmlRow() for arg in self.docArgs)),
+                unicode(self.docReturnValue) if hasReturnValue else None
+            )
+        if hasattr(self, "docRequiredPrivilegues"):
+            result = result + (u"""
+<h3>Required privilegues</h3>
+<p>{0}</p>""").format(
+                unicode(self.docRequiredPrivilegues)
+            )
+        if hasattr(self, "docRemarks"):
+            result = result + (u"""
+<h3>Remarks</h3>
+<p>{0}</p>""").format(
+                unicode(self.docRemarks)
+            )
+        if len(result) == 0:
+            return None
         return result
         
     def parameterError(self, parameterName, message = None):

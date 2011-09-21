@@ -21,13 +21,13 @@ def get_site_map(priyomInterface):
     
     model = WebModel(priyomInterface)
     
-    apiMap = MapResource({
+    apiMap = MapSelector("calls", {
         "getUpcomingBroadcasts": UpcomingBroadcastsAPI(model),
         "import": AuthorizationSelector(ImportAPI(model), "transaction"),
         "listStations": ListAPI(model, libPriyom.Station),
-        "listBroadcasts": AuthorizationSelector(ListAPI(model, libPriyom.Broadcast), "list"),
+        "listBroadcasts": AuthorizationSelector(ListAPI(model, libPriyom.Broadcast, "list"), "list"),
         "listTransmissionClasses": ListAPI(model, libPriyom.TransmissionClass),
-        "listTransmissions": AuthorizationSelector(ListAPI(model, libPriyom.Transmission), "list"),
+        "listTransmissions": AuthorizationSelector(ListAPI(model, libPriyom.Transmission, "list"), "list"),
         "listModulations": ListModulationsAPI(model),
         "getSession": SessionAPI(model),
         "getTransmissionStats": TransmissionStatsAPI(model),
@@ -36,11 +36,12 @@ def get_site_map(priyomInterface):
         "getStationFrequencies": StationFrequenciesAPI(model),
         "instanciateSchedules": AuthorizationSelector(InstanciateSchedulesAPI(model), "instanciate")
     })
+    apiMap.mapping[""] = apiMap
     
     return ContinueSelector(
         CompressionSelector(
             ExceptionSelector(
-                ResetSelector(model, AuthenticationSelector(model.store, MapResource({
+                ResetSelector(model, AuthenticationSelector(model.store, MapSelector("API root", {
                     "station": StationResource(model),
                     "broadcast": IDResource(model, libPriyom.Broadcast),
                     "transmission": IDResource(model, libPriyom.Transmission),

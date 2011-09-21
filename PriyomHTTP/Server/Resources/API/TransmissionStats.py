@@ -1,10 +1,18 @@
 from WebStack.Generic import ContentType
 from libPriyom import *
-from API import API
+from API import API, CallSyntax, Argument
 import time
 from datetime import datetime, timedelta
 
 class TransmissionStatsAPI(API):
+    title = u"getTransmissionStats"
+    shortDescription = u"get the amount of transmissions grouped by calendar months"
+    
+    docArgs = [
+        Argument(u"stationId", u"station id", u"select the station at which to look", metavar="stationid")
+    ]
+    docCallSyntax = CallSyntax(docArgs, u"?{0}")
+    
     def handle(self, trans):
         stationId = self.getQueryInt("stationId", "must be integer")
         

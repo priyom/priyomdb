@@ -1,12 +1,21 @@
 from WebStack.Generic import ContentType
 from libPriyom import *
-from API import API
+from API import API, CallSyntax, Argument
 from ...limits import queryLimits
 import time
 from datetime import datetime, timedelta
 from libPriyom.Formatting import priyomdate
 
 class InstanciateSchedulesAPI(API):
+    title = u"instanciateSchedules"
+    shortDescription = u"instanciate schedules"
+    
+    docArgs = [
+        Argument(u"stationId", u"station ID", u"Restrict the instanciation to a single station", metavar="stationid", optional=True),
+    ]
+    docCallSyntax = CallSyntax(docArgs, u"?{0}")
+    docRequiredPrivilegues = u"instanciate"
+    
     def __init__(self, model):
         super(InstanciateSchedulesAPI, self).__init__(model)
         self.allowedMethods = frozenset(("POST", "GET", "HEAD"))
