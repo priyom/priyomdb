@@ -6,7 +6,8 @@ class AuthorizationSelector(object):
         self.requiredCap = requiredCap
         
         self.title = self.resource.title
-        self.shortDescription = self.resource.shortDescription
+        if hasattr(self.resource, "shortDescription"):
+            self.shortDescription = self.resource.shortDescription
         
     def respond(self, trans):
         if not (self.requiredCap in trans.apiCaps):
