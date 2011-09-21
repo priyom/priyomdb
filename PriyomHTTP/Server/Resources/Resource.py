@@ -1,4 +1,5 @@
 from WebStack.Generic import EndOfResponse
+from cfg_priyomhttpd import response
 
 class Preference(object):
     def __init__(self, value, q):
@@ -51,7 +52,7 @@ class Resource(object):
         
     def parsePreferences(self, trans):
         prefs = self.parseCharsetPreferences(", ".join(trans.get_header_values("Accept-Charset")))
-        charset = self.getCharsetToUse(prefs, ["utf-8", "utf8"])
+        charset = self.getCharsetToUse(prefs, response.get("defaultEncodings") or ["utf-8", "utf8"])
         if charset is None:
             trans.rollback()
             trans.set_response_code(400)
