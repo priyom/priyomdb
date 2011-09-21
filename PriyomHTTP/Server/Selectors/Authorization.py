@@ -5,10 +5,17 @@ class AuthorizationSelector(object):
         self.resource = resource
         self.requiredCap = requiredCap
         
+        self.title = self.resource.title
+        self.shortDescription = self.resource.shortDescription
+        
     def respond(self, trans):
         if not (self.requiredCap in trans.apiCaps):
             self.authFailed(trans)
         return self.resource.respond(trans)
+        
+    def doc(self, trans, breadcrumbs):
+        # transparently pass this through
+        return self.resource(trans, breadcrumbs)
         
     def authFailed(self, trans):
         trans.set_response_code(401)
