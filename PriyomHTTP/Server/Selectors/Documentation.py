@@ -1,13 +1,25 @@
 from WebStack.Generic import ContentType
+from cfg_priyomhttpd import application, doc, misc
 
 class DocumentationSelector(object):
+    path_encoding = "utf-8"
+    
     def __init__(self, resource):
         self.resource = resource
     
     def respond(self, trans):
         if hasattr(self.resource, "doc"):
+            parts = trans.get_virtual_path_info(self.path_encoding).split("/")
+
+            new_path = parts[0:1] + parts[2:]
+            new_path_info = "/".join(new_path)
+            trans.set_virtual_path_info(new_path_info)
+
             trans.encoding = "utf-8"
-            return self.resource.doc(trans)
+            breadcrumbs = None
+            if doc.get("breadcrumbs", {}).get("enabled", False):
+                breadcrumbs = list()
+            return self.resource.doc(trans, breadcrumbs)
         else:
             trans.rollback()
             trans.set_response_code(501)

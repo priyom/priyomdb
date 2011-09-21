@@ -1,5 +1,5 @@
-from WebStack.Generic import EndOfResponse
-from cfg_priyomhttpd import response
+from WebStack.Generic import EndOfResponse, ContentType
+from cfg_priyomhttpd import response, doc, misc, application
 
 class Preference(object):
     def __init__(self, value, q):
@@ -17,6 +17,7 @@ class Preference(object):
 
 class Resource(object):
     allowedMethods = frozenset(["HEAD", "GET"])
+    title = u"untitled"
     
     def __init__(self, model):
         self.model = model
@@ -120,6 +121,33 @@ class Resource(object):
         finally:
             self.store.flush()
         return result
+        
+    def doc(self, trans, breadcrumbs):
+        self.out = trans.get_response_stream()
+        
+        breadcrumbs = None
+        
+        trans.set_response_code(200)
+        trans.set_content_type(ContentType("text/html", "utf-8"))
+        print >>self.out, u"""<html>
+    <head>
+        <title>{0}{1}{2}</title>
+    </head>
+    <body>
+        <h1>Documentation</h1>"""+(u"""
+        <div class="doc-breadcrumbs">{3}</div>""" if breadcrumbs is not None else u"")+u"""
+        <h2>{0}</h2>
+        <p>{4}</p>
+        {5}
+    </body>
+</html>""".format(
+            self.title,
+            (misc.get("titleSeparator", u" ") + application["name"] + u" documentation") if "name" in application else u"",
+            (misc.get("titleSeparator", u" ") + application["host"]) if "host" in application else u"",
+            u"",
+            self.shortDescription if hasattr(self, "shortDescription") else u"",
+            self.handleDoc(trans) if hasattr(self, "handleDoc") else (self.handleDocSubstitute if hasattr(self, "handleDocSubstitute") else u"No further documentation available.")
+        ).encode("utf-8")
         
     def parameterError(self, parameterName, message = None):
         self.trans.set_response_code(400)

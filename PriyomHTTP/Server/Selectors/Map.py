@@ -20,7 +20,7 @@ class MapSelector(object):
         else:
             self.send_error(trans)
             return
-            
+        
         resource = self.mapping.get(name)
         catch_all = False
         if resource is None:
@@ -34,7 +34,7 @@ class MapSelector(object):
             new_path_info = "/".join(new_path)
             trans.set_virtual_path_info(new_path_info)
         
-        return resource
+        return resource, name
         
     def formatListing(self):
         items = [(name, resource) for name, resource in self.mapping.iteritems() if name is not None]
@@ -61,13 +61,13 @@ class MapSelector(object):
     </body>
 </html>""".format(
             self.title,
-            (misc.get("titleSeparator", u" ") + application["name"]) if "name" in application else "",
-            (misc.get("titleSeparator", u" ") + application["host"]) if "host" in application else "",
+            (misc.get("titleSeparator", u" ") + application["name"]) if "name" in application else u"",
+            (misc.get("titleSeparator", u" ") + application["host"]) if "host" in application else u"",
             self.formatListing()
         ).encode("utf-8")
         
     def respond(self, trans):
-        resource = self.findResource(trans)
+        resource, name = self.findResource(trans)
         if resource == self:
             self.listing(trans)
         else:
@@ -79,12 +79,13 @@ class MapSelector(object):
 {0}
 </ul>""".format(self.formatListing()).encode(trans.encoding)
     
-    def doc(self, trans):
-        resource = self.findResource(trans)
+    def doc(self, trans, breadcrumbs):
+        resource, name = self.findResource(trans)
         if resource == self:
             self.docListing(trans)
         else:
-            return resource.doc(trans)
+            breadcrumbs.append((resource, name))
+            return resource.doc(trans, breadcrumbs)
         
     def send_error(self, trans):
         trans.rollback()

@@ -36,7 +36,7 @@ def get_site_map(priyomInterface):
         "getStationFrequencies": StationFrequenciesAPI(model),
         "instanciateSchedules": AuthorizationSelector(InstanciateSchedulesAPI(model), "instanciate")
     })
-    apiMap.mapping[None] = apiMap
+    apiMap.mapping[""] = apiMap
     
     return ContinueSelector(
         CompressionSelector(
