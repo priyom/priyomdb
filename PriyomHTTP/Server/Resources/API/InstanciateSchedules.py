@@ -11,7 +11,6 @@ class InstanciateSchedulesAPI(API):
         self.allowedMethods = frozenset(("POST", "GET", "HEAD"))
     
     def handle(self, trans):
-        super(InstanciateSchedulesAPI, self).handle(trans)
         stationId = self.getQueryIntDefault("stationId", None, "must be integer")
         
         trans.set_content_type(ContentType("text/plain", self.encoding))
