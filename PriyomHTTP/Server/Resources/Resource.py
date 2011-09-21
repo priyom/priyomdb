@@ -19,11 +19,13 @@ class Argument(object):
         return u"""<tr>
     <td>{0}</td>
     <td>{1}</td>
+    <td>{3}</td>
     <td>{2}</td>
 </tr>""".format(
             self.name,
             unicode(self.type),
-            (u"""(optional) """ if self.optional else u"")+self.description
+            self.description,
+            (u"""(optional) """ if self.optional else u"")
         )
         
     def __unicode__(self):
@@ -202,6 +204,7 @@ class Resource(object):
         <tr>
             <th>Name</th>
             <th>Type</th>
+            <th></th>
             <th>Description</th>
         </tr>
     </thead>
