@@ -35,7 +35,7 @@ class MapSelector(object):
         
     def respond(self, trans):
         resource = self.findResource(trans)
-        return resource.respond(self, trans)
+        return resource.respond(trans)
     
     def doc(self, trans):
         resource = self.findResource(trans)
