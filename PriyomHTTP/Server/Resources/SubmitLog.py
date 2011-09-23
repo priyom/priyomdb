@@ -39,7 +39,7 @@ class SubmitLogResource(Resource):
         else:
             return unicode(freq) + u" Hz"
         
-    def formatFrequencies(self, editable):
+    def formatFrequencies(self):
         i = -1
         items = [(key, value) for key, value in self.queryEx.get("frequencies", {}).iteritems() if (key != "new" or "submit" in value) and (not "delete" in value)]
         items.sort(lambda x,y: cmp(x[0], y[0]))
@@ -70,18 +70,6 @@ class SubmitLogResource(Resource):
             u"\n".join((u"""<option value="{0}"{1}>{0}</option>""".format(modulation.Name, u' selected="selected"' if modulation.Name == item["modulation"] else u"") for modulation in self.store.find(Modulation).order_by(Asc(Modulation.Name))))
         )
         
-    """
-            Frequencies:
-            <table class="frequency-table">
-                <thead>
-                    <th>Frequency</th>
-                    <th>Modulation/Mode</th>
-                </thead>
-                <tbody>
-                    {6}
-                </tbody>
-            </table>"""
-        
     def formatBroadcastSelector(self, station, timestamp):
         yield u"""<select name="broadcast">"""
         yield u"""<option value="0">New broadcast</option>"""
@@ -91,13 +79,14 @@ class SubmitLogResource(Resource):
             if broadcast.Type == u"continous":
                 continue
             ids.append(broadcast.ID)
-            yield u"""<option value="{0}">Broadcast at {1} on {2}</option>""".format(
+            yield u"""<option value="{0}"{3}>Broadcast at {1} on {2}</option>""".format(
                 broadcast.ID,
                 datetime.fromtimestamp(broadcast.BroadcastStart).strftime(Formatting.priyomdate),
-                ", ".join((self.formatFrequency(freq.Frequency) for freq in broadcast.Frequencies))
+                u", ".join((self.formatFrequency(freq.Frequency) for freq in broadcast.Frequencies)),
+                u' selected="selected"' if broadcast.ID == int(self.queryEx.get("broadcast", 0)) else u""
             )
             found = True
-        yield u"""</select>"""
+        yield u"""</select><input type="submit" name="updateBroadcast" value="Ok" />"""
         
         if not found:
             yield u""" (no suitable broadcasts found at the given timestamp)"""
@@ -106,7 +95,53 @@ class SubmitLogResource(Resource):
             yield u"""<div>"""
         else:
             yield u"""<div class="hidden">"""
+            
+        yield u"""Frequencies:
+            <table class="frequency-table">
+                <thead>
+                    <th>Frequency</th>
+                    <th>Modulation/Mode</th>
+                </thead>
+                <tbody>"""
+            
+        for line in self.formatFrequencies():
+            yield line
+            
+        yield u"""
+                </tbody>
+            </table>
+            Silence before TX: <input type="text" name="broadcastBefore" value="{0}" /> seconds<br />
+            Silence after TX: <input type="text" name="broadcastAfter" value="{1}" /> seconds""".format(
+            self.queryEx.get("broadcastBefore", 0),
+            self.queryEx.get("broadcastAfter", 0)
+        )
+            
+        yield u"""</div>"""
         
+    def recursiveDictNode(self, dictionary, indent = u""):
+        for key, value in dictionary.iteritems():
+            if type(value) == dict:
+                yield u"""{1}{0}: {2}""".format(key, indent, u"{")
+                for line in self.recursiveDictNode(value, indent + u"    "):
+                    yield line
+                yield u"""{0}{1}""".format(indent, u"}")
+            else:
+                yield u"""{2}{0}: {1}""".format(key, repr(value), indent)
+        
+    def recursiveDict(self, dict):
+        return "\n".join(self.recursiveDictNode(dict))
+        
+    def formatTransmissionEditor(self):
+        yield u"""<select name="transmissionClass">"""
+        for txClass in self.store.find(TransmissionClass).order_by(Asc(TransmissionClass.DisplayName)):
+            yield u"""<option value="{0}"{2}>{1}</option>""".format(
+                txClass.ID,
+                txClass.DisplayName,
+                u' selected="selected"' if txClass.ID == self.queryEx.get("transmissionClass", 0) else u""
+            )
+        yield u"""</select>"""
+        yield u"""<textarea name="transmission" rows="5" style="width: 100%">{0}</textarea>""".format(self.queryEx.get("transmission", u""))
+        yield u"""<input type="submit" name="parseTx" value="Check transmission" />"""
     
     def handle(self, trans):
         trans.set_content_type(ContentType(self.xhtmlContentType, self.encoding))
@@ -122,6 +157,7 @@ class SubmitLogResource(Resource):
         broadcastSet = broadcast is not None
         
         self.queryEx = self.parseQueryDict()
+        
         
         timestamp = self.queryEx.get("timestamp", None)
         if timestamp is None:
@@ -141,12 +177,15 @@ class SubmitLogResource(Resource):
         <script src="{0}{3}" type="text/javascript" />
     </head>
     <body>
+        <pre>{7}</pre>
         <form name="logform" action="submit" method="POST">
             Station: <select name="stationId">
                 {4}
             </select><br />
             Timestamp: <input type="text" name="timestamp" value="{5}" /><br />
-            Broadcast: {6}
+            Duration: <input type="text" name="duration" value="{8}" /> seconds<br />
+            Broadcast: {6}<br />
+            Transmission contents: {9}<br />
             <input type="submit" name="submit" value="Submit" />
         </form>
     </body>
@@ -163,5 +202,8 @@ class SubmitLogResource(Resource):
                                             station.PriyomIdentifier
                                         ) for station in stations)),
             datetime.fromtimestamp(timestamp).strftime(Formatting.priyomdate),
-            u"\n                ".join(self.formatBroadcastSelector(station, timestamp))
+            u"\n            ".join(self.formatBroadcastSelector(station, timestamp)),
+            self.recursiveDict(self.queryEx),
+            self.queryEx.get("duration", 0),
+            u"\n            ".join(self.formatTransmissionEditor())
         ).encode(self.encoding, 'replace')
