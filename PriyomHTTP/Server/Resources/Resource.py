@@ -1,5 +1,6 @@
 from WebStack.Generic import EndOfResponse, ContentType
 from cfg_priyomhttpd import response, doc, misc, application
+from fnmatch import fnmatch
 
 class Argument(object):
     def __init__(self, name, type, description, metavar = None, optional = False):
@@ -64,9 +65,9 @@ class Resource(object):
         self.store = self.priyomInterface.store
         self.modelAutoSetup = True
         
-    def parseCharsetPreferences(self, charsetPreferences):
-        prefs = (s.lstrip().rstrip().lower().partition(';') for s in charsetPreferences.split(","))
-        prefs = [Preference(charset, float(q[2:]) if len(q) > 0 else 1.0) for (charset, sep, q) in prefs if not (len(q) > 0 and float(q[2:])==0) and len(charset) > 0]
+    def parsePreferencesList(self, preferences):
+        prefs = (s.lstrip().rstrip().lower().partition(';') for s in preferences.split(","))
+        prefs = [Preference(value, float(q[2:]) if len(q) > 0 else 1.0) for (value, sep, q) in prefs if not (len(q) > 0 and float(q[2:])==0) and len(value) > 0]
         prefs.sort(reverse=True)        
         return prefs
         
@@ -90,14 +91,38 @@ class Resource(object):
             use = ownPreferences[0]
         return use
         
+    def getContentTypeToUse(self, prefList, ownPreferences):
+        use = None
+        q = None
+        if len(prefList) == 0:
+            return ownPreferences[0]
+        for item in prefList:
+            if q is None:
+                q = item.q
+            if use is None:
+                use = item.value
+            if item.q < q:
+                break
+            for pref in ownPreferences:
+                if item.value == pref:
+                    return item.value
+                if use is None and fnmatch(pref, item.value):
+                    use = pref
+        return use
+        
     def parsePreferences(self, trans):
-        prefs = self.parseCharsetPreferences(", ".join(trans.get_header_values("Accept-Charset")))
+        prefs = self.parsePreferencesList(",".join(trans.get_header_values("Accept-Charset")))
         charset = self.getCharsetToUse(prefs, response.get("defaultEncodings") or ["utf-8", "utf8"])
         if charset is None:
             trans.rollback()
             trans.set_response_code(400)
             print >>trans.get_response_stream(), "user agent does not support any charsets"
         self.encoding = charset
+        
+        prefs = self.parsePreferencesList(",".join(trans.get_header_values("Accept")))
+        xhtmlContentType = self.getContentTypeToUse(prefs, ["application/xhtml+xml", "application/xml", "text/html"])
+        htmlContentType = self.getContentTypeToUse(prefs, ["text/html"])
+        xmlContentType = self.getContentTypeToUse(prefs, ["application/xml"])
         
     def setupModel(self):
         if "flags" in self.query:
