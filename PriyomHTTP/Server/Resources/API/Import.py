@@ -31,7 +31,7 @@ class ImportAPI(API):
                 "application/json": self.model.importFromJsonStr
             }[contentType]
         except KeyError:
-            trans.set_response_code(400)
+            trans.set_response_code(415)
             raise EndOfResponse
         data = trans.get_request_stream().read()
         context = method(data)
