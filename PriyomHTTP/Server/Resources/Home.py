@@ -4,7 +4,7 @@ from ..APIDatabase import APINews
 from WebStack.Generic import ContentType
 from Resource import Resource
 
-class EmptyResource(Resource):
+class HomeResource(Resource):
     def handle(self, trans):
         trans.set_content_type(ContentType("text/html", self.encoding))
         news = self.store.find(APINews)
@@ -13,11 +13,11 @@ class EmptyResource(Resource):
         newsRows = "\n                ".join((newsItem.html_row() for newsItem in news))
         if len(newsRows) == 0:
             newsRows = '<tr><td colspan="3">No news</td></tr>'
-        print >>self.out, (u"""
+        print >>self.out, u"""
 <html>
     <head>
         <title>Priyom.org API</title>
-        <link rel="stylesheet" type="text/css" href="css/home.css" />
+        <link rel="stylesheet" type="text/css" href="{0}" />
     </head>
     <body>
         <h1>Welcome!</h1>
@@ -50,8 +50,11 @@ class EmptyResource(Resource):
                 </tr>
             </thead>
             <tbody>
-                %s
+                {1}
             </tbody>
         </table>
     </body>
-</html>""" % (newsRows)).encode(self.encoding, 'replace')
+</html>""".format(
+            self.model.rootPath("css/home.css"),
+            newsRows
+        ).encode(self.encoding, 'replace')
