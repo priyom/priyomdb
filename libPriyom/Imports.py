@@ -28,8 +28,6 @@ class ImportContext(object):
         if id < 0:
             obj = cls()
             self.store.add(obj)
-            if hasattr(obj, "__storm_loaded__"):
-                obj.__storm_loaded__()
         else:
             obj = self.store.get(cls, id)
             if obj is None:
