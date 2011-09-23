@@ -230,7 +230,7 @@ class Transmission(PriyomBase, XMLIntf.XMLStorm):
                 print("Invalid transmission class table: %s" % (group.getAttribute(u"name")))
                 return False
             block = table.PythonClass(store)
-            block.fromDom(group)
+            block.fromDom(group, context)
         
     def _metadataToDom(self, doc, parentNode):
         XMLIntf.appendTextElements(parentNode,
