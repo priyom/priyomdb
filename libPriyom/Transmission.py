@@ -195,6 +195,8 @@ class Transmission(PriyomBase, XMLIntf.XMLStorm):
         self.ForeignCallsign = ForeignHelper(self, "Callsign")
         
     def _loadCallsign(self, node, context):
+        if self.ForeignCallsign is None:
+            self.ForeignCallsign = ForeignHelper(self, "Callsign")
         if node.getAttribute("lang") is not None:
             self.ForeignCallsign.supplement.ForeignText = XMLIntf.getText(node)
             self.ForeignCallsign.supplement.LangCode = XMLIntf.getAttribute("lang")
