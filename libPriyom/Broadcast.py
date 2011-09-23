@@ -65,7 +65,6 @@ class Broadcast(PriyomBase, XMLIntf.XMLStorm):
     Frequencies = ReferenceSet(ID, BroadcastFrequency.BroadcastID)
     
     xmlMapping = {
-        u"StationID": "StationID",
         u"Comment": "Comment",
         u"Type": "Type"
     }
@@ -138,6 +137,12 @@ class Broadcast(PriyomBase, XMLIntf.XMLStorm):
                 transmission.toDom(broadcast, flags)
         
         parentNode.appendChild(broadcast)
+        
+    def loadProperty(self, tagName, data, element, context):
+        if tagName == u"StationID":
+            self.StationID = int(data)
+        else:
+            super(Broadcast, self).loadProperty(tagName, data, element, context)
         
     def loadDomElement(self, node, context):
         print("loading %s" % node.tagName)
