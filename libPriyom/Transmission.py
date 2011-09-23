@@ -49,12 +49,12 @@ class TransmissionClassBase(object):
         parentNode.appendChild(group)
         
     def fromDom(self, node, context):
-        fields = (field for field in self.fields)
+        fields = iter((field for field in self.fields))
         field = None
         for item in filter(lambda x: (x.nodeType == dom.Node.ELEMENT_NODE) and (x.tagName == u"item"), node.childNodes):
             langCode = item.getAttribute("lang")
             if langCode is None or len(langCode) == 0:
-                field = fields.__next__()
+                field = next(fields)
                 setattr(self, field.FieldName, XMLIntf.getText(item))
             else:
                 supplement = self.supplements[field.FieldName]
