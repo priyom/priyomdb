@@ -207,4 +207,7 @@ class WebModel(object):
         )
         
     def rootPath(self, rootPath):
-        return application.get("urlroot", u"") + rootPath
+        if len(rootPath) > 0 and rootPath[0] != u"/":
+            return application.get("urlroot", u"") + u"/" + rootPath
+        else:
+            return application.get("urlroot", u"") + rootPath
