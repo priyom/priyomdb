@@ -51,7 +51,7 @@ def get_site_map(priyomInterface):
                     "submit": AuthorizationSelector(SubmitLogResource(model), ["log", "log-moderated"]),
                     "call": apiMap,
                     "doc": DocumentationSelector(apiMap),
-                    "": EmptyResource(model),
+                    "": HomeResource(model),
                     "css": MapResource({
                         "home.css": FileResource(os.path.join(rootPath, "www-files/css/home.css"), ContentType("text/css", "utf-8")),
                         "error.css": FileResource(os.path.join(rootPath, "www-files/css/error.css"), ContentType("text/css", "utf-8"))
