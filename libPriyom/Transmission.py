@@ -5,6 +5,7 @@ from Broadcast import Broadcast
 from Station import Station
 from PriyomBase import PriyomBase
 import types
+from TransmissionParser import TransmissionParserNode, TransmissionParserNodeField
     
 class TransmissionClassBase(object):
     def __getitem__(self, index):
@@ -135,6 +136,8 @@ class TransmissionClass(PriyomBase):
     __storm_table__ = "transmissionClasses"
     ID = Int(primary = True)
     DisplayName = Unicode()
+    RootParserNodeID = Int()
+    RootParserNode = Reference(RootParserNodeID, TransmissionParserNode)
     Tables = ReferenceSet(ID, TransmissionClassTable.TransmissionClassID)
     
     def __storm_loaded__(self):
@@ -153,6 +156,35 @@ class TransmissionClass(PriyomBase):
             table.toDom(tablesNode, flags)
         classNode.appendChild(tablesNode)
         parentNode.appendChild(classNode)
+        
+    def parseNode(self, node, s):
+        expr = node.getExpression()
+        match = expr.match(s)
+        groups = match.groups()
+        if node.Table is not None:
+            yield (node.Table, dict(((field.FieldName, groups[field.Group]) for field in node.Fields)))
+        else:
+            for child in node.Children:
+                if child.ParentGroup is None:
+                    raise Exception("Malformed node: ParentGroup is None at child node #{0}".format(node.ID)
+                for item in self.parseNode(child, groups[child.ParentGroup]):
+                    yield item
+        
+    def parsePlainText(self, s):
+        if self.RootParserNode is None:
+            raise Exception("No parser assigned.")
+        node = self.RootParserNode
+        expr = node.getExpression() # re.compile(node.RegularExpression)
+        match = expr.match(s)
+        if match is None:
+            return None
+        items = list()
+        groups = match.groups()
+        for child in node.Children:
+            if child.ParentGroup is None:
+                raise Exception("Malformed node: ParentGroup is None at child node #{0}".format(node.ID)
+            items.extend(self.parseNode(child, groups[child.ParentGroup]))
+        
 
 class Transmission(PriyomBase, XMLIntf.XMLStorm):
     __storm_table__ = "transmissions"
@@ -264,3 +296,6 @@ class Transmission(PriyomBase, XMLIntf.XMLStorm):
             }[node.tagName](node)
         except KeyError:
             pass
+
+
+TransmissionParserNode.Table = Reference(TransmissionParserNode.TableID, TransmissionClassTable.ID)
