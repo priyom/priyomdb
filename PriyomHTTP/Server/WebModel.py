@@ -8,6 +8,7 @@ from APIDatabase import Variable
 import re
 import cStringIO
 import io
+from cfg_priyomhttpd import application, misc
 
 weekdayname = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 monthname = [None, 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
@@ -197,3 +198,13 @@ class WebModel(object):
     def importFromJsonStr(self, data, context = None, flags = None):
         tree = json.loads(data)
         return self.importFromJson(tree, context, flags)
+        
+    def formatHTMLTitle(self, pageTitle, appNameSuffix = u""):
+        return u"""{0}{1}{2}""".format(
+            pageTitle,
+            (misc.get("titleSeparator", u" ") + application["name"] + appNameSuffix) if "name" in application else u"",
+            (misc.get("titleSeparator", u" ") + application["host"]) if "host" in application else u""
+        )
+        
+    def rootPath(self, rootPath):
+        return application.get("urlroot", u"") + rootPath

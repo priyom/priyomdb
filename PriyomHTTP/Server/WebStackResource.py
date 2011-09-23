@@ -48,6 +48,7 @@ def get_site_map(priyomInterface):
                     "transmission": IDResource(model, libPriyom.Transmission),
                     "transmissionClass": IDResource(model, libPriyom.TransmissionClass),
                     "schedule": IDResource(model, libPriyom.Schedule),
+                    "submit": AuthorizationSelector(SubmitLogResource(model), ["log", "log-moderated"]),
                     "call": apiMap,
                     "doc": DocumentationSelector(apiMap),
                     "": EmptyResource(model),
