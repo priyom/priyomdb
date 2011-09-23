@@ -85,13 +85,28 @@ class SubmitLogResource(Resource):
     def formatBroadcastSelector(self, station, timestamp):
         yield u"""<select name="broadcast">"""
         yield u"""<option value="0">New broadcast</option>"""
-        for broadcast in self.model.priyomInterface.getCloseBroadcasts(station.ID, timestamp, 600):
+        found = False
+        ids = list()
+        for broadcast in (self.model.priyomInterface.getCloseBroadcasts(station.ID, timestamp, 600)[1]):
+            if broadcast.Type == u"continous":
+                continue
+            ids.append(broadcast.ID)
             yield u"""<option value="{0}">Broadcast at {1} on {2}</option>""".format(
                 broadcast.ID,
-                datetime.fromtimestamp(broadcast.Timestamp).strftime(Formatting.priyomdate),
+                datetime.fromtimestamp(broadcast.BroadcastStart).strftime(Formatting.priyomdate),
                 ", ".join((self.formatFrequency(freq.Frequency) for freq in broadcast.Frequencies))
             )
+            found = True
         yield u"""</select>"""
+        
+        if not found:
+            yield u""" (no suitable broadcasts found at the given timestamp)"""
+        
+        if not found or not "broadcast" in self.queryEx or self.queryEx["broadcast"] == "0":
+            yield u"""<div>"""
+        else:
+            yield u"""<div class="hidden">"""
+        
     
     def handle(self, trans):
         trans.set_content_type(ContentType(self.xhtmlContentType, self.encoding))
@@ -108,13 +123,13 @@ class SubmitLogResource(Resource):
         
         self.queryEx = self.parseQueryDict()
         
-        timestamp = self.queryEx.get("Timestamp", None)
+        timestamp = self.queryEx.get("timestamp", None)
         if timestamp is None:
             timestamp = self.model.now()
         else:
             try:
-                timestamp = self.model.toTimestamp(datetime.strptime(timestamp, Formatting.priyomdate))
-            except:
+                timestamp = self.model.priyomInterface.toTimestamp(datetime.strptime(timestamp, Formatting.priyomdate))
+            except ValueError:
                 timestamp = self.model.now()
         
         print >>self.out, (u"""
@@ -131,7 +146,7 @@ class SubmitLogResource(Resource):
                 {4}
             </select><br />
             Timestamp: <input type="text" name="timestamp" value="{5}" /><br />
-            Broadcast: {7}
+            Broadcast: {6}
             <input type="submit" name="submit" value="Submit" />
         </form>
     </body>
