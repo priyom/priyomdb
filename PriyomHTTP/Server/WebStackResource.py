@@ -54,7 +54,11 @@ def get_site_map(priyomInterface):
                     "": HomeResource(model),
                     "css": MapResource({
                         "home.css": FileResource(os.path.join(rootPath, "www-files/css/home.css"), ContentType("text/css", "utf-8")),
-                        "error.css": FileResource(os.path.join(rootPath, "www-files/css/error.css"), ContentType("text/css", "utf-8"))
+                        "error.css": FileResource(os.path.join(rootPath, "www-files/css/error.css"), ContentType("text/css", "utf-8")),
+                        "submit.css": FileResource(os.path.join(rootPath, "www-files/css/submit.css"), ContentType("text/css", "utf-8"))
+                    }),
+                    "js": MapResource({
+                        "jquery.js": FileResource(os.path.join(rootPath, "www-files/js/jquery.js"), ContentType("text/javascript", "utf-8"))
                     })
                 }))),
                 show = response["showExceptions"]
