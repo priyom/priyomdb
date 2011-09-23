@@ -1,9 +1,17 @@
 from WebStack.Generic import ContentType
 from libPriyom import *
-from API import API
+from API import API, CallSyntax, Argument
 from libPriyom.Interface import PAST, ONAIR, UPCOMING
 
 class StationFrequenciesAPI(API):
+    title = u"getStationFrequencies"
+    shortDescription = u"get a list of frequencies the station uses"
+    
+    docArgs = [
+        Argument(u"stationId", u"station id", u"select the station at which to look", metavar="stationid")
+    ]
+    docCallSyntax = CallSyntax(docArgs, u"?{0}")
+    
     def handle(self, trans):
         stationId = self.getQueryInt("stationId", "must be integer")
         station = self.store.get(Station, stationId)
@@ -11,7 +19,7 @@ class StationFrequenciesAPI(API):
             self.parameterError("stationId", "Station does not exist")
         
         lastModified, frequencies = self.priyomInterface.getStationFrequencies(station, notModifiedCheck=self.autoNotModified, head=self.head)
-        trans.set_content_type(ContentType("application/xml"))
+        trans.set_content_type(ContentType("application/xml", self.encoding))
         trans.set_header_value("Last-Modified", self.model.formatHTTPTimestamp(lastModified))
         if self.head:
             return
@@ -27,6 +35,6 @@ class StationFrequenciesAPI(API):
                 node.setAttribute("unix", unicode(timestamp))
             rootNode.appendChild(node)
         
-        print >>self.out, doc.toxml()
+        print >>self.out, doc.toxml(encoding=self.encoding)
 
 

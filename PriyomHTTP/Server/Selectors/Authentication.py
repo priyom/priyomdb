@@ -1,5 +1,5 @@
 from WebStack.Generic import ContentType, EndOfResponse
-from APIDatabase import APIKey, APISession
+from ..APIDatabase import APIKey, APISession
 
 class AuthenticationFailed(Exception):
     pass
@@ -60,9 +60,13 @@ class AuthenticationSelector(object):
             apiSession = None
             if "sid" in query:
                 apiSession = self.getAPISession(query["sid"])
-            if apiSession is not None:
-                return self.continueWithAPICapable(trans, apiSession)
-            apiSession = self.getAPISession(trans.get_header_values("X-API-Session"))
+            if apiSession is None:
+                apiSession = self.getAPISession(trans.get_header_values("X-API-Session"))
+            if apiSession is None:
+                cookie = trans.get_cookie("priyom-api-session")
+                if cookie is not None:
+                    apiSession = self.getAPISession([cookie.value])
+            
             if apiSession is not None:
                 return self.continueWithAPICapable(trans, apiSession)
         except AuthenticationFailed as e:

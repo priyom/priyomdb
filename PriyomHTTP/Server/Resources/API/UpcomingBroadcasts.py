@@ -1,11 +1,23 @@
+# encoding=utf-8
 from WebStack.Generic import ContentType
 from libPriyom import *
-from API import API
+from API import API, CallSyntax, Argument
 from ...limits import queryLimits
 import time
 from datetime import datetime, timedelta
 
 class UpcomingBroadcastsAPI(API):
+    title = u"getUpcomingBroadcasts"
+    shortDescription = u"Returns a list of upcoming broadcasts"
+    
+    docArgs = [
+        Argument(u"stationId", u"station ID", u"Restrict the lookup to a single station", metavar="stationid", optional=True),
+        Argument(u"timeLimit", u"integer seconds", u"How many seconds to look into the future. This is constrained depending on the other parameters.", metavar="seconds", optional=True),
+        Argument(u"all", u"", "If given, even non-data broadcasts will be shown.", optional=True),
+        Argument(u"no-update", u"", "If given, no update of schedules is performed (may result in outdated data, reduces server load).", optional=True)
+    ]
+    docCallSyntax = CallSyntax(docArgs, u"?{0}&{1}&{2}&{3}")
+    
     def handle(self, trans):
         stationId = self.getQueryIntDefault("stationId", None, "must be integer")
         
@@ -21,12 +33,16 @@ class UpcomingBroadcastsAPI(API):
         else:
             station = None
             
-        lastModified, broadcasts = self.priyomInterface.getUpcomingBroadcasts(station, all, update, timeLimit, maxTimeRange, limiter=self.model, notModifiedCheck=self.autoNotModified, head=self.head)
-        trans.set_content_type(ContentType("application/xml"))
+        lastModified, broadcasts, upToDate, validUntil = self.priyomInterface.getUpcomingBroadcasts(station, all, update, timeLimit, maxTimeRange, limiter=self.model, notModifiedCheck=self.autoNotModified, head=self.head)
+        trans.set_content_type(ContentType("application/xml", self.encoding))
         if lastModified is not None:
             trans.set_header_value("Last-Modified", self.model.formatHTTPTimestamp(float(lastModified)))
         if self.head:
             return
+        if not upToDate:
+            trans.set_header_value("Warning", """199 api.priyom.org "Currently not all upcoming broadcasts from all affected schedules are instanciated up to date. Maybe your timeLimit is too high for this to ever happen" """)
         broadcasts.order_by(Asc(Broadcast.BroadcastStart))
         
-        print >>self.out, self.model.exportListToXml(broadcasts, Broadcast)
+        doc = self.model.exportListToDom(broadcasts, Broadcast, flags=frozenset())
+        doc.documentElement.setAttribute("valid-until", unicode(long(validUntil)))
+        print >>self.out, doc.toxml(self.encoding)

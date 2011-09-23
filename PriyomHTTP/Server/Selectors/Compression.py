@@ -1,3 +1,4 @@
+from WebStack.Generic import EndOfResponse
 import zlib
 import cStringIO
 import io
@@ -41,6 +42,14 @@ class CompressionSelector(object):
         # our stream will get killed in that case
         if issubclass(type(trans.content), CompressionStream):
             trans.content = trans.content.close()
+        elif "deflate" in accepted:
+            trans.set_header_value("Content-Encoding", "deflate")
+            tmp = trans.content.getvalue()
+            trans.content.truncate(0)
+            compressor = DeflateCompressionStream(trans.content)
+            compressor.write(tmp)
+            compressor.close()
+            
         if exc is not None:
             raise exc
         

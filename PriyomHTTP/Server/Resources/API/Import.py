@@ -3,6 +3,14 @@ from libPriyom import *
 from API import API
 
 class ImportAPI(API):
+    title = u"import"
+    shortDescription = u"Import a priyom transaction xml into the database"
+    
+    docArgs = []
+    docCallSyntax = u""
+    docRemarks = u"Must be called in POST mode, the transaction must be sent as request body with Content-Type set to application/xml."
+    docRequiredPrivilegues = u"transaction"
+    
     def __init__(self, model):
         super(ImportAPI, self).__init__(model)
         self.allowedMethods = frozenset(["GET", "POST"])
@@ -14,7 +22,7 @@ class ImportAPI(API):
             trans.set_content_type(ContentType("text/plain"))
             print >>self.out, "POST your transaction data either as application/xml or as application/json according to priyom.org transaction specification"
             return
-        trans.set_content_type(ContentType("text/plain"))
+        trans.set_content_type(ContentType("text/plain". self.encoding))
         
         contentType = str(trans.get_content_type()).split(' ', 1)[0].split(';', 1)[0]
         try:
@@ -23,7 +31,7 @@ class ImportAPI(API):
                 "application/json": self.model.importFromJsonStr
             }[contentType]
         except KeyError:
-            trans.set_response_code(400)
+            trans.set_response_code(415)
             raise EndOfResponse
         data = trans.get_request_stream().read()
         context = method(data)
