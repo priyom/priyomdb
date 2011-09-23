@@ -98,6 +98,9 @@ class Broadcast(PriyomBase, XMLIntf.XMLStorm):
         broadcastFrequency = BroadcastFrequency.importFromDom(Store.of(self), element, self, context)
         if element.hasAttribute("delete"):
             Store.of(self).remove(broadcastFrequency)
+            
+    def _loadStationID(self, node, context):
+        self.StationID = context.resolveId(Station, int(XMLIntf.getText(node)))
     
     def getIsOnAir(self):
         now = datetime.datetime.utcnow()
@@ -137,12 +140,6 @@ class Broadcast(PriyomBase, XMLIntf.XMLStorm):
                 transmission.toDom(broadcast, flags)
         
         parentNode.appendChild(broadcast)
-        
-    def loadProperty(self, tagName, data, element, context):
-        if tagName == u"StationID":
-            self.StationID = int(data)
-        else:
-            super(Broadcast, self).loadProperty(tagName, data, element, context)
         
     def loadDomElement(self, node, context):
         print("loading %s" % node.tagName)
