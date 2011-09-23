@@ -13,20 +13,28 @@ class SubmitLogResource(Resource):
         stations = self.store.find(Station)
         stationId = self.getQueryIntDefault("stationId", None)
         
-        print >>self.out, (u"""<html>
+        print >>self.out, (u"""<!DOCTYPE HTML>
+<html>
     <head>
-        <title>{0}</title>
+        <title>{1}</title>
+        <link rel="stylesheet" type="text/css" href="{0}{2}" />
+        <script src="{0}{3}" type="text/javascript">
+        </script>
     </head>
     <body>
         <form name="logform" action="submit" method="POST">
             Station: <select name="stationId">
-                {1}
+                {4}
             </select><br />
+            
             <input type="submit" name="submit" value="Submit logs" />
         </form>
     </body>
 </html>""").format(
+            self.model.rootPath(u""),
             self.model.formatHTMLTitle(u"Submit logs"),
+            u"/css/submit.css",
+            u"/js/jquery.js",
             u"\n                ".join((u"""<option value="{0}"{1}>{3}{4}{2}</option>""".format(
                                             station.ID,
                                             u' selected="selected"' if station.ID == stationId else u"",
