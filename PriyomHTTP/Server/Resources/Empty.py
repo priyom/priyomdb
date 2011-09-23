@@ -54,4 +54,4 @@ class EmptyResource(Resource):
             </tbody>
         </table>
     </body>
-</html>""" % (newsRows)).encode(self.encoding)
+</html>""" % (newsRows)).encode(self.encoding, 'replace')
