@@ -205,3 +205,6 @@ class WebModel(object):
             (misc.get("titleSeparator", u" ") + application["name"] + appNameSuffix) if "name" in application else u"",
             (misc.get("titleSeparator", u" ") + application["host"]) if "host" in application else u""
         )
+        
+    def rootPath(self, rootPath):
+        return application.get("urlroot", u"") + rootPath
