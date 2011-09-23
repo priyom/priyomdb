@@ -41,7 +41,7 @@ class PriyomInterface:
         if store is None:
             raise ValueError("store must not be None.")
         self.store = store
-        self.scheduleMaintainer = ScheduleMaintainer(store)
+        self.scheduleMaintainer = ScheduleMaintainer(self)
         
     def now(self):
         return int(time.mktime(datetime.utcnow().timetuple()))
@@ -256,7 +256,7 @@ class PriyomInterface:
         wideBroadcasts = self.store.find(Broadcast, Broadcast.StationID == stationId)
         lastModified = max(
             wideBroadcasts.max(Broadcast.Modified), 
-            self.store.get(stationId).BroadcastDeleted
+            self.store.get(Station, stationId).BroadcastDeleted
         )
         if head:
             return (lastModified, None)
@@ -288,10 +288,14 @@ class PriyomInterface:
         return (lastModified, objects)
     
     def getTransmissionsByMonth(self, stationId, year, month, limiter = None, notModifiedCheck = None, head = False):
-        startTimestamp = datetime(year, month, 1)
-        if month != 12:
-            endTimestamp = datetime(year, month+1, 1)
+        if month is not None:
+            startTimestamp = datetime(year, month, 1)
+            if month != 12:
+                endTimestamp = datetime(year, month+1, 1)
+            else:
+                endTimestamp = datetime(year+1, 1, 1)
         else:
+            startTimestamp = datetime(year, 1, 1)
             endTimestamp = datetime(year+1, 1, 1)
         startTimestamp = int(time.mktime(startTimestamp.timetuple()))
         endTimestamp = int(time.mktime(endTimestamp.timetuple()))
@@ -347,7 +351,7 @@ class PriyomInterface:
             station.Schedule.Modified if (station is not None and station.Schedule is not None) else None
         )
         if head:
-            return (lastModified, None)
+            return (lastModified, None, None, None)
         if notModifiedCheck is not None:
             notModifiedCheck(lastModified)
         
@@ -363,8 +367,7 @@ class PriyomInterface:
             else:
                 validUntil = self.scheduleMaintainer.updateSchedule(station, until, maxTimeRange)
             # trans.set_header_value("Expires", self.model.formatHTTPTimestamp(validUntil))
-        
-        return (lastModified, broadcasts if limiter is None else limiter(broadcasts))
+        return (lastModified, broadcasts if limiter is None else limiter(broadcasts), validUntil >= until, validUntil)
         
     def getStationFrequencies(self, station, notModifiedCheck = None, head = False):
         global UPCOMING, PAST, ONAIR
