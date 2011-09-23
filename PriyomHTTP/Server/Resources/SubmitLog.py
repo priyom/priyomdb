@@ -2,7 +2,7 @@ from WebStack.Generic import ContentType, EndOfResponse
 from Resource import Resource
 from libPriyom import *
 
-class SubmitLogResource(object):
+class SubmitLogResource(Resource):
     def __init__(self, model):
         super(SubmitLogResource, self).__init__(model)
         self.allowedMethods = frozenset(["GET", "POST"])
