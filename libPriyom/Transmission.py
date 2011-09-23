@@ -52,14 +52,14 @@ class TransmissionClassBase(object):
         fields = (field for field in self.fields)
         field = None
         for item in filter(lambda x: (x.nodeType == dom.Node.ELEMENT_NODE) and (x.tagName == u"item"), node.childNodes):
-            langCode = unicode(item.getAttribute("lang"), "utf-8")
+            langCode = item.getAttribute("lang")
             if langCode is None:
                 field = fields.__next__()
                 setattr(self, field.FieldName, XMLIntf.getText(item))
             else:
                 supplement = self.supplements[field.FieldName]
                 supplement.ForeignText = XMLIntf.getText(item)
-                supplement.LangCode = langCode
+                supplement.LangCode = unicode(langCode)
     
     def deleteForeignSupplements(self):
         for supplement in self.supplements.itervalues():
