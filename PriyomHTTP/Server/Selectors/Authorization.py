@@ -4,11 +4,22 @@ class AuthorizationSelector(object):
     def __init__(self, resource, requiredCap):
         self.resource = resource
         self.requiredCap = requiredCap
+        if type(self.requiredCap) != list:
+            self.requiredCap = [self.requiredCap]
+        
+        self.title = self.resource.title
+        if hasattr(self.resource, "shortDescription"):
+            self.shortDescription = self.resource.shortDescription
         
     def respond(self, trans):
-        if not (self.requiredCap in trans.apiCaps):
-            self.authFailed(trans)
-        return self.resource.respond(trans)
+        for cap in self.requiredCap:
+            if cap in trans.apiCaps:
+                return self.resource.respond(trans)
+        self.authFailed(trans)
+        
+    def doc(self, trans, breadcrumbs):
+        # transparently pass this through
+        return self.resource.doc(trans, breadcrumbs)
         
     def authFailed(self, trans):
         trans.set_response_code(401)
