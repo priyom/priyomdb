@@ -27,10 +27,10 @@ class ExceptionSelector(object):
 <html>
     <head>
         <title>Priyom.org internal API error</title>
-        <link rel="stylesheet" type="text/css" href="css/error.css"/>
+        <link rel="stylesheet" type="text/css" href="{0}"/>
     </head>
     <body>
-        <h1>Internal API error</h1>"""
+        <h1>Internal API error</h1>""".format(application.get("urlroot", u"") + u"/css/error.css")
             if self.show:
                 s += u"""
         <h2>Error information</h2>
