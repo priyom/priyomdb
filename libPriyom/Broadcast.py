@@ -100,7 +100,7 @@ class Broadcast(PriyomBase, XMLIntf.XMLStorm):
             Store.of(self).remove(broadcastFrequency)
             
     def _loadStationID(self, node, context):
-        self.StationID = context.resolveId(Station, int(XMLIntf.getText(node)))
+        self.Station = context.resolveId(Station, int(XMLIntf.getText(node)))
     
     def getIsOnAir(self):
         now = datetime.datetime.utcnow()
