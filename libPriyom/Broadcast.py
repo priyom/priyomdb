@@ -65,7 +65,6 @@ class Broadcast(PriyomBase, XMLIntf.XMLStorm):
     Frequencies = ReferenceSet(ID, BroadcastFrequency.BroadcastID)
     
     xmlMapping = {
-        u"StationID": "StationID",
         u"Comment": "Comment",
         u"Type": "Type"
     }
@@ -99,6 +98,9 @@ class Broadcast(PriyomBase, XMLIntf.XMLStorm):
         broadcastFrequency = BroadcastFrequency.importFromDom(Store.of(self), element, self, context)
         if element.hasAttribute("delete"):
             Store.of(self).remove(broadcastFrequency)
+            
+    def _loadStationID(self, node, context):
+        self.StationID = context.resolveId(Station, int(XMLIntf.getText(node)))
     
     def getIsOnAir(self):
         now = datetime.datetime.utcnow()

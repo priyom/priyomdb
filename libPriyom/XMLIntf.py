@@ -25,7 +25,11 @@ class XMLStorm(object):
             if child.nodeType == dom.Node.ELEMENT_NODE:
                 if len(child.childNodes) == 1 and child.childNodes[0].nodeType == dom.Node.TEXT_NODE:
                     if child.tagName in self.xmlMapping:
-                        setattr(self, self.xmlMapping[child.tagName], child.childNodes[0].data)
+                        mapped = self.xmlMapping[child.tagName]
+                        if type(mapped) == tuple:
+                            setattr(self, mapped[0], mapped[1](child.childNodes[0].data))
+                        else:
+                            setattr(self, mapped, child.childNodes[0].data)
                     else:
                         self.loadProperty(child.tagName, child.childNodes[0].data, child, context)
                 elif len(child.childNodes) == 0:

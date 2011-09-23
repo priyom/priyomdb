@@ -168,10 +168,7 @@ class Transmission(PriyomBase, XMLIntf.XMLStorm):
     
     xmlMapping = {
         u"Recording": "RecordingURL",
-        u"Remarks": "Remarks",
-        u"StationID": "StationID",
-        u"BroadcastID": "BroadcastID",
-        u"ClassID": "ClassID"
+        u"Remarks": "Remarks"
     }
     
     def updateBlocks(self):
@@ -197,18 +194,24 @@ class Transmission(PriyomBase, XMLIntf.XMLStorm):
         
         self.ForeignCallsign = ForeignHelper(self, "Callsign")
         
-    def _loadCallsign(self, node):
+    def _loadCallsign(self, node, context):
         if node.getAttribute("lang") is not None:
             self.ForeignCallsign.supplement.ForeignText = XMLIntf.getText(node)
             self.ForeignCallsign.supplement.LangCode = XMLIntf.getAttribute("lang")
         else:
             self.Callsign = XMLIntf.getText(node)
+            
+    def _loadBroadcastID(self, node, context):
+        self.BroadcastID = context.resolveId(Broadcast, int(XMLIntf.getText(node)))
+        
+    def _loadClassID(self, node, context):
+        self.ClassID = context.resolveId(TransmissionClass, int(XMLIntf.getText(node)))
         
     """
         Note that loading the contents is, in contrast to most other 
         import operations, replacing instead of merging.
     """
-    def _loadContents(self, node):
+    def _loadContents(self, node, context):
         store = Store.of(self)
         for block in self.blocks:
             store.remove(block)
@@ -259,8 +262,10 @@ class Transmission(PriyomBase, XMLIntf.XMLStorm):
     def loadDomElement(self, node, context):
         try:
             {
+                u"BroadcastID": self._loadBroadcastID,
+                u"ClassID": self._loadClassID,
                 u"Callsign": self._loadCallsign,
                 u"Contents": self._loadContents
-            }[node.tagName](node)
+            }[node.tagName](node, context)
         except KeyError:
             pass

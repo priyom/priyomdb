@@ -167,7 +167,6 @@ class Resource(object):
         self.query = trans.get_fields_from_path()
         if trans.get_content_type().media_type == "application/x-www-form-encoded":
             self.query.update(trans.get_fields_from_body())
-        self.query.update(trans.get_fields_from_body())
         ifModifiedSince = trans.get_header_values("If-Modified-Since")
         if len(ifModifiedSince) > 0:
             try:
