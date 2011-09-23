@@ -22,7 +22,7 @@ class ImportAPI(API):
             trans.set_content_type(ContentType("text/plain"))
             print >>self.out, "POST your transaction data either as application/xml or as application/json according to priyom.org transaction specification"
             return
-        trans.set_content_type(ContentType("text/plain". self.encoding))
+        trans.set_content_type(ContentType("text/plain", self.encoding))
         
         contentType = str(trans.get_content_type()).split(' ', 1)[0].split(';', 1)[0]
         try:
