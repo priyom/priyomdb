@@ -1,3 +1,4 @@
+import xml.dom.minidom as dom
 from storm.locals import *
 import XMLIntf
 from Foreign import ForeignHelper
@@ -224,7 +225,7 @@ class Transmission(PriyomBase, XMLIntf.XMLStorm):
             return False
         
         for group in filter(lambda x: (x.nodeType == dom.Node.ELEMENT_NODE) and (x.tagName == u"group"), node.childNodes):
-            table = store.find(TransmissionClassTable, TransmissionClassTable.TableName == group.getAttribute(u"name"))
+            table = store.find(TransmissionClassTable, TransmissionClassTable.TableName == group.getAttribute(u"name")).any()
             if table is None:
                 print("Invalid transmission class table: %s" % (group.getAttribute(u"name")))
                 return False
