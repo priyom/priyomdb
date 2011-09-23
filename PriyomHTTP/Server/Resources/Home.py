@@ -4,7 +4,7 @@ from ..APIDatabase import APINews
 from WebStack.Generic import ContentType
 from Resource import Resource
 
-class EmptyResource(Resource):
+class HomeResource(Resource):
     def handle(self, trans):
         trans.set_content_type(ContentType("text/html", self.encoding))
         news = self.store.find(APINews)
