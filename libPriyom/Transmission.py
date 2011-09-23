@@ -202,10 +202,10 @@ class Transmission(PriyomBase, XMLIntf.XMLStorm):
             self.Callsign = XMLIntf.getText(node)
             
     def _loadBroadcastID(self, node, context):
-        self.BroadcastID = context.resolveId(Broadcast, int(XMLIntf.getText(node)))
+        self.Broadcast = context.resolveId(Broadcast, int(XMLIntf.getText(node)))
         
     def _loadClassID(self, node, context):
-        self.ClassID = context.resolveId(TransmissionClass, int(XMLIntf.getText(node)))
+        self.Class = context.resolveId(TransmissionClass, int(XMLIntf.getText(node)))
         
     """
         Note that loading the contents is, in contrast to most other 
