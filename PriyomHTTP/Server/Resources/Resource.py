@@ -1,6 +1,9 @@
 from WebStack.Generic import EndOfResponse, ContentType
 from cfg_priyomhttpd import response, doc, misc, application
 from fnmatch import fnmatch
+import re
+
+dictfield = re.compile("\[([^\]]+)\]")
 
 class Argument(object):
     def __init__(self, name, type, description, metavar = None, optional = False):
@@ -144,6 +147,32 @@ class Resource(object):
         else:
             self.model.setOffset(None)
             
+    def setDictValue(self, someDict, path, value):
+        global dictfield
+        i = dictfield.finditer(path)
+        try:
+            m = next(i)
+            node = path[0:m.start()]
+            path = path[m.start():]
+        except StopIteration:
+            node = path
+        prevNodeDict = someDict
+            
+        i = dictfield.finditer(path)
+        for m in i:
+            nodeDict = prevNodeDict.get(node, {})
+            prevNodeDict[node] = nodeDict
+            prevNodeDict = nodeDict
+            node = m.group(1)
+        prevNodeDict[node] = value
+            
+    def parseQueryDict(self):
+        global dictfield
+        newQueryDict = dict()
+        for key, value in self.query.iteritems():
+            self.setDictValue(newQueryDict, key, value)
+        return newQueryDict
+        
     def normalizeQueryDict(self):
         for key in self.query.iterkeys():
             self.query[key] = self.query[key][0]
