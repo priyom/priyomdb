@@ -12,9 +12,13 @@ class SubmitLogResource(Resource):
         
         print >>self.out, u"""<html>
     <head>
-        <title>Submit logs</title>
+        <title>{0}</title>
     </head>
     <body>
-    
+        <form name="logform" action="submit" method="POST">
+            <input type="submit" name="submit" value="Submit logs" />
+        </form>
     </body>
-</html>""".encode(self.encoding)
+</html>""".format(
+            self.model.formatHTMLTitle(u"Submit logs")
+        ).encode(self.encoding, 'replace')
