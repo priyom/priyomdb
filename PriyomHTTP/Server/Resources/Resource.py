@@ -120,9 +120,9 @@ class Resource(object):
         self.encoding = charset
         
         prefs = self.parsePreferencesList(",".join(trans.get_header_values("Accept")))
-        xhtmlContentType = self.getContentTypeToUse(prefs, ["application/xhtml+xml", "application/xml", "text/html"])
-        htmlContentType = self.getContentTypeToUse(prefs, ["text/html"])
-        xmlContentType = self.getContentTypeToUse(prefs, ["application/xml"])
+        self.xhtmlContentType = self.getContentTypeToUse(prefs, ["application/xhtml+xml", "application/xml", "text/html"])
+        self.htmlContentType = self.getContentTypeToUse(prefs, ["text/html"])
+        self.xmlContentType = self.getContentTypeToUse(prefs, ["application/xml"])
         
     def setupModel(self):
         if "flags" in self.query:
