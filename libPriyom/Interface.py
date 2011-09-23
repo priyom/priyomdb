@@ -256,7 +256,7 @@ class PriyomInterface:
         wideBroadcasts = self.store.find(Broadcast, Broadcast.StationID == stationId)
         lastModified = max(
             wideBroadcasts.max(Broadcast.Modified), 
-            self.store.get(stationId).BroadcastDeleted
+            self.store.get(Station, stationId).BroadcastDeleted
         )
         if head:
             return (lastModified, None)
