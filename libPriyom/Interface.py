@@ -288,10 +288,14 @@ class PriyomInterface:
         return (lastModified, objects)
     
     def getTransmissionsByMonth(self, stationId, year, month, limiter = None, notModifiedCheck = None, head = False):
-        startTimestamp = datetime(year, month, 1)
-        if month != 12:
-            endTimestamp = datetime(year, month+1, 1)
+        if month is not None:
+            startTimestamp = datetime(year, month, 1)
+            if month != 12:
+                endTimestamp = datetime(year, month+1, 1)
+            else:
+                endTimestamp = datetime(year+1, 1, 1)
         else:
+            startTimestamp = datetime(year, 1, 1)
             endTimestamp = datetime(year+1, 1, 1)
         startTimestamp = int(time.mktime(startTimestamp.timetuple()))
         endTimestamp = int(time.mktime(endTimestamp.timetuple()))
