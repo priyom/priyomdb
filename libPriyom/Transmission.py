@@ -53,7 +53,7 @@ class TransmissionClassBase(object):
         field = None
         for item in filter(lambda x: (x.nodeType == dom.Node.ELEMENT_NODE) and (x.tagName == u"item"), node.childNodes):
             langCode = item.getAttribute("lang")
-            if langCode is None:
+            if langCode is None or len(langCode) == 0:
                 field = fields.__next__()
                 setattr(self, field.FieldName, XMLIntf.getText(item))
             else:
