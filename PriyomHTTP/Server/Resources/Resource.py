@@ -93,17 +93,11 @@ class Resource(object):
         
     def getContentTypeToUse(self, prefList, ownPreferences):
         use = None
-        q = None
         if len(prefList) == 0:
             return ownPreferences[0]
-        for item in prefList:
-            if q is None:
-                q = item.q
-            if use is None:
-                use = item.value
-            if item.q < q:
-                break
-            for pref in ownPreferences:
+            
+        for pref in ownPreferences:
+            for item in prefList:
                 if item.value == pref:
                     return item.value
                 if use is None and fnmatch(pref, item.value):
