@@ -1,9 +1,17 @@
 from WebStack.Generic import ContentType
 from libPriyom import *
-from API import API
+from API import API, CallSyntax, Argument
 from libPriyom.Interface import PAST, ONAIR, UPCOMING
 
 class StationFrequenciesAPI(API):
+    title = u"getStationFrequencies"
+    shortDescription = u"get a list of frequencies the station uses"
+    
+    docArgs = [
+        Argument(u"stationId", u"station id", u"select the station at which to look", metavar="stationid")
+    ]
+    docCallSyntax = CallSyntax(docArgs, u"?{0}")
+    
     def handle(self, trans):
         stationId = self.getQueryInt("stationId", "must be integer")
         station = self.store.get(Station, stationId)
