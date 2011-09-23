@@ -8,3 +8,4 @@ from TransmissionsByMonth import TransmissionsByMonthAPI
 from CloseBroadcasts import CloseBroadcastsAPI
 from StationFrequencies import StationFrequenciesAPI
 from InstanciateSchedules import InstanciateSchedulesAPI
+from TransmissionsByYear import TransmissionsByYearAPI
