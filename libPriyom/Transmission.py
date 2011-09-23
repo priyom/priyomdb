@@ -1,3 +1,4 @@
+import xml.dom.minidom as dom
 from storm.locals import *
 import XMLIntf
 from Foreign import ForeignHelper
