@@ -37,6 +37,8 @@ class TransmissionParserNodeField(object):
     ParserNodeID = Int()
     ParserNode = Reference(ParserNodeID, TransmissionParserNode.ID)
     Group = Int()
+    ForeignGroup = Int()
+    ForeignLangGroup = Int()
     FieldName = Unicode()
 
 TransmissionParserNode.Fields = ReferenceSet(TransmissionParserNode.ID, TransmissionParserNodeField.ParserNodeID)

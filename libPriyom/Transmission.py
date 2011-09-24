@@ -161,7 +161,7 @@ class TransmissionClass(PriyomBase):
         expr = node.getExpression()
         if node.Table is not None:
             for match in expr.finditer(s):
-                yield (node.Table, dict(((field.FieldName, match.group(field.Group+1)) for field in node.Fields)))
+                yield (node.Table, dict(((field.FieldName, (match.group(field.Group+1), None if field.ForeignGroup is None or field.ForeignLangGroup is None else (match.group(field.ForeignGroup+1), match.group(field.ForeignLangGroup+1)))) for field in node.Fields)))
         else:
             match = expr.match(s)
             if match is None:
