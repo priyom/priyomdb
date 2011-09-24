@@ -3,9 +3,7 @@ from storm.locals import *
 from storm.exceptions import NoStoreError
 import time
 from datetime import datetime
-
-def now():
-    return int(time.mktime(datetime.utcnow().timetuple()))
+from Helpers.TimeUtils import now
 
 def AutoSetModified(instance, propertyName, newValue):
     instance.touch()
@@ -17,8 +15,8 @@ class PriyomBase(object):
     _knownModified = None
     
     def __init__(self):
-        self.Created = now()
-        self.Modified = now()
+        self.Created = int(now())
+        self.Modified = int(now())
     
     def _forceStore(self, exceptionMessage = None):
         store = Store.of(self)
@@ -44,6 +42,6 @@ class PriyomBase(object):
             
     def touch(self, newModified = None):
         if newModified is None:
-            self.Modified = now()
+            self.Modified = int(now())
         else:
             self.Modified = newModified

@@ -4,7 +4,8 @@ from Schedule import Schedule
 import Imports
 from Broadcast import Broadcast
 import xml.dom.minidom as dom
-from PriyomBase import PriyomBase, now
+from PriyomBase import PriyomBase
+from Helpers import TimeUtils
 
 class Station(PriyomBase, XMLIntf.XMLStorm):
     __storm_table__ = "stations"
@@ -124,7 +125,7 @@ class Station(PriyomBase, XMLIntf.XMLStorm):
         return "Station: %s/%s \"%s\"" % (self.EnigmaIdentifier, self.PriyomIdentifier, self.Nickname)
         
     def broadcastDeleted(self):
-        self.BroadcastDeleted = now()
+        self.BroadcastDeleted = TimeUtils.now()
         
     def __unicode__(self):
         return u"{1}{2}{0}".format(

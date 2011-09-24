@@ -167,12 +167,12 @@ class SubmitLogResource(Resource):
             transmissionContents = self.queryEx["transmission"]
             
             if timestamp is None:
-                timestamp = self.model.now()
+                timestamp = int(TimeUtils.now())
             else:
                 try:
                     timestamp = self.model.priyomInterface.toTimestamp(datetime.strptime(timestamp, Formatting.priyomdate))
                 except ValueError:
-                    timestamp = self.model.now()
+                    timestamp = int(TimeUtils.now())
         except KeyError as e:
             return unicode(e)
             
@@ -267,12 +267,12 @@ Transmission: {2}</pre>""".format(
         
         timestamp = self.queryEx.get("timestamp", None)
         if timestamp is None:
-            timestamp = self.model.now()
+            timestamp = int(TimeUtils.now())
         else:
             try:
                 timestamp = self.model.priyomInterface.toTimestamp(datetime.strptime(timestamp, Formatting.priyomdate))
             except ValueError:
-                timestamp = self.model.now()
+                timestamp = int(TimeUtils.now())
         
         print >>self.out, u"""<!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml">
@@ -325,7 +325,7 @@ Transmission: {2}</pre>""".format(
                                                 u' selected="selected"' if station.ID == stationId else u"",
                                                 unicode(station)
                                             ) for station in stations)),
-                datetime.fromtimestamp(timestamp).strftime(Formatting.priyomdate),
+                TimeUtils.fromTimestamp(timestamp).strftime(Formatting.priyomdate),
                 u"\n            ".join(self.formatBroadcastSelector(station, timestamp)),
                 self.recursiveDict(self.queryEx),
                 self.queryEx.get("duration", 0),
