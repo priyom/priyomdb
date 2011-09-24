@@ -4,6 +4,15 @@ from Modulation import Modulation
 import datetime
 from PriyomBase import PriyomBase, now
 from Formatting import priyomdate
+import re
+
+freqRe = re.compile("([0-9]+(\.[0-9]*)?|\.[0-9]+)\s*(([mkg]?)hz)?", re.I)
+siPrefixes = {
+    "" : 1,
+    "k": 1000,
+    "m": 1000000,
+    "g": 1000000000
+}
 
 class BroadcastFrequency(object):
     __storm_table__ = "broadcastFrequencies"
@@ -16,6 +25,27 @@ class BroadcastFrequency(object):
     def __init__(self):
         self.Frequency = 0
         self.ModulationID = 0
+        
+    @staticmethod
+    def parseFrequency(freqStr):
+        global freqRe
+        m = freqRe.match(freqStr)
+        if m is None:
+            return None
+        si = m.group(4)
+        return float(m.group(1)) * siPrefixes[si.lower() if si is not None else ""]
+        
+    @staticmethod
+    def formatFrequency(freq):
+        freq = int(freq)
+        if freq > 1000000000:
+            return unicode((freq / 1000000000.0)) + u" GHz"
+        elif freq > 1000000:
+            return unicode((freq / 1000000.0)) + u" MHz"
+        elif freq > 1000:
+            return unicode((freq / 1000.0)) + u" kHz"
+        else:
+            return unicode(freq) + u" Hz"
     
     @staticmethod
     def importFromDom(store, node, broadcast, context):
@@ -47,6 +77,12 @@ class BroadcastFrequency(object):
         frequency = XMLIntf.buildTextElementNS(doc, "frequency", unicode(self.Frequency), XMLIntf.namespace)
         frequency.setAttribute("modulation", self.Modulation.Name)
         parentNode.appendChild(frequency)
+        
+    def __unicode__(self):
+        return u"{0} ({1})".format(
+            BroadcastFrequency.formatFrequency(self.Frequency),
+            self.Modulation.Name
+        )
         
 
 class Broadcast(PriyomBase, XMLIntf.XMLStorm):
