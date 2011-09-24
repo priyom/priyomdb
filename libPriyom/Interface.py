@@ -12,6 +12,7 @@ from Foreign import ForeignSupplement
 from Helpers.ScheduleMaintainer import ScheduleMaintainer
 import time
 from datetime import datetime, timedelta
+from Helpers import TimeUtils
 
 PAST = u"past"
 ONAIR = u"on-air"
@@ -42,9 +43,6 @@ class PriyomInterface:
             raise ValueError("store must not be None.")
         self.store = store
         self.scheduleMaintainer = ScheduleMaintainer(self)
-        
-    def now(self):
-        return int(time.mktime(datetime.utcnow().timetuple()))
         
     def createDocument(self, rootNodeName):
         return dom.getDOMImplementation().createDocument(XMLIntf.namespace, rootNodeName, None)
@@ -185,9 +183,6 @@ class PriyomInterface:
     def normalizeDate(self, dateTime):
         return datetime(year=dateTime.year, month=dateTime.month, day=dateTime.day)
         
-    def toTimestamp(self, dateTime):
-        return time.mktime(dateTime.timetuple())
-        
     def importTransaction(self, doc):
         context = self.getImportContext()
         for node in (node for node in doc.documentElement.childNodes if node.nodeType == dom.Node.ELEMENT_NODE):
@@ -297,8 +292,8 @@ class PriyomInterface:
         else:
             startTimestamp = datetime(year, 1, 1)
             endTimestamp = datetime(year+1, 1, 1)
-        startTimestamp = int(time.mktime(startTimestamp.timetuple()))
-        endTimestamp = int(time.mktime(endTimestamp.timetuple()))
+        startTimestamp = TimeUtils.toTimestamp(startTimestamp)
+        endTimestamp = TimeUtils.toTimestamp(endTimestamp)
         
         transmissions = self.store.find((Transmission, Broadcast), 
             Transmission.BroadcastID == Broadcast.ID,

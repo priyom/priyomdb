@@ -4,6 +4,7 @@ from Modulation import Modulation
 import datetime
 from PriyomBase import PriyomBase, now
 from Formatting import priyomdate
+from Helpers import TimeUtils
 import re
 
 freqRe = re.compile("([0-9]+(\.[0-9]*)?|\.[0-9]+)\s*(([mkg]?)hz)?", re.I)
@@ -141,7 +142,7 @@ class Broadcast(PriyomBase, XMLIntf.XMLStorm):
     
     def getIsOnAir(self):
         now = datetime.datetime.utcnow()
-        start = datetime.datetime.fromtimestamp(self.BroadcastStart)
+        start = TimeUtils.toDatetime(self.BroadcastStart)
         if now > start:
             if self.BroadcastEnd is None:
                 return True
@@ -196,7 +197,7 @@ class Broadcast(PriyomBase, XMLIntf.XMLStorm):
         return "%s broadcast from %s until %s" % (self.Type, repr(self.BroadcastStart), repr(self.BroadcastEnd))
         
     def transmissionDeleted(self):
-        self.TransmissionDeleted = now()
+        self.TransmissionDeleted = int(TimeUtils.now())
         
     def __unicode__(self):
         return u"Broadcast at {0} on {1}".format(

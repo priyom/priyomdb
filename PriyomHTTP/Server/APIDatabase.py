@@ -5,9 +5,7 @@ import time
 from datetime import datetime
 from libPriyom.Formatting import priyomdate
 import netaddr
-
-def now():
-    return int(time.mktime(datetime.utcnow().timetuple()))
+from libPriyom.Helpers import TimeUtils
 
 rnd = random.SystemRandom()
 
@@ -64,12 +62,12 @@ class APIUser(APICapableObject):
             old.delete()
         
         # generate a new session id
-        sid = unicode(sha256(unicode(now())).hexdigest())
+        sid = unicode(sha256(unicode(int(TimeUtils.now()))).hexdigest())
         while store.find(APISession, APISession.Key == sid).any() is not None:
-            sid = unicode(sha256(unicode(now())+unicode(rnd.randint(0, 655535))).hexdigest())
+            sid = unicode(sha256(unicode(int(TimeUtils.now()))+unicode(rnd.randint(0, 655535))).hexdigest())
         
         # create a new session
-        session = APISession(sid, self.ID, now() + 86400)
+        session = APISession(sid, self.ID, int(TimeUtils.now() + 86400))
         store.add(session)
         for cap in self.Capabilities:
             session.Capabilities.add(cap)
@@ -96,7 +94,7 @@ class APISession(APICapableObject):
         
     def isValid(self):
         store = Store.of(self)
-        return (store is not None) and (len(self.Key) > 0) and (self.Expires > now())
+        return (store is not None) and (len(self.Key) > 0) and (self.Expires > TimeUtils.now())
         
     def delete(self):
         store = Store.of(self)
