@@ -2,6 +2,7 @@ from WebStack.Generic import EndOfResponse, ContentType
 from cfg_priyomhttpd import response, doc, misc, application
 from fnmatch import fnmatch
 import re
+from libPriyom.Helpers import TimeUtils
 
 dictfield = re.compile("\[([^\]]+)\]")
 
@@ -200,7 +201,7 @@ class Resource(object):
                 trans.set_response_code(400)
                 print >>self.out, "If-Modified-Since date given in a invalid format: %s" % str(e)
                 raise EndOfResponse
-            self.ifModifiedSinceUnix = self.priyomInterface.toTimestamp(self.ifModifiedSince)
+            self.ifModifiedSinceUnix = TimeUtils.toTimestamp(self.ifModifiedSince)
         else:
             self.ifModifiedSince = None
             self.ifModifiedSinceUnix = None
