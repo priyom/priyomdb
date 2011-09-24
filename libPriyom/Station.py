@@ -125,3 +125,10 @@ class Station(PriyomBase, XMLIntf.XMLStorm):
         
     def broadcastDeleted(self):
         self.BroadcastDeleted = now()
+        
+    def __unicode__(self):
+        return u"{1}{2}{0}".format(
+            u" (" + self.Nickname + u")" if len(self.Nickname) > 0 else u"",
+            self.EnigmaIdentifier + (u" / " if len(self.EnigmaIdentifier) > 0 and len(self.PriyomIdentifier) > 0 else u""),
+            self.PriyomIdentifier
+        )
