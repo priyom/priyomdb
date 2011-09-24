@@ -5,39 +5,11 @@ from Resource import Resource
 from libPriyom import *
 from datetime import datetime, timedelta
 from time import mktime, time
-import re
-
-freqRe = re.compile("([0-9]+(\.[0-9]*)?|\.[0-9]+)\s*(([mkg]?)hz)?", re.I)
-siPrefixes = {
-    "" : 1,
-    "k": 1000,
-    "m": 1000000,
-    "g": 1000000000
-}
 
 class SubmitLogResource(Resource):
     def __init__(self, model):
         super(SubmitLogResource, self).__init__(model)
         self.allowedMethods = frozenset(["GET", "POST"])
-        
-    def parseFrequency(self, freqStr):
-        global freqRe
-        m = freqRe.match(freqStr)
-        if m is None:
-            return None
-        si = m.group(4)
-        return float(m.group(1)) * siPrefixes[si.lower() if si is not None else ""]
-        
-    def formatFrequency(self, freq):
-        freq = int(freq)
-        if freq > 1000000000:
-            return unicode((freq / 1000000000.0)) + u" GHz"
-        elif freq > 1000000:
-            return unicode((freq / 1000000.0)) + u" MHz"
-        elif freq > 1000:
-            return unicode((freq / 1000.0)) + u" kHz"
-        else:
-            return unicode(freq) + u" Hz"
         
     def formatFrequencies(self):
         i = -1
@@ -48,11 +20,11 @@ class SubmitLogResource(Resource):
             if "submit" in item:
                 item["frequency"] = "0 Hz"
                 item["modulation"] = "USB"
-            freq = self.parseFrequency(item["frequency"])
+            freq = BroadcastFrequency.parseFrequency(item["frequency"])
             if freq is None:
                 freq = "0 Hz"
             else:
-                freq = self.formatFrequency(freq)
+                freq = BroadcastFrequency.formatFrequency(freq)
             yield u"""<tr>
     <td><input type="text" name="frequencies[{0}][frequency]" value="{1}" /></td>
     <td><select name="frequencies[{0}][modulation]">{2}</select></td>
@@ -82,10 +54,9 @@ class SubmitLogResource(Resource):
                 if broadcast.Type == u"continous":
                     continue
                 ids.append(broadcast.ID)
-                yield u"""<option value="{0}"{3}>Broadcast at {1} on {2}</option>""".format(
+                yield u"""<option value="{0}"{2}>{1}</option>""".format(
                     broadcast.ID,
-                    datetime.fromtimestamp(broadcast.BroadcastStart).strftime(Formatting.priyomdate),
-                    u", ".join((self.formatFrequency(freq.Frequency) for freq in broadcast.Frequencies)),
+                    unicode(broadcast),
                     u' selected="selected"' if broadcast.ID == int(self.queryEx.get("broadcast", 0)) else u""
                 )
                 found = True
@@ -167,7 +138,7 @@ class SubmitLogResource(Resource):
                 else:
                     yield u""" Parsing failed, no items"""
                     
-    def validate(self):
+    def insert(self):
         try:
             station = self.store.get(Station, int(self.queryEx["stationId"]))
             if station is None:
@@ -175,13 +146,18 @@ class SubmitLogResource(Resource):
             timestamp = self.queryEx["timestamp"]
             duration = int(self.queryEx["duration"])
             remarks = self.queryEx["remarks"]
+            callsign = self.queryEx["callsign"]
+            foreignCallsignLang = self.queryEx["foreignCallsign"]["lang"]
+            foreignCallsign = self.queryEx["foreignCallsign"]["value"]
+            if len(foreignCallsign) != 0 and len(foreignCallsignLang) == 0:
+                raise KeyError("Foreign callsign given but no language code set.")
             
             broadcast = self.store.get(Broadcast, int(self.queryEx["broadcast"]))
             if broadcast is None and int(self.queryEx["broadcast"]) != 0:
                 raise KeyError("No broadcast with id #{0}".format(self.queryEx["broadcast"]))
             broadcastAfter = int(self.queryEx["broadcastAfter"])
             broadcastBefore = int(self.queryEx["broadcastBefore"])
-            broadcastFrequencies = [(self.parseFrequency(item["frequency"]), item["modulation"]) for key, item in self.queryEx["frequencies"].iteritems() if key != "new"]
+            broadcastFrequencies = [(BroadcastFrequency.parseFrequency(item["frequency"]), item["modulation"]) for key, item in self.queryEx["frequencies"].iteritems() if key != "new"]
             broadcastConfirmed = "broadcastConfirmed" in self.queryEx
             broadcastComment = self.queryEx["broadcastComment"]
             
@@ -208,6 +184,7 @@ class SubmitLogResource(Resource):
             broadcast.Comment = broadcastComment
             broadcast.Type = u"data"
             broadcast.Confirmed = broadcastConfirmed
+            broadcast.Station = station
             
             for freqItem in broadcastFrequencies:
                 freq = BroadcastFrequency()
@@ -219,6 +196,7 @@ class SubmitLogResource(Resource):
                     modulation.Name = freqItem[1]
                     self.store.add(modulation)
                 freq.Modulation = modulation
+                freq.Broadcast = broadcast
         else:
             if broadcast.BroadcastStart > timestamp:
                 broadcast.BroadcastStart = timestamp
@@ -228,7 +206,46 @@ class SubmitLogResource(Resource):
         transmission = Transmission()
         self.store.add(transmission)
         transmission.Broadcast = broadcast
-        # transmission.
+        transmission.Class = transmissionClass
+        transmission.__storm_loaded__()
+        transmission.Callsign = callsign
+        transmission.ForeignCallsign.supplement.LangCode = foreignCallsignLang
+        transmission.ForeignCallsign.supplement.ForeignText = foreignCallsignLang
+        transmission.Remarks = remarks
+        transmission.Timestamp = timestamp
+        transmission.RecordingURL = None
+        
+        contents = transmissionClass.parsePlainText(transmissionContents)
+        order = 0
+        for rowData in contents:
+            tableClass = rowData[0].PythonClass
+            contentDict = rowData[1]
+            
+            row = tableClass(self.store)
+            row.Transmission = transmission
+            row.Order = order
+            
+            for key, value in contentDict.iteritems():
+                foreign = value[1]
+                value = value[0]
+                setattr(row, key, value)
+                if foreign is not None:
+                    row.supplements[key].LangCode = foreign[0]
+                    row.supplements[key].ForeignText = foreign[0]
+            
+            order += 1
+            
+        transmission.updateBlocks()
+        self.store.flush()
+        
+        print >>self.out, u"""<pre>Added transmission
+Station: {0}
+Broadcast: {1}
+Transmission: {2}</pre>""".format(
+            unicode(transmission.Broadcast.Station),
+            unicode(transmission.Broadcast),
+            unicode(transmission)
+        )
         
     
     def handle(self, trans):
@@ -301,13 +318,12 @@ class SubmitLogResource(Resource):
                 <div class="inner-caption">Transmission contents:</div>
                 {5}
             </div>
-            <input type="submit" name="submit" value="Submit" />""".format(
-                u"\n                ".join((u"""<option value="{0}"{1}>{3}{4}{2}</option>""".format(
+            <input type="submit" name="submit" value="Submit" />
+        </form>""".format(
+                u"\n                ".join((u"""<option value="{0}"{1}>{2}</option>""".format(
                                                 station.ID,
                                                 u' selected="selected"' if station.ID == stationId else u"",
-                                                u" (" + station.Nickname + u")" if len(station.Nickname) > 0 else u"",
-                                                station.EnigmaIdentifier + (u" / " if len(station.EnigmaIdentifier) > 0 and len(station.PriyomIdentifier) > 0 else u""),
-                                                station.PriyomIdentifier
+                                                unicode(station)
                                             ) for station in stations)),
                 datetime.fromtimestamp(timestamp).strftime(Formatting.priyomdate),
                 u"\n            ".join(self.formatBroadcastSelector(station, timestamp)),
@@ -322,6 +338,5 @@ class SubmitLogResource(Resource):
             ).encode(self.encoding, 'replace')
             
         print >>self.out, u"""
-        </form>
     </body>
 </html>""".encode(self.encoding, 'replace')
