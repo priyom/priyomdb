@@ -77,17 +77,18 @@ class SubmitLogResource(Resource):
         yield u"""<option value="0">New broadcast</option>"""
         found = False
         ids = list()
-        for broadcast in (self.model.priyomInterface.getCloseBroadcasts(station.ID, timestamp, 600)[1]):
-            if broadcast.Type == u"continous":
-                continue
-            ids.append(broadcast.ID)
-            yield u"""<option value="{0}"{3}>Broadcast at {1} on {2}</option>""".format(
-                broadcast.ID,
-                datetime.fromtimestamp(broadcast.BroadcastStart).strftime(Formatting.priyomdate),
-                u", ".join((self.formatFrequency(freq.Frequency) for freq in broadcast.Frequencies)),
-                u' selected="selected"' if broadcast.ID == int(self.queryEx.get("broadcast", 0)) else u""
-            )
-            found = True
+        if station is not None:
+            for broadcast in (self.model.priyomInterface.getCloseBroadcasts(station.ID, timestamp, 600)[1]):
+                if broadcast.Type == u"continous":
+                    continue
+                ids.append(broadcast.ID)
+                yield u"""<option value="{0}"{3}>Broadcast at {1} on {2}</option>""".format(
+                    broadcast.ID,
+                    datetime.fromtimestamp(broadcast.BroadcastStart).strftime(Formatting.priyomdate),
+                    u", ".join((self.formatFrequency(freq.Frequency) for freq in broadcast.Frequencies)),
+                    u' selected="selected"' if broadcast.ID == int(self.queryEx.get("broadcast", 0)) else u""
+                )
+                found = True
         yield u"""</select><input type="submit" name="updateBroadcast" value="Ok" />"""
         
         if not found:
@@ -114,9 +115,13 @@ class SubmitLogResource(Resource):
                 </tbody>
             </table>
             Silence before TX: <input type="text" name="broadcastBefore" value="{0}" /> seconds<br />
-            Silence after TX: <input type="text" name="broadcastAfter" value="{1}" /> seconds""".format(
+            Silence after TX: <input type="text" name="broadcastAfter" value="{1}" /> seconds<br />
+            <input type="checkbox" name="broadcastConfirmed"{3} id="broadcastConfirmed" /><label for="broadcastConfirmed"> confirmed</label><br />
+            Comment: <input type="text" name="broadcastComment" value="{2}" style="width: 100%;" /><br />""".format(
             self.queryEx.get("broadcastBefore", 0),
-            self.queryEx.get("broadcastAfter", 0)
+            self.queryEx.get("broadcastAfter", 0),
+            self.queryEx.get("broadcastComment", u""),
+            u' checked="checked"' if "broadcastConfirmed" in self.queryEx else u""
         )
             
         yield u"""</div></div>"""
@@ -161,6 +166,70 @@ class SubmitLogResource(Resource):
                     yield u""" Parsing ok, creates {0:d} items.""".format(len(items))
                 else:
                     yield u""" Parsing failed, no items"""
+                    
+    def validate(self):
+        try:
+            station = self.store.get(Station, int(self.queryEx["stationId"]))
+            if station is None:
+                raise KeyError("No station with id #{0}".format(self.queryEx["stationId"]))
+            timestamp = self.queryEx["timestamp"]
+            duration = int(self.queryEx["duration"])
+            remarks = self.queryEx["remarks"]
+            
+            broadcast = self.store.get(Broadcast, int(self.queryEx["broadcast"]))
+            if broadcast is None and int(self.queryEx["broadcast"]) != 0:
+                raise KeyError("No broadcast with id #{0}".format(self.queryEx["broadcast"]))
+            broadcastAfter = int(self.queryEx["broadcastAfter"])
+            broadcastBefore = int(self.queryEx["broadcastBefore"])
+            broadcastFrequencies = [(self.parseFrequency(item["frequency"]), item["modulation"]) for key, item in self.queryEx["frequencies"].iteritems() if key != "new"]
+            broadcastConfirmed = "broadcastConfirmed" in self.queryEx
+            broadcastComment = self.queryEx["broadcastComment"]
+            
+            transmissionClass = self.store.get(TransmissionClass, int(self.queryEx["transmissionClass"]))
+            if transmissionClass is None:
+                raise KeyError("No transmission class with id #{0}".format(self.queryEx["transmissionClass"]))
+            transmissionContents = self.queryEx["transmission"]
+            
+            if timestamp is None:
+                timestamp = self.model.now()
+            else:
+                try:
+                    timestamp = self.model.priyomInterface.toTimestamp(datetime.strptime(timestamp, Formatting.priyomdate))
+                except ValueError:
+                    timestamp = self.model.now()
+        except KeyError as e:
+            return unicode(e)
+            
+        if broadcast is None:
+            broadcast = Broadcast()
+            self.store.add(broadcast)
+            broadcast.BroadcastStart = timestamp - broadcastBefore
+            broadcast.BroadcastEnd = timestamp + duration + broadcastAfter
+            broadcast.Comment = broadcastComment
+            broadcast.Type = u"data"
+            broadcast.Confirmed = broadcastConfirmed
+            
+            for freqItem in broadcastFrequencies:
+                freq = BroadcastFrequency()
+                self.store.add(freq)
+                freq.Frequency = freqItem[0]
+                modulation = self.store.find(Modulation, Modulation.Name == freqItem[1]).any()
+                if modulation is None:
+                    modulation = Modulation()
+                    modulation.Name = freqItem[1]
+                    self.store.add(modulation)
+                freq.Modulation = modulation
+        else:
+            if broadcast.BroadcastStart > timestamp:
+                broadcast.BroadcastStart = timestamp
+            else:
+                broadcast.BroadcastEnd = timestamp + duration
+                
+        transmission = Transmission()
+        self.store.add(transmission)
+        transmission.Broadcast = broadcast
+        # transmission.
+        
     
     def handle(self, trans):
         trans.set_content_type(ContentType(self.xhtmlContentType, self.encoding))
@@ -177,6 +246,7 @@ class SubmitLogResource(Resource):
         
         self.queryEx = self.parseQueryDict()
         
+        error = u""
         
         timestamp = self.queryEx.get("timestamp", None)
         if timestamp is None:
@@ -187,49 +257,71 @@ class SubmitLogResource(Resource):
             except ValueError:
                 timestamp = self.model.now()
         
-        print >>self.out, (u"""
-<!DOCTYPE html>
+        print >>self.out, u"""<!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml">
     <head>
         <title>{1}</title>
         <link rel="stylesheet" type="text/css" href="{0}{2}" />
         <script src="{0}{3}" type="text/javascript" />
     </head>
-    <body>
-        <form name="logform" action="submit" method="POST">
-            <div class="section">
-                <div class="inner-caption">Basic information</div>
-                Station: <select name="stationId">
-                    {4}
-                </select><br />
-                Timestamp: <input type="text" name="timestamp" value="{5}" /><br />
-                Duration: <input type="text" name="duration" value="{8}" /> seconds<br />
-                Remarks: <input type="text" name="remarks" value="{10}" style="width: 100%" />
-            </div>
-            {6}
-            <div class="section">
-                <div class="inner-caption">Transmission contents:</div>
-                {9}
-            </div>
-            <input type="submit" name="submit" value="Submit" />
-        </form>
-    </body>
-</html>""").format(
+    <body>""".format(            
             self.model.rootPath(u""),
             self.model.formatHTMLTitle(u"Submit logs"),
             u"/css/submit.css",
-            u"/js/jquery.js",
-            u"\n                ".join((u"""<option value="{0}"{1}>{3}{4}{2}</option>""".format(
-                                            station.ID,
-                                            u' selected="selected"' if station.ID == stationId else u"",
-                                            u" (" + station.Nickname + u")" if len(station.Nickname) > 0 else u"",
-                                            station.EnigmaIdentifier + (u" / " if len(station.EnigmaIdentifier) > 0 and len(station.PriyomIdentifier) > 0 else u""),
-                                            station.PriyomIdentifier
-                                        ) for station in stations)),
-            datetime.fromtimestamp(timestamp).strftime(Formatting.priyomdate),
-            u"\n            ".join(self.formatBroadcastSelector(station, timestamp)),
-            u"",# self.recursiveDict(self.queryEx),
-            self.queryEx.get("duration", 0),
-            u"\n            ".join(self.formatTransmissionEditor()),
-            self.queryEx.get("remarks", "")
+            u"/js/jquery.js"
         ).encode(self.encoding, 'replace')
+        
+        submitted = False
+        if "submit" in self.queryEx:
+            insertResult = self.insert()
+            if insertResult is not None:
+                error = insertResult
+            else:
+                submitted = True
+        
+        if not submitted:
+            print >>self.out, u"""
+        <form name="logform" action="submit" method="POST">
+            <pre>{3}</pre>
+            {7}
+            <div class="section">
+                <div class="inner-caption">Basic information</div>
+                Station: <select name="stationId">
+                    {0}
+                </select><br />
+                Timestamp: <input type="text" name="timestamp" value="{1}" /><br />
+                Duration: <input type="text" name="duration" value="{4}" /> seconds<br />
+                Callsign: <input type="text" name="callsign" value="{8}" /> <br />
+                Foreign callsign language code: <input type="text" name="foreignCallsign[lang]" value="{9}" /><br />
+                Foreign callsign: <input type="text" name="foreignCallsign[value]" value="{10}" /><br />
+                Remarks: <input type="text" name="remarks" value="{6}" style="width: 100%" />
+            </div>
+            {2}
+            <div class="section">
+                <div class="inner-caption">Transmission contents:</div>
+                {5}
+            </div>
+            <input type="submit" name="submit" value="Submit" />""".format(
+                u"\n                ".join((u"""<option value="{0}"{1}>{3}{4}{2}</option>""".format(
+                                                station.ID,
+                                                u' selected="selected"' if station.ID == stationId else u"",
+                                                u" (" + station.Nickname + u")" if len(station.Nickname) > 0 else u"",
+                                                station.EnigmaIdentifier + (u" / " if len(station.EnigmaIdentifier) > 0 and len(station.PriyomIdentifier) > 0 else u""),
+                                                station.PriyomIdentifier
+                                            ) for station in stations)),
+                datetime.fromtimestamp(timestamp).strftime(Formatting.priyomdate),
+                u"\n            ".join(self.formatBroadcastSelector(station, timestamp)),
+                self.recursiveDict(self.queryEx),
+                self.queryEx.get("duration", 0),
+                u"\n            ".join(self.formatTransmissionEditor()),
+                self.queryEx.get("remarks", u""),
+                u'<div class="error">{0}</div>'.format(error) if len(error) > 0 else u"",
+                self.queryEx.get("callsign", u""),
+                self.queryEx.get("foreignCallsign", {}).get("lang", u""),
+                self.queryEx.get("foreignCallsign", {}).get("value", u"")
+            ).encode(self.encoding, 'replace')
+            
+        print >>self.out, u"""
+        </form>
+    </body>
+</html>""".encode(self.encoding, 'replace')
