@@ -55,6 +55,6 @@ def addNews(title, contents):
     except:
         store.remove(news)
         return
-    news.Timestamp = now()
+    news.Timestamp = int(TimeUtils.now())
     store.flush()
     return "News added #%d" % news.ID

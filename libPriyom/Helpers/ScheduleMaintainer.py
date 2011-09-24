@@ -5,6 +5,7 @@ from ..Station import Station
 from time import mktime
 from datetime import datetime, timedelta
 from ..Limits import limits
+import TimeUtils
 
 class ScheduleMaintainerError(Exception):
     pass
@@ -44,14 +45,6 @@ class ScheduleMaintainer(object):
     def __init__(self, interface):
         self.interface = interface
         self.store = self.interface.store
-        
-    @staticmethod
-    def now():
-        return int(mktime(datetime.utcnow().timetuple()))
-        
-    @staticmethod
-    def toTimestamp(datetime):
-        return int(mktime(datetime.timetuple()))
         
     @staticmethod
     def incYear(dt, by):
@@ -194,7 +187,7 @@ class ScheduleMaintainer(object):
         station.ScheduleUpToDateUntil = end
         
     def updateSchedule(self, station, until, limit = None):
-        now = ScheduleMaintainer.now()
+        now = TimeUtils.now()
         if station.Schedule is None:
             return until
         if until is None or (until - now) > limits.schedule.maxLookahead:
