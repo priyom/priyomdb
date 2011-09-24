@@ -3,6 +3,7 @@ from cfg_priyomhttpd import response, doc, misc, application
 from fnmatch import fnmatch
 import re
 from libPriyom.Helpers import TimeUtils
+import sys
 
 dictfield = re.compile("\[([^\]]+)\]")
 
@@ -295,6 +296,7 @@ class Resource(object):
     def autoNotModified(self, lastModified):
         if lastModified is None:
             return
+        print >>sys.stderr, "lastModified={0}; ifModifiedSince={1}; header={2}".format(long(lastModified), long(self.ifModifiedSinceUnix), u",".join(self.trans.get_header_values("If-Modified-Since")))
         if self.ifModifiedSinceUnix is not None and long(lastModified) == long(self.ifModifiedSinceUnix):
             self.trans.set_response_code(304)
             raise EndOfResponse
