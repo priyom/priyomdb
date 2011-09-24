@@ -16,7 +16,6 @@ class Transmission(PriyomBase, XMLIntf.XMLStorm):
     Callsign = Unicode()
     Timestamp = Int()
     ClassID = Int()
-    Class = Reference(ClassID, TransmissionClass.ID)
     RecordingURL = Unicode()
     Remarks = Unicode()
     
