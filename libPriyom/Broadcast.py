@@ -3,6 +3,7 @@ import XMLIntf
 from Modulation import Modulation
 import datetime
 from PriyomBase import PriyomBase, now
+from Formatting import priyomdate
 
 class BroadcastFrequency(object):
     __storm_table__ = "broadcastFrequencies"
@@ -163,3 +164,9 @@ class Broadcast(PriyomBase, XMLIntf.XMLStorm):
         
     def transmissionDeleted(self):
         self.TransmissionDeleted = now()
+        
+    def __unicode__(self):
+        return u"Broadcast at {0} on {1}".format(
+            datetime.datetime.fromtimestamp(self.BroadcastStart).strftime(priyomdate),
+            u", ".join((unicode(freq) for freq in self.Frequencies))
+        )
