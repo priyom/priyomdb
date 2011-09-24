@@ -5,7 +5,7 @@ from Broadcast import Broadcast
 from Station import Station
 from PriyomBase import PriyomBase
 import types
-from TransmissionParser import TransmissionParserNode, TransmissionParserNodeField
+from TransmissionParser import TransmissionParserNode, TransmissionParserNodeField, NodeError
     
 class TransmissionClassBase(object):
     def __getitem__(self, index):
@@ -137,7 +137,7 @@ class TransmissionClass(PriyomBase):
     ID = Int(primary = True)
     DisplayName = Unicode()
     RootParserNodeID = Int()
-    RootParserNode = Reference(RootParserNodeID, TransmissionParserNode)
+    RootParserNode = Reference(RootParserNodeID, TransmissionParserNode.ID)
     Tables = ReferenceSet(ID, TransmissionClassTable.TransmissionClassID)
     
     def __storm_loaded__(self):
@@ -159,31 +159,37 @@ class TransmissionClass(PriyomBase):
         
     def parseNode(self, node, s):
         expr = node.getExpression()
-        match = expr.match(s)
-        groups = match.groups()
         if node.Table is not None:
-            yield (node.Table, dict(((field.FieldName, groups[field.Group]) for field in node.Fields)))
+            for match in expr.finditer(s):
+                yield (node.Table, dict(((field.FieldName, match.group(field.Group+1)) for field in node.Fields)))
         else:
+            match = expr.match(s)
+            if match is None:
+                raise ValueError("Sub-match failed")
+            groups = match.groups()
             for child in node.Children:
                 if child.ParentGroup is None:
-                    raise Exception("Malformed node: ParentGroup is None at child node #{0}".format(node.ID)
+                    raise NodeError("Malformed node: ParentGroup is None at child node #{0}".format(node.ID))
                 for item in self.parseNode(child, groups[child.ParentGroup]):
                     yield item
         
     def parsePlainText(self, s):
         if self.RootParserNode is None:
-            raise Exception("No parser assigned.")
+            raise NodeError("No parser assigned.")
         node = self.RootParserNode
         expr = node.getExpression() # re.compile(node.RegularExpression)
+        print(expr.pattern)
         match = expr.match(s)
         if match is None:
-            return None
+            raise ValueError("Root match failed")
         items = list()
         groups = match.groups()
-        for child in node.Children:
+        
+        for child in Store.of(node).find(TransmissionParserNode, TransmissionParserNode.ParentID == node.ID).order_by(Asc(TransmissionParserNode.ParentGroup)):
             if child.ParentGroup is None:
-                raise Exception("Malformed node: ParentGroup is None at child node #{0}".format(node.ID)
+                raise NodeError("Malformed node: ParentGroup is None at child node #{0}".format(node.ID))
             items.extend(self.parseNode(child, groups[child.ParentGroup]))
+        return items
         
 
 class Transmission(PriyomBase, XMLIntf.XMLStorm):

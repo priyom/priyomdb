@@ -1,6 +1,9 @@
 from storm.locals import *
 import re
 
+class NodeError(Exception):
+    pass
+
 class TransmissionParserNode(object):
     __storm_table__ = "transmissionParserNode"
     
@@ -11,6 +14,9 @@ class TransmissionParserNode(object):
     TableID = Int()
     
     def __init__(self):
+        self.expression = None
+        
+    def __storm_loaded__(self):
         self.expression = None
     
     def __storm_invalidated__(self):
