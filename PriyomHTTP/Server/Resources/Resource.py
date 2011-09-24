@@ -170,6 +170,8 @@ class Resource(object):
         global dictfield
         newQueryDict = dict()
         for key, value in self.query.iteritems():
+            if type(value) == str:
+                value = value.decode("utf-8")
             self.setDictValue(newQueryDict, key, value)
         return newQueryDict
         
@@ -188,8 +190,8 @@ class Resource(object):
         self.trans = trans
         self.out = trans.get_response_stream()
         self.query = trans.get_fields_from_path()
-        if trans.get_content_type().media_type == "application/x-www-form-encoded":
-            self.query.update(trans.get_fields_from_body())
+        if trans.get_content_type().media_type == "application/x-www-form-urlencoded":
+            self.query.update(trans.get_fields_from_body("utf-8"))
         ifModifiedSince = trans.get_header_values("If-Modified-Since")
         if len(ifModifiedSince) > 0:
             try:
