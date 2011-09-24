@@ -1,3 +1,4 @@
+import xml.dom.minidom as dom
 from storm.locals import *
 import XMLIntf
 from Foreign import ForeignHelper
@@ -20,10 +21,7 @@ class Transmission(PriyomBase, XMLIntf.XMLStorm):
     
     xmlMapping = {
         u"Recording": "RecordingURL",
-        u"Remarks": "Remarks",
-        u"StationID": "StationID",
-        u"BroadcastID": "BroadcastID",
-        u"ClassID": "ClassID"
+        u"Remarks": "Remarks"
     }
     
     def updateBlocks(self):
@@ -38,6 +36,7 @@ class Transmission(PriyomBase, XMLIntf.XMLStorm):
     def __init__(self):
         super(Transmission, self).__init__()
         self.ForeignCallsign = None
+        self.blocks = []
     
     def __storm_invalidated__(self):
         self.updateBlocks()
@@ -49,18 +48,26 @@ class Transmission(PriyomBase, XMLIntf.XMLStorm):
         
         self.ForeignCallsign = ForeignHelper(self, "Callsign")
         
-    def _loadCallsign(self, node):
+    def _loadCallsign(self, node, context):
+        if self.ForeignCallsign is None:
+            self.ForeignCallsign = ForeignHelper(self, "Callsign")
         if node.getAttribute("lang") is not None:
             self.ForeignCallsign.supplement.ForeignText = XMLIntf.getText(node)
-            self.ForeignCallsign.supplement.LangCode = XMLIntf.getAttribute("lang")
+            self.ForeignCallsign.supplement.LangCode = unicode(node.getAttribute("lang"), "utf-8")
         else:
             self.Callsign = XMLIntf.getText(node)
+            
+    def _loadBroadcastID(self, node, context):
+        self.Broadcast = context.resolveId(Broadcast, int(XMLIntf.getText(node)))
+        
+    def _loadClassID(self, node, context):
+        self.Class = context.resolveId(TransmissionClass, int(XMLIntf.getText(node)))
         
     """
         Note that loading the contents is, in contrast to most other 
         import operations, replacing instead of merging.
     """
-    def _loadContents(self, node):
+    def _loadContents(self, node, context):
         store = Store.of(self)
         for block in self.blocks:
             store.remove(block)
@@ -70,12 +77,12 @@ class Transmission(PriyomBase, XMLIntf.XMLStorm):
             return False
         
         for group in filter(lambda x: (x.nodeType == dom.Node.ELEMENT_NODE) and (x.tagName == u"group"), node.childNodes):
-            table = store.find(TransmissionClassTable, TransmissionClassTable.TableName == group.getAttribute(u"name"))
+            table = store.find(TransmissionClassTable, TransmissionClassTable.TableName == group.getAttribute(u"name")).any()
             if table is None:
                 print("Invalid transmission class table: %s" % (group.getAttribute(u"name")))
                 return False
             block = table.PythonClass(store)
-            block.fromDom(group)
+            block.fromDom(group, context)
         
     def _metadataToDom(self, doc, parentNode):
         XMLIntf.appendTextElements(parentNode,
@@ -111,9 +118,11 @@ class Transmission(PriyomBase, XMLIntf.XMLStorm):
     def loadDomElement(self, node, context):
         try:
             {
+                u"BroadcastID": self._loadBroadcastID,
+                u"ClassID": self._loadClassID,
                 u"Callsign": self._loadCallsign,
                 u"Contents": self._loadContents
-            }[node.tagName](node)
+            }[node.tagName](node, context)
         except KeyError:
             pass
     
@@ -162,17 +171,17 @@ class TransmissionClassBase(object):
         parentNode.appendChild(group)
         
     def fromDom(self, node, context):
-        fields = (field for field in self.fields)
+        fields = iter((field for field in self.fields))
         field = None
-        for item in filter(lambda x: (x.nodeType == dom.ELEMENT_NODE) and (x.tagName == u"item"), node.childNodes):
+        for item in filter(lambda x: (x.nodeType == dom.Node.ELEMENT_NODE) and (x.tagName == u"item"), node.childNodes):
             langCode = item.getAttribute("lang")
-            if langCode is None:
-                field = fields.__next__()
+            if langCode is None or len(langCode) == 0:
+                field = next(fields)
                 setattr(self, field.FieldName, XMLIntf.getText(item))
             else:
                 supplement = self.supplements[field.FieldName]
                 supplement.ForeignText = XMLIntf.getText(item)
-                supplement.LangCode = langCode
+                supplement.LangCode = unicode(langCode)
     
     def deleteForeignSupplements(self):
         for supplement in self.supplements.itervalues():
