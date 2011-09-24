@@ -1,6 +1,9 @@
 from WebStack.Generic import EndOfResponse, ContentType
 from cfg_priyomhttpd import response, doc, misc, application
 from fnmatch import fnmatch
+import re
+
+dictfield = re.compile("\[([^\]]+)\]")
 
 class Argument(object):
     def __init__(self, name, type, description, metavar = None, optional = False):
@@ -93,17 +96,11 @@ class Resource(object):
         
     def getContentTypeToUse(self, prefList, ownPreferences):
         use = None
-        q = None
         if len(prefList) == 0:
             return ownPreferences[0]
-        for item in prefList:
-            if q is None:
-                q = item.q
-            if use is None:
-                use = item.value
-            if item.q < q:
-                break
-            for pref in ownPreferences:
+            
+        for pref in ownPreferences:
+            for item in prefList:
                 if item.value == pref:
                     return item.value
                 if use is None and fnmatch(pref, item.value):
@@ -150,6 +147,34 @@ class Resource(object):
         else:
             self.model.setOffset(None)
             
+    def setDictValue(self, someDict, path, value):
+        global dictfield
+        i = dictfield.finditer(path)
+        try:
+            m = next(i)
+            node = path[0:m.start()]
+            path = path[m.start():]
+        except StopIteration:
+            node = path
+        prevNodeDict = someDict
+            
+        i = dictfield.finditer(path)
+        for m in i:
+            nodeDict = prevNodeDict.get(node, {})
+            prevNodeDict[node] = nodeDict
+            prevNodeDict = nodeDict
+            node = m.group(1)
+        prevNodeDict[node] = value
+            
+    def parseQueryDict(self):
+        global dictfield
+        newQueryDict = dict()
+        for key, value in self.query.iteritems():
+            if type(value) == str:
+                value = value.decode("utf-8")
+            self.setDictValue(newQueryDict, key, value)
+        return newQueryDict
+        
     def normalizeQueryDict(self):
         for key in self.query.iterkeys():
             self.query[key] = self.query[key][0]
@@ -165,8 +190,8 @@ class Resource(object):
         self.trans = trans
         self.out = trans.get_response_stream()
         self.query = trans.get_fields_from_path()
-        if trans.get_content_type().media_type == "application/x-www-form-encoded":
-            self.query.update(trans.get_fields_from_body())
+        if trans.get_content_type().media_type == "application/x-www-form-urlencoded":
+            self.query.update(trans.get_fields_from_body("utf-8"))
         ifModifiedSince = trans.get_header_values("If-Modified-Since")
         if len(ifModifiedSince) > 0:
             try:

@@ -7,6 +7,7 @@ from Station import Station
 from Foreign import ForeignSupplement
 import XMLIntf
 from Interface import PriyomInterface
+from TransmissionParser import TransmissionParserNode, TransmissionParserNodeField, NodeError
 
 BroadcastFrequency.Broadcast = Reference(BroadcastFrequency.BroadcastID, Broadcast.ID)
 Broadcast.Station = Reference(Broadcast.StationID, Station.ID)
