@@ -170,7 +170,7 @@ class SubmitLogResource(Resource):
                 timestamp = int(TimeUtils.now())
             else:
                 try:
-                    timestamp = self.model.priyomInterface.toTimestamp(datetime.strptime(timestamp, Formatting.priyomdate))
+                    timestamp = TimeUtils.toTimestamp(datetime.strptime(timestamp, Formatting.priyomdate))
                 except ValueError:
                     timestamp = int(TimeUtils.now())
         except KeyError as e:
@@ -270,7 +270,7 @@ Transmission: {2}</pre>""".format(
             timestamp = int(TimeUtils.now())
         else:
             try:
-                timestamp = self.model.priyomInterface.toTimestamp(datetime.strptime(timestamp, Formatting.priyomdate))
+                timestamp = TimeUtils.toTimestamp(datetime.strptime(timestamp, Formatting.priyomdate))
             except ValueError:
                 timestamp = int(TimeUtils.now())
         
