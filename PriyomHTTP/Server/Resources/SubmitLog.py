@@ -56,7 +56,7 @@ class SubmitLogResource(Resource):
             yield u"""<tr>
     <td><input type="text" name="frequencies[{0}][frequency]" value="{1}" /></td>
     <td><select name="frequencies[{0}][modulation]">{2}</select></td>
-    <td><input type="submit" name="frequencies[{0}][update]" value="Save" /><input type="submit" name="frequencies[{0}][delete]" value="✗" /></td>
+    <td class="buttons"><input type="submit" name="frequencies[{0}][update]" value="Save" /><input type="submit" name="frequencies[{0}][delete]" value="✗" /></td>
 </tr>""".format(
                 unicode(i),
                 freq,
@@ -64,13 +64,15 @@ class SubmitLogResource(Resource):
             )
         item = self.queryEx.get("frequencies", {}).get("new", {"frequency": "10 MHz", "modulation": "USB"})
         yield u"""<tr>
-    <td colspan="3"><input type="submit" name="frequencies[new][submit]" value="+" /></td>
+    <td class="buttons" colspan="3"><input type="submit" name="frequencies[new][submit]" value="+" /></td>
 </tr>""".format(
             item["frequency"],
             u"\n".join((u"""<option value="{0}"{1}>{0}</option>""".format(modulation.Name, u' selected="selected"' if modulation.Name == item["modulation"] else u"") for modulation in self.store.find(Modulation).order_by(Asc(Modulation.Name))))
         )
         
     def formatBroadcastSelector(self, station, timestamp):
+        yield u"""<div class="section">"""
+        yield u"""<div class="inner-caption">Broadcast: </div>"""
         yield u"""<select name="broadcast">"""
         yield u"""<option value="0">New broadcast</option>"""
         found = False
@@ -95,12 +97,13 @@ class SubmitLogResource(Resource):
             yield u"""<div>"""
         else:
             yield u"""<div class="hidden">"""
-            
+
         yield u"""Frequencies:
             <table class="frequency-table">
                 <thead>
                     <th>Frequency</th>
                     <th>Modulation/Mode</th>
+                    <th class="buttons"></th>
                 </thead>
                 <tbody>"""
             
@@ -116,7 +119,7 @@ class SubmitLogResource(Resource):
             self.queryEx.get("broadcastAfter", 0)
         )
             
-        yield u"""</div>"""
+        yield u"""</div></div>"""
         
     def recursiveDictNode(self, dictionary, indent = u""):
         for key, value in dictionary.iteritems():
@@ -132,16 +135,32 @@ class SubmitLogResource(Resource):
         return "\n".join(self.recursiveDictNode(dict))
         
     def formatTransmissionEditor(self):
-        yield u"""<select name="transmissionClass">"""
+        yield u"""Transmission class: <select name="transmissionClass">"""
+        txClassId = int(self.queryEx.get("transmissionClass", 0))
         for txClass in self.store.find(TransmissionClass).order_by(Asc(TransmissionClass.DisplayName)):
             yield u"""<option value="{0}"{2}>{1}</option>""".format(
                 txClass.ID,
                 txClass.DisplayName,
-                u' selected="selected"' if txClass.ID == self.queryEx.get("transmissionClass", 0) else u""
+                u' selected="selected"' if txClass.ID == txClassId else u""
             )
         yield u"""</select>"""
         yield u"""<textarea name="transmission" rows="5" style="width: 100%">{0}</textarea>""".format(self.queryEx.get("transmission", u""))
         yield u"""<input type="submit" name="parseTx" value="Check transmission" />"""
+        
+        txClass = self.store.get(TransmissionClass, txClassId)
+        if txClass is not None:
+            items = None
+            try:
+                items = txClass.parsePlainText(self.queryEx.get("transmission", u""))
+            except ValueError as e:
+                yield u""" Parsing failed: {0:s}""".format(e)
+            except NodeError as e:
+                yield u""" Parsing failed: {0:s}""".format(e)
+            if items is not None:
+                if len(items) > 0:
+                    yield u""" Parsing ok, creates {0:d} items.""".format(len(items))
+                else:
+                    yield u""" Parsing failed, no items"""
     
     def handle(self, trans):
         trans.set_content_type(ContentType(self.xhtmlContentType, self.encoding))
@@ -177,15 +196,21 @@ class SubmitLogResource(Resource):
         <script src="{0}{3}" type="text/javascript" />
     </head>
     <body>
-        <pre>{7}</pre>
         <form name="logform" action="submit" method="POST">
-            Station: <select name="stationId">
-                {4}
-            </select><br />
-            Timestamp: <input type="text" name="timestamp" value="{5}" /><br />
-            Duration: <input type="text" name="duration" value="{8}" /> seconds<br />
-            Broadcast: {6}<br />
-            Transmission contents: {9}<br />
+            <div class="section">
+                <div class="inner-caption">Basic information</div>
+                Station: <select name="stationId">
+                    {4}
+                </select><br />
+                Timestamp: <input type="text" name="timestamp" value="{5}" /><br />
+                Duration: <input type="text" name="duration" value="{8}" /> seconds<br />
+                Remarks: <input type="text" name="remarks" value="{10}" style="width: 100%" />
+            </div>
+            {6}
+            <div class="section">
+                <div class="inner-caption">Transmission contents:</div>
+                {9}
+            </div>
             <input type="submit" name="submit" value="Submit" />
         </form>
     </body>
@@ -203,7 +228,8 @@ class SubmitLogResource(Resource):
                                         ) for station in stations)),
             datetime.fromtimestamp(timestamp).strftime(Formatting.priyomdate),
             u"\n            ".join(self.formatBroadcastSelector(station, timestamp)),
-            self.recursiveDict(self.queryEx),
+            u"",# self.recursiveDict(self.queryEx),
             self.queryEx.get("duration", 0),
-            u"\n            ".join(self.formatTransmissionEditor())
+            u"\n            ".join(self.formatTransmissionEditor()),
+            self.queryEx.get("remarks", "")
         ).encode(self.encoding, 'replace')

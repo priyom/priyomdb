@@ -1,3 +1,50 @@
 div.hidden {
     display: none;
 }
+
+div.section {
+    border: 1px solid #000;
+    margin: 0.5em;
+    padding: 0.5em;
+}
+
+div.over-caption {
+    margin: 0;
+    padding: 0;
+    margin-bottom: -1.2em;
+    margin-left: 1em;
+    background-color: #fff;
+}
+
+div.inner-caption {
+    margin: 0;
+    padding: 0;
+    margin-top: -1em;
+    margin-left: 1em;
+    background-color: #fff;
+    width: 20em;
+    margin-right: auto;
+    display: block;
+    border-left: 1px solid #000;
+    border-right: 1px solid #000;
+    padding-left: 2px;
+}
+
+table.frequency-table {
+    border-collapse: collapse;
+}
+
+table.frequency-table th, table.frequency-table td {
+    border: 1px solid #000;
+}
+
+table.frequency-table th {
+    background-color: #efefef;
+}
+
+table.frequency-table .buttons {
+    border: none;
+    background-color: transparent;
+}
+
+
