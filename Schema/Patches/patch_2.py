@@ -1,5 +1,5 @@
 """
-File name: api.py
+File name: patch_2.py
 This file is part of: priyomdb
 
 LICENSE
@@ -24,22 +24,9 @@ For feedback and questions about priyomdb please e-mail one of the
 authors:
     Jonas Wielicki <j.wielicki@sotecware.net>
 """
-import sys
-sys.path.append('/etc/priyomdb/')
-from cfg_priyomhttpd import application, database
-sys.path.append(application["root"])
-
-
-
-from WebStack.Adapters.WSGI import WSGIAdapter
-from PriyomHTTP.Server.WebStackResource import get_site_map
-from libPriyom.Interface import PriyomInterface
-from Schema import DatabaseSchema
-from storm.locals import *
-
-db = create_database(database["stormURL"])
-store = Store(db)
-DatabaseSchema.upgrade(store)
-intf = PriyomInterface(store)
-
-application = WSGIAdapter(get_site_map(intf), handle_errors=0)
+def apply(store):
+    store.execute("""ALTER TABLE stations DROP KEY BroadcastDeleted""")
+    store.execute("""ALTER TABLE stations ADD INDEX (BroadcastRemoved)""")
+    
+    store.execute("""ALTER TABLE broadcasts DROP KEY TransmissionDeleted""")
+    store.execute("""ALTER TABLE broadcasts ADD INDEX (TransmissionRemoved)""")
