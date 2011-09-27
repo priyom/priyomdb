@@ -1,5 +1,5 @@
 """
-File name: Documentation.py
+File name: TimeUtils.py
 This file is part of: priyomdb
 
 LICENSE
@@ -24,24 +24,16 @@ For feedback and questions about priyomdb please e-mail one of the
 authors:
     Jonas Wielicki <j.wielicki@sotecware.net>
 """
-from WebStack.Generic import ContentType
-from cfg_priyomhttpd import application, doc, misc
+from datetime import datetime, timedelta
+from calendar import timegm
 
-class DocumentationSelector(object):
-    path_encoding = "utf-8"
+def toTimestamp(datetime):
+    return timegm(datetime.utctimetuple())
     
-    def __init__(self, resource):
-        self.resource = resource
+def toDatetime(timestamp):
+    return datetime.utcfromtimestamp(timestamp)
     
-    def respond(self, trans):
-        if hasattr(self.resource, "doc"):
-            trans.encoding = "utf-8"
-            breadcrumbs = None
-            if doc.get("breadcrumbs", {}).get("enabled", False):
-                breadcrumbs = list()
-            return self.resource.doc(trans, breadcrumbs)
-        else:
-            trans.rollback()
-            trans.set_response_code(501)
-            trans.set_content_type(ContentType("text/plain", "utf-8"))
-            print >>trans.get_response_stream(), u"Documentation not implemented.".encode("utf-8")
+def now():
+    return toTimestamp(datetime.utcnow())
+
+fromTimestamp = toDatetime

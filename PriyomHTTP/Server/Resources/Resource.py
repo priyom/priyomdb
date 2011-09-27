@@ -1,5 +1,37 @@
+"""
+File name: Resource.py
+This file is part of: priyomdb
+
+LICENSE
+
+The contents of this file are subject to the Mozilla Public License
+Version 1.1 (the "License"); you may not use this file except in
+compliance with the License. You may obtain a copy of the License at
+http://www.mozilla.org/MPL/
+
+Software distributed under the License is distributed on an "AS IS"
+basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+License for the specific language governing rights and limitations under
+the License.
+
+Alternatively, the contents of this file may be used under the terms of
+the GNU General Public license (the  "GPL License"), in which case  the
+provisions of GPL License are applicable instead of those above.
+
+FEEDBACK & QUESTIONS
+
+For feedback and questions about priyomdb please e-mail one of the
+authors:
+    Jonas Wielicki <j.wielicki@sotecware.net>
+"""
 from WebStack.Generic import EndOfResponse, ContentType
 from cfg_priyomhttpd import response, doc, misc, application
+from fnmatch import fnmatch
+import re
+from libPriyom.Helpers import TimeUtils
+import sys
+
+dictfield = re.compile("\[([^\]]+)\]")
 
 class Argument(object):
     def __init__(self, name, type, description, metavar = None, optional = False):
@@ -64,9 +96,9 @@ class Resource(object):
         self.store = self.priyomInterface.store
         self.modelAutoSetup = True
         
-    def parseCharsetPreferences(self, charsetPreferences):
-        prefs = (s.lstrip().rstrip().lower().partition(';') for s in charsetPreferences.split(","))
-        prefs = [Preference(charset, float(q[2:]) if len(q) > 0 else 1.0) for (charset, sep, q) in prefs if not (len(q) > 0 and float(q[2:])==0) and len(charset) > 0]
+    def parsePreferencesList(self, preferences):
+        prefs = (s.lstrip().rstrip().lower().partition(';') for s in preferences.split(","))
+        prefs = [Preference(value, float(q[2:]) if len(q) > 0 else 1.0) for (value, sep, q) in prefs if not (len(q) > 0 and float(q[2:])==0) and len(value) > 0]
         prefs.sort(reverse=True)        
         return prefs
         
@@ -90,14 +122,32 @@ class Resource(object):
             use = ownPreferences[0]
         return use
         
+    def getContentTypeToUse(self, prefList, ownPreferences):
+        use = None
+        if len(prefList) == 0:
+            return ownPreferences[0]
+            
+        for pref in ownPreferences:
+            for item in prefList:
+                if item.value == pref:
+                    return item.value
+                if use is None and fnmatch(pref, item.value):
+                    use = pref
+        return use
+        
     def parsePreferences(self, trans):
-        prefs = self.parseCharsetPreferences(", ".join(trans.get_header_values("Accept-Charset")))
+        prefs = self.parsePreferencesList(",".join(trans.get_header_values("Accept-Charset")))
         charset = self.getCharsetToUse(prefs, response.get("defaultEncodings") or ["utf-8", "utf8"])
         if charset is None:
             trans.rollback()
             trans.set_response_code(400)
             print >>trans.get_response_stream(), "user agent does not support any charsets"
         self.encoding = charset
+        
+        prefs = self.parsePreferencesList(",".join(trans.get_header_values("Accept")))
+        self.xhtmlContentType = self.getContentTypeToUse(prefs, ["application/xhtml+xml", "application/xml", "text/html"])
+        self.htmlContentType = self.getContentTypeToUse(prefs, ["text/html"])
+        self.xmlContentType = self.getContentTypeToUse(prefs, ["application/xml"])
         
     def setupModel(self):
         if "flags" in self.query:
@@ -125,6 +175,34 @@ class Resource(object):
         else:
             self.model.setOffset(None)
             
+    def setDictValue(self, someDict, path, value):
+        global dictfield
+        i = dictfield.finditer(path)
+        try:
+            m = next(i)
+            node = path[0:m.start()]
+            path = path[m.start():]
+        except StopIteration:
+            node = path
+        prevNodeDict = someDict
+            
+        i = dictfield.finditer(path)
+        for m in i:
+            nodeDict = prevNodeDict.get(node, {})
+            prevNodeDict[node] = nodeDict
+            prevNodeDict = nodeDict
+            node = m.group(1)
+        prevNodeDict[node] = value
+            
+    def parseQueryDict(self):
+        global dictfield
+        newQueryDict = dict()
+        for key, value in self.query.iteritems():
+            if type(value) == str:
+                value = value.decode("utf-8")
+            self.setDictValue(newQueryDict, key, value)
+        return newQueryDict
+        
     def normalizeQueryDict(self):
         for key in self.query.iterkeys():
             self.query[key] = self.query[key][0]
@@ -140,9 +218,8 @@ class Resource(object):
         self.trans = trans
         self.out = trans.get_response_stream()
         self.query = trans.get_fields_from_path()
-        if trans.get_content_type().media_type == "application/x-www-form-encoded":
-            self.query.update(trans.get_fields_from_body())
-        self.query.update(trans.get_fields_from_body())
+        if trans.get_content_type().media_type == "application/x-www-form-urlencoded":
+            self.query.update(trans.get_fields_from_body("utf-8"))
         ifModifiedSince = trans.get_header_values("If-Modified-Since")
         if len(ifModifiedSince) > 0:
             try:
@@ -151,7 +228,7 @@ class Resource(object):
                 trans.set_response_code(400)
                 print >>self.out, "If-Modified-Since date given in a invalid format: %s" % str(e)
                 raise EndOfResponse
-            self.ifModifiedSinceUnix = self.priyomInterface.toTimestamp(self.ifModifiedSince)
+            self.ifModifiedSinceUnix = TimeUtils.toTimestamp(self.ifModifiedSince)
         else:
             self.ifModifiedSince = None
             self.ifModifiedSinceUnix = None
@@ -245,6 +322,7 @@ class Resource(object):
     def autoNotModified(self, lastModified):
         if lastModified is None:
             return
+        print >>sys.stderr, "lastModified={0}; ifModifiedSince={1}; header={2}".format(long(lastModified), long(self.ifModifiedSinceUnix) if self.ifModifiedSince is not None else None, u",".join(self.trans.get_header_values("If-Modified-Since")))
         if self.ifModifiedSinceUnix is not None and long(lastModified) == long(self.ifModifiedSinceUnix):
             self.trans.set_response_code(304)
             raise EndOfResponse

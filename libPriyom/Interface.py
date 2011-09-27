@@ -1,3 +1,29 @@
+"""
+File name: Interface.py
+This file is part of: priyomdb
+
+LICENSE
+
+The contents of this file are subject to the Mozilla Public License
+Version 1.1 (the "License"); you may not use this file except in
+compliance with the License. You may obtain a copy of the License at
+http://www.mozilla.org/MPL/
+
+Software distributed under the License is distributed on an "AS IS"
+basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+License for the specific language governing rights and limitations under
+the License.
+
+Alternatively, the contents of this file may be used under the terms of
+the GNU General Public license (the  "GPL License"), in which case  the
+provisions of GPL License are applicable instead of those above.
+
+FEEDBACK & QUESTIONS
+
+For feedback and questions about priyomdb please e-mail one of the
+authors:
+    Jonas Wielicki <j.wielicki@sotecware.net>
+"""
 from storm.locals import *
 from storm.expr import Func
 import Imports
@@ -12,6 +38,7 @@ from Foreign import ForeignSupplement
 from Helpers.ScheduleMaintainer import ScheduleMaintainer
 import time
 from datetime import datetime, timedelta
+from Helpers import TimeUtils
 
 PAST = u"past"
 ONAIR = u"on-air"
@@ -42,9 +69,6 @@ class PriyomInterface:
             raise ValueError("store must not be None.")
         self.store = store
         self.scheduleMaintainer = ScheduleMaintainer(self)
-        
-    def now(self):
-        return int(time.mktime(datetime.utcnow().timetuple()))
         
     def createDocument(self, rootNodeName):
         return dom.getDOMImplementation().createDocument(XMLIntf.namespace, rootNodeName, None)
@@ -104,7 +128,7 @@ class PriyomInterface:
         if obj.ForeignCallsign is not None:
             Store.of(obj.ForeignCallsign.supplement).remove(obj.ForeignCallsign.supplement)
         if obj.Broadcast is not None:
-            obj.Broadcast.transmissionDeleted()
+            obj.Broadcast.transmissionRemoved()
         store.remove(obj)
         return True
         
@@ -166,7 +190,7 @@ class PriyomInterface:
                 return False
         store.find(BroadcastFrequency, BroadcastFrequency.BroadcastID == obj.ID).remove()
         if self.Station is not None:
-            self.Station.broadcastDeleted()
+            self.Station.broadcastRemoved()
         store.remove(obj)
         return True
         
@@ -184,9 +208,6 @@ class PriyomInterface:
         
     def normalizeDate(self, dateTime):
         return datetime(year=dateTime.year, month=dateTime.month, day=dateTime.day)
-        
-    def toTimestamp(self, dateTime):
-        return time.mktime(dateTime.timetuple())
         
     def importTransaction(self, doc):
         context = self.getImportContext()
@@ -256,7 +277,7 @@ class PriyomInterface:
         wideBroadcasts = self.store.find(Broadcast, Broadcast.StationID == stationId)
         lastModified = max(
             wideBroadcasts.max(Broadcast.Modified), 
-            self.store.get(stationId).BroadcastDeleted
+            self.store.get(Station, stationId).BroadcastRemoved
         )
         if head:
             return (lastModified, None)
@@ -276,9 +297,9 @@ class PriyomInterface:
         objects = self.store.find(cls)
         lastModified = objects.max(cls.Modified)
         if cls == Transmission:
-            lastModified = max(lastModified, self.store.find(Broadcast).max(Broadcast.TransmissionDeleted))
+            lastModified = max(lastModified, self.store.find(Broadcast).max(Broadcast.TransmissionRemoved))
         elif cls == Broadcast:
-            lastModified = max(lastModified, self.store.find(Station).max(Station.BroadcastDeleted))
+            lastModified = max(lastModified, self.store.find(Station).max(Station.BroadcastRemoved))
         if head:
             return (lastModified, None)
         if notModifiedCheck is not None:
@@ -297,8 +318,8 @@ class PriyomInterface:
         else:
             startTimestamp = datetime(year, 1, 1)
             endTimestamp = datetime(year+1, 1, 1)
-        startTimestamp = int(time.mktime(startTimestamp.timetuple()))
-        endTimestamp = int(time.mktime(endTimestamp.timetuple()))
+        startTimestamp = TimeUtils.toTimestamp(startTimestamp)
+        endTimestamp = TimeUtils.toTimestamp(endTimestamp)
         
         transmissions = self.store.find((Transmission, Broadcast), 
             Transmission.BroadcastID == Broadcast.ID,
@@ -307,8 +328,8 @@ class PriyomInterface:
                     Transmission.Timestamp < endTimestamp)))
         lastModified = max(
             transmissions.max(Transmission.Modified), 
-            self.store.find(Broadcast, Broadcast.StationID == stationId).max(Broadcast.TransmissionDeleted),
-            self.store.get(Station, stationId).BroadcastDeleted
+            self.store.find(Broadcast, Broadcast.StationID == stationId).max(Broadcast.TransmissionRemoved),
+            self.store.get(Station, stationId).BroadcastRemoved
         )
         if head:
             return (lastModified, None)
@@ -324,8 +345,8 @@ class PriyomInterface:
             Broadcast.StationID == stationId)
         lastModified = max(
             transmissions.max(Transmission.Modified),
-            self.store.find(Broadcast, Broadcast.StationID == stationId).max(Broadcast.TransmissionDeleted),
-            self.store.get(Station, stationId).BroadcastDeleted
+            self.store.find(Broadcast, Broadcast.StationID == stationId).max(Broadcast.TransmissionRemoved),
+            self.store.get(Station, stationId).BroadcastRemoved
         )
         if head:
             return (lastModified, None)
@@ -347,7 +368,7 @@ class PriyomInterface:
         broadcasts = self.store.find(Broadcast, where)
         lastModified = max(
             broadcasts.max(Broadcast.Modified),
-            station.BroadcastDeleted if station is not None else None,
+            station.BroadcastRemoved if station is not None else None,
             station.Schedule.Modified if (station is not None and station.Schedule is not None) else None
         )
         if head:
@@ -375,7 +396,7 @@ class PriyomInterface:
             Broadcast.StationID == station.ID)
         lastModified = max(
             broadcasts.max(Broadcast.Modified),
-            station.BroadcastDeleted
+            station.BroadcastRemoved
         )
         if station.Schedule is not None:
             scheduleLeafs = self.store.find(ScheduleLeaf,

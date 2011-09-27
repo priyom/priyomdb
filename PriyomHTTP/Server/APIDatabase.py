@@ -1,3 +1,29 @@
+"""
+File name: APIDatabase.py
+This file is part of: priyomdb
+
+LICENSE
+
+The contents of this file are subject to the Mozilla Public License
+Version 1.1 (the "License"); you may not use this file except in
+compliance with the License. You may obtain a copy of the License at
+http://www.mozilla.org/MPL/
+
+Software distributed under the License is distributed on an "AS IS"
+basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+License for the specific language governing rights and limitations under
+the License.
+
+Alternatively, the contents of this file may be used under the terms of
+the GNU General Public license (the  "GPL License"), in which case  the
+provisions of GPL License are applicable instead of those above.
+
+FEEDBACK & QUESTIONS
+
+For feedback and questions about priyomdb please e-mail one of the
+authors:
+    Jonas Wielicki <j.wielicki@sotecware.net>
+"""
 from storm.locals import *
 import random
 from hashlib import sha256
@@ -5,9 +31,7 @@ import time
 from datetime import datetime
 from libPriyom.Formatting import priyomdate
 import netaddr
-
-def now():
-    return int(time.mktime(datetime.utcnow().timetuple()))
+from libPriyom.Helpers import TimeUtils
 
 rnd = random.SystemRandom()
 
@@ -64,12 +88,12 @@ class APIUser(APICapableObject):
             old.delete()
         
         # generate a new session id
-        sid = unicode(sha256(unicode(now())).hexdigest())
+        sid = unicode(sha256(unicode(int(TimeUtils.now()))).hexdigest())
         while store.find(APISession, APISession.Key == sid).any() is not None:
-            sid = unicode(sha256(unicode(now())+unicode(rnd.randint(0, 655535))).hexdigest())
+            sid = unicode(sha256(unicode(int(TimeUtils.now()))+unicode(rnd.randint(0, 655535))).hexdigest())
         
         # create a new session
-        session = APISession(sid, self.ID, now() + 86400)
+        session = APISession(sid, self.ID, int(TimeUtils.now() + 86400))
         store.add(session)
         for cap in self.Capabilities:
             session.Capabilities.add(cap)
@@ -96,7 +120,7 @@ class APISession(APICapableObject):
         
     def isValid(self):
         store = Store.of(self)
-        return (store is not None) and (len(self.Key) > 0) and (self.Expires > now())
+        return (store is not None) and (len(self.Key) > 0) and (self.Expires > TimeUtils.now())
         
     def delete(self):
         store = Store.of(self)
