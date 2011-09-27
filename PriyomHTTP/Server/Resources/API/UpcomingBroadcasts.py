@@ -1,3 +1,4 @@
+# encoding=utf-8
 """
 File name: UpcomingBroadcasts.py
 This file is part of: priyomdb
@@ -24,7 +25,6 @@ For feedback and questions about priyomdb please e-mail one of the
 authors:
     Jonas Wielicki <j.wielicki@sotecware.net>
 """
-# encoding=utf-8
 from WebStack.Generic import ContentType
 from libPriyom import *
 from API import API, CallSyntax, Argument
