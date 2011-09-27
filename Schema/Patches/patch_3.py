@@ -29,7 +29,8 @@ def apply(store):
     statements = [
 """CREATE TABLE `eventClass` (
     `ID` INT NOT NULL AUTO_INCREMENT,
-    `Title` VARCHAR(255) NOT NULL COMMENT 'title of the event class'
+    `Title` VARCHAR(255) NOT NULL COMMENT 'title of the event class',
+    PRIMARY KEY (`ID`)
 ) ENGINE=MyISAM  DEFAULT CHARSET=utf8""",
     
 """CREATE TABLE `events` (
@@ -38,7 +39,8 @@ def apply(store):
     `Modified` BIGINT NOT NULL COMMENT 'last modification date of row',
     `StationID` INT NOT NULL COMMENT 'station to which the ID is associated',
     `EventClassID` INT DEFAULT NULL COMMENT 'event class, NULL for raw event',
-    `Description` TEXT NOT NULL COMMENT 'descriptive text of the event'
+    `Description` TEXT NOT NULL COMMENT 'descriptive text of the event',
+    PRIMARY KEY (`ID`)
 ) ENGINE=MyISAM  DEFAULT CHARSET=utf8"""
 ]
     for statement in statements:
