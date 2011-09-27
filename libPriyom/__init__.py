@@ -35,6 +35,7 @@ import XMLIntf
 from Interface import PriyomInterface
 from TransmissionParser import TransmissionParserNode, TransmissionParserNodeField, NodeError
 from Helpers import TimeUtils
+from Event import Event, EventClass
 
 BroadcastFrequency.Broadcast = Reference(BroadcastFrequency.BroadcastID, Broadcast.ID)
 Broadcast.Station = Reference(Broadcast.StationID, Station.ID)

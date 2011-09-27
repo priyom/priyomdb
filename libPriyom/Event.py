@@ -1,5 +1,5 @@
 """
-File name: patch_3.py
+File name: Event.py
 This file is part of: priyomdb
 
 LICENSE
@@ -24,24 +24,24 @@ For feedback and questions about priyomdb please e-mail one of the
 authors:
     Jonas Wielicki <j.wielicki@sotecware.net>
 """
+from storm.locals import *
+from Station import Station
+from PriyomBase import PriyomBase
 
-def apply(store):
-    statements = [
-"""CREATE TABLE `eventClass` (
-    `ID` INT NOT NULL AUTO_INCREMENT,
-    `Title` VARCHAR(255) NOT NULL COMMENT 'title of the event class',
-    PRIMARY KEY (`ID`)
-) ENGINE=MyISAM  DEFAULT CHARSET=utf8""",
+class EventClass(object):
+    __storm_table__ = "eventClass"
     
-"""CREATE TABLE `events` (
-    `ID` INT NOT NULL AUTO_INCREMENT,
-    `Created` BIGINT NOT NULL COMMENT 'creation date of row',
-    `Modified` BIGINT NOT NULL COMMENT 'last modification date of row',
-    `StationID` INT NOT NULL COMMENT 'station to which the ID is associated',
-    `EventClassID` INT DEFAULT NULL COMMENT 'event class, NULL for raw event',
-    `Description` TEXT NOT NULL COMMENT 'descriptive text of the event',
-    PRIMARY KEY (`ID`)
-) ENGINE=MyISAM  DEFAULT CHARSET=utf8"""
-]
-    for statement in statements:
-        store.execute(statement)
+    ID = Int(primary=True)
+    Title = Unicode()
+    
+class Event(PriyomBase):
+    __storm_table__ = "event"
+    
+    ID = Int(primary=True)
+    Created = Int()
+    Modified = Int()
+    StationID = Int()
+    Station = Reference(StationID, Station.ID)
+    EventClassID = Int()
+    EventClass = Reference(EventClassID, EventClass.ID)
+    Description = Unicode()
