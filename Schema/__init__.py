@@ -27,7 +27,7 @@ authors:
 from storm.schema.schema import Schema
 import Patches
 
-libPriyomSchema = Schema(
+DatabaseSchema = Schema(
     [
 """CREATE TABLE `variables` (
     `Name` VARCHAR(255) NOT NULL,
@@ -192,6 +192,67 @@ libPriyomSchema = Schema(
     `Remarks` VARCHAR(1023) DEFAULT NULL COMMENT 'may contain further remarks (reception etc)',
     PRIMARY KEY (`ID`),
     KEY `Modified` (`Modified`)
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8;""",
+"""CREATE TABLE `api-capabilities` (
+    `ID` INT NOT NULL AUTO_INCREMENT,
+    `Capability` VARCHAR(255) NOT NULL,
+    PRIMARY KEY (`ID`),
+    UNIQUE KEY `Capability` (`Capability`)
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8;""",
+
+"""CREATE TABLE `api-keys` (
+    `ID` INT NOT NULL AUTO_INCREMENT,
+    `Key` VARCHAR(256) NOT NULL COMMENT 'api key',
+    `CIDRList` VARCHAR(1024) DEFAULT NULL COMMENT 'valid ip ranges from which requests may be issued with this API key',
+    PRIMARY KEY (`ID`),
+    UNIQUE KEY `Key` (`Key`)
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8 COMMENT='API keys for usage by priyomhttpd';""",
+
+"""CREATE TABLE `api-keyCapabilities` (
+    `KeyID` INT NOT NULL,
+    `CapabilityID` INT NOT NULL,
+    PRIMARY KEY (`KeyID`,`CapabilityID`)
+) ENGINE=MyISAM DEFAULT CHARSET=utf8;""",
+
+"""CREATE TABLE `api-users` (
+    `ID` INT NOT NULL AUTO_INCREMENT,
+    `UserName` VARCHAR(255) NOT NULL,
+    `EMail` VARCHAR(255) NOT NULL,
+    `PasswordHash` CHAR(64) NOT NULL,
+    `PasswordSalt` CHAR(32) NOT NULL,
+    PRIMARY KEY (`ID`),
+    UNIQUE KEY `UserName` (`UserName`),
+    UNIQUE KEY `EMail` (`EMail`)
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8;""",
+
+"""CREATE TABLE `api-userCapabilities` (
+    `UserID` INT NOT NULL,
+    `CapabilityID` INT NOT NULL,
+    PRIMARY KEY (`UserID`,`CapabilityID`)
+) ENGINE=MyISAM DEFAULT CHARSET=utf8;""",
+
+"""CREATE TABLE `api-sessions` (
+    `ID` INT NOT NULL AUTO_INCREMENT,
+    `Key` VARCHAR(256) NOT NULL,
+    `UserID` INT NOT NULL,
+    `Expires` BIGINT NOT NULL,
+    PRIMARY KEY (`ID`),
+    UNIQUE KEY `Key` (`Key`),
+    UNIQUE KEY `UserID` (`UserID`)
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8;""",
+
+"""CREATE TABLE `api-sessionCapabilities` (
+    `SessionID` INT NOT NULL,
+    `CapabilityID` INT NOT NULL,
+    PRIMARY KEY (`SessionID`,`CapabilityID`)
+) ENGINE=MyISAM DEFAULT CHARSET=utf8;""",
+
+"""CREATE TABLE `api-news` (
+    `ID` INT NOT NULL AUTO_INCREMENT,
+    `Title` VARCHAR(256) NOT NULL,
+    `Contents` TEXT NOT NULL,
+    `Timestamp` BIGINT NOT NULL,
+    PRIMARY KEY (`ID`)
 ) ENGINE=MyISAM  DEFAULT CHARSET=utf8;"""
     ],
     [
@@ -209,7 +270,15 @@ libPriyomSchema = Schema(
 """DROP TABLE `schedules`;""",
 """DROP TABLE `modulations`;""",
 """DROP TABLE `foreignSupplement`;""",
-"""DROP TABLE `variables`;"""
+"""DROP TABLE `variables`;""",
+"""DROP TABLE `api-news`;""",
+"""DROP TABLE `api-sessionCapabilities`;""",
+"""DROP TABLE `api-userCapabilities`;""",
+"""DROP TABLE `api-keyCapabilities`;""",
+"""DROP TABLE `api-sessions`;""",
+"""DROP TABLE `api-users`;""",
+"""DROP TABLE `api-keys`;""",
+"""DROP TABLE `api-capabilities`;"""
     ],
     [
 """DELETE FROM `transmissions`;""",
@@ -226,7 +295,15 @@ libPriyomSchema = Schema(
 """DELETE FROM `schedules`;""",
 """DELETE FROM `modulations`;""",
 """DELETE FROM `foreignSupplement`;""",
-"""DELETE FROM `variables`;"""
+"""DELETE FROM `variables`;""",
+"""DELETE FROM `api-news`;""",
+"""DELETE FROM `api-sessionCapabilities`;""",
+"""DELETE FROM `api-userCapabilities`;""",
+"""DELETE FROM `api-keyCapabilities`;""",
+"""DELETE FROM `api-sessions`;""",
+"""DELETE FROM `api-users`;""",
+"""DELETE FROM `api-keys`;""",
+"""DELETE FROM `api-capabilities`;"""
     ],
     Patches
 )
