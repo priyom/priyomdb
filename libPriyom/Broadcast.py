@@ -115,7 +115,7 @@ class BroadcastFrequency(object):
 class Broadcast(PriyomBase, XMLIntf.XMLStorm):
     __storm_table__ = "broadcasts"
     ID = Int(primary = True)
-    TransmissionDeleted = Int()
+    TransmissionRemoved = Int()
     StationID = Int()
     Type = Enum(map={
         "data": "data",
@@ -222,8 +222,8 @@ class Broadcast(PriyomBase, XMLIntf.XMLStorm):
     def __str__(self):
         return "%s broadcast from %s until %s" % (self.Type, repr(self.BroadcastStart), repr(self.BroadcastEnd))
         
-    def transmissionDeleted(self):
-        self.TransmissionDeleted = int(TimeUtils.now())
+    def transmissionRemoved(self):
+        self.TransmissionRemoved = int(TimeUtils.now())
         
     def __unicode__(self):
         return u"Broadcast at {0} on {1}".format(

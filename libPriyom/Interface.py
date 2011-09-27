@@ -128,7 +128,7 @@ class PriyomInterface:
         if obj.ForeignCallsign is not None:
             Store.of(obj.ForeignCallsign.supplement).remove(obj.ForeignCallsign.supplement)
         if obj.Broadcast is not None:
-            obj.Broadcast.transmissionDeleted()
+            obj.Broadcast.transmissionRemoved()
         store.remove(obj)
         return True
         
@@ -190,7 +190,7 @@ class PriyomInterface:
                 return False
         store.find(BroadcastFrequency, BroadcastFrequency.BroadcastID == obj.ID).remove()
         if self.Station is not None:
-            self.Station.broadcastDeleted()
+            self.Station.broadcastRemoved()
         store.remove(obj)
         return True
         
@@ -277,7 +277,7 @@ class PriyomInterface:
         wideBroadcasts = self.store.find(Broadcast, Broadcast.StationID == stationId)
         lastModified = max(
             wideBroadcasts.max(Broadcast.Modified), 
-            self.store.get(Station, stationId).BroadcastDeleted
+            self.store.get(Station, stationId).BroadcastRemoved
         )
         if head:
             return (lastModified, None)
@@ -297,9 +297,9 @@ class PriyomInterface:
         objects = self.store.find(cls)
         lastModified = objects.max(cls.Modified)
         if cls == Transmission:
-            lastModified = max(lastModified, self.store.find(Broadcast).max(Broadcast.TransmissionDeleted))
+            lastModified = max(lastModified, self.store.find(Broadcast).max(Broadcast.TransmissionRemoved))
         elif cls == Broadcast:
-            lastModified = max(lastModified, self.store.find(Station).max(Station.BroadcastDeleted))
+            lastModified = max(lastModified, self.store.find(Station).max(Station.BroadcastRemoved))
         if head:
             return (lastModified, None)
         if notModifiedCheck is not None:
@@ -328,8 +328,8 @@ class PriyomInterface:
                     Transmission.Timestamp < endTimestamp)))
         lastModified = max(
             transmissions.max(Transmission.Modified), 
-            self.store.find(Broadcast, Broadcast.StationID == stationId).max(Broadcast.TransmissionDeleted),
-            self.store.get(Station, stationId).BroadcastDeleted
+            self.store.find(Broadcast, Broadcast.StationID == stationId).max(Broadcast.TransmissionRemoved),
+            self.store.get(Station, stationId).BroadcastRemoved
         )
         if head:
             return (lastModified, None)
@@ -345,8 +345,8 @@ class PriyomInterface:
             Broadcast.StationID == stationId)
         lastModified = max(
             transmissions.max(Transmission.Modified),
-            self.store.find(Broadcast, Broadcast.StationID == stationId).max(Broadcast.TransmissionDeleted),
-            self.store.get(Station, stationId).BroadcastDeleted
+            self.store.find(Broadcast, Broadcast.StationID == stationId).max(Broadcast.TransmissionRemoved),
+            self.store.get(Station, stationId).BroadcastRemoved
         )
         if head:
             return (lastModified, None)
@@ -368,7 +368,7 @@ class PriyomInterface:
         broadcasts = self.store.find(Broadcast, where)
         lastModified = max(
             broadcasts.max(Broadcast.Modified),
-            station.BroadcastDeleted if station is not None else None,
+            station.BroadcastRemoved if station is not None else None,
             station.Schedule.Modified if (station is not None and station.Schedule is not None) else None
         )
         if head:
@@ -396,7 +396,7 @@ class PriyomInterface:
             Broadcast.StationID == station.ID)
         lastModified = max(
             broadcasts.max(Broadcast.Modified),
-            station.BroadcastDeleted
+            station.BroadcastRemoved
         )
         if station.Schedule is not None:
             scheduleLeafs = self.store.find(ScheduleLeaf,
