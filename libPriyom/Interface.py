@@ -25,7 +25,7 @@ authors:
     Jonas Wielicki <j.wielicki@sotecware.net>
 """
 from storm.locals import *
-from storm.expr import Func
+from storm.expr import *
 import Imports
 import XMLIntf
 import xml.dom.minidom as dom
@@ -417,3 +417,54 @@ class PriyomInterface:
             frequencies.group_by(Or(Func("ISNULL", Broadcast.BroadcastEnd), And(Broadcast.BroadcastEnd >= now, Broadcast.BroadcastStart <= now)), Broadcast.BroadcastStart > now, BroadcastFrequency.Frequency, Modulation.Name)
             
             return (lastModified, ((freq, modulation, UPCOMING if isUpcoming == 1 else (ONAIR if lastUse is None else PAST), nextUse if isUpcoming else lastUse) for (lastUse, nextUse, isUpcoming, freq, modulation) in frequencies))
+            
+    def getDuplicateTransmissions(self, txTable, mainStation, matchFields = None, includeOtherStationsWithin = 86400, notModifiedCheck = None, head = False):
+        txItem1 = ClassAlias(txTable.PythonClass, name="txItem1")
+        txItem2 = ClassAlias(txTable.PythonClass, name="txItem2")
+        
+        tx1 = ClassAlias(Transmission, name="tx1")
+        tx2 = ClassAlias(Transmission, name="tx2")
+        
+        bc1 = ClassAlias(Broadcast, name="broadcast1")
+        bc2 = ClassAlias(Broadcast, name="broadcast2")
+        
+        on = txItem1.TransmissionID > txItem2.TransmissionID
+        if matchFields is None:
+            matchFields = txTable.PythonClass.fields
+        for field in txTable.PythonClass.fields:
+            cond = getattr(txItem1, field.FieldName) == getattr(txItem2, field.FieldName)
+            on = And(on, cond)
+        
+        
+        dupes = self.store.using(
+            txItem1, 
+            LeftJoin(tx1, on=(txItem1.TransmissionID == tx1.ID)), 
+            LeftJoin(bc1, on=(tx1.BroadcastID == bc1.ID)),
+            LeftJoin(txItem2, on=on), 
+            LeftJoin(tx2, on=(txItem2.TransmissionID == tx2.ID)),
+            LeftJoin(bc2, on=(tx2.BroadcastID == bc2.ID))
+        ).find((tx1, txItem1, tx2, txItem2), 
+            And(
+                bc1.StationID == mainStation.ID,  
+                Or(
+                    bc2.StationID == mainStation.ID,
+                    Func("ABS", (tx2.Timestamp - tx1.Timestamp) <= includeOtherStationsWithin)
+                )
+            )
+        )
+        
+        lastModified = max(
+            dupes.max(tx1.Modified),
+            dupes.max(tx2.Modified),
+            dupes.max(bc1.TransmissionRemoved),
+            dupes.max(bc2.TransmissionRemoved),
+            self.store.find(Station).max(Station.BroadcastRemoved)
+        )
+        if head:
+            return (lastModified, None)
+        if notModifiedCheck is not None:
+            notModifiedCheck(lastModified)
+            
+            
+        return (lastModified, dupes.order_by(Asc(tx1.Timestamp)))
+            
