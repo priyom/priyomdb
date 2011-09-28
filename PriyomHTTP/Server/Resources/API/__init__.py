@@ -35,3 +35,4 @@ from CloseBroadcasts import CloseBroadcastsAPI
 from StationFrequencies import StationFrequenciesAPI
 from InstanciateSchedules import InstanciateSchedulesAPI
 from TransmissionsByYear import TransmissionsByYearAPI
+from DuplicatedTransmissionItems import DuplicatedTransmissionItemsAPI
