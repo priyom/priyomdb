@@ -1,5 +1,5 @@
 """
-File name: __init__.py
+File name: patch_1.py
 This file is part of: priyomdb
 
 LICENSE
@@ -24,15 +24,6 @@ For feedback and questions about priyomdb please e-mail one of the
 authors:
     Jonas Wielicki <j.wielicki@sotecware.net>
 """
-from UpcomingBroadcasts import UpcomingBroadcastsAPI
-from Import import ImportAPI
-from List import ListAPI
-from Session import SessionAPI
-from ListModulations import ListModulationsAPI
-from TransmissionStats import TransmissionStatsAPI
-from TransmissionsByMonth import TransmissionsByMonthAPI
-from CloseBroadcasts import CloseBroadcastsAPI
-from StationFrequencies import StationFrequenciesAPI
-from InstanciateSchedules import InstanciateSchedulesAPI
-from TransmissionsByYear import TransmissionsByYearAPI
-from DuplicatedTransmissionItems import DuplicatedTransmissionItemsAPI
+def apply(store):
+    store.execute("""ALTER TABLE stations CHANGE BroadcastDeleted BroadcastRemoved BIGINT DEFAULT NULL COMMENT 'last removal of an associated broadcast'""")
+    store.execute("""ALTER TABLE broadcasts CHANGE TransmissionDeleted TransmissionRemoved BIGINT DEFAULT NULL COMMENT 'last removal of an associated transmission'""")

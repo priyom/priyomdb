@@ -25,7 +25,7 @@ authors:
     Jonas Wielicki <j.wielicki@sotecware.net>
 """
 from storm.locals import *
-from storm.expr import Func
+from storm.expr import *
 import Imports
 import XMLIntf
 import xml.dom.minidom as dom
@@ -128,7 +128,7 @@ class PriyomInterface:
         if obj.ForeignCallsign is not None:
             Store.of(obj.ForeignCallsign.supplement).remove(obj.ForeignCallsign.supplement)
         if obj.Broadcast is not None:
-            obj.Broadcast.transmissionDeleted()
+            obj.Broadcast.transmissionRemoved()
         store.remove(obj)
         return True
         
@@ -190,7 +190,7 @@ class PriyomInterface:
                 return False
         store.find(BroadcastFrequency, BroadcastFrequency.BroadcastID == obj.ID).remove()
         if self.Station is not None:
-            self.Station.broadcastDeleted()
+            self.Station.broadcastRemoved()
         store.remove(obj)
         return True
         
@@ -277,7 +277,7 @@ class PriyomInterface:
         wideBroadcasts = self.store.find(Broadcast, Broadcast.StationID == stationId)
         lastModified = max(
             wideBroadcasts.max(Broadcast.Modified), 
-            self.store.get(Station, stationId).BroadcastDeleted
+            self.store.get(Station, stationId).BroadcastRemoved
         )
         if head:
             return (lastModified, None)
@@ -297,9 +297,9 @@ class PriyomInterface:
         objects = self.store.find(cls)
         lastModified = objects.max(cls.Modified)
         if cls == Transmission:
-            lastModified = max(lastModified, self.store.find(Broadcast).max(Broadcast.TransmissionDeleted))
+            lastModified = max(lastModified, self.store.find(Broadcast).max(Broadcast.TransmissionRemoved))
         elif cls == Broadcast:
-            lastModified = max(lastModified, self.store.find(Station).max(Station.BroadcastDeleted))
+            lastModified = max(lastModified, self.store.find(Station).max(Station.BroadcastRemoved))
         if head:
             return (lastModified, None)
         if notModifiedCheck is not None:
@@ -328,8 +328,8 @@ class PriyomInterface:
                     Transmission.Timestamp < endTimestamp)))
         lastModified = max(
             transmissions.max(Transmission.Modified), 
-            self.store.find(Broadcast, Broadcast.StationID == stationId).max(Broadcast.TransmissionDeleted),
-            self.store.get(Station, stationId).BroadcastDeleted
+            self.store.find(Broadcast, Broadcast.StationID == stationId).max(Broadcast.TransmissionRemoved),
+            self.store.get(Station, stationId).BroadcastRemoved
         )
         if head:
             return (lastModified, None)
@@ -345,8 +345,8 @@ class PriyomInterface:
             Broadcast.StationID == stationId)
         lastModified = max(
             transmissions.max(Transmission.Modified),
-            self.store.find(Broadcast, Broadcast.StationID == stationId).max(Broadcast.TransmissionDeleted),
-            self.store.get(Station, stationId).BroadcastDeleted
+            self.store.find(Broadcast, Broadcast.StationID == stationId).max(Broadcast.TransmissionRemoved),
+            self.store.get(Station, stationId).BroadcastRemoved
         )
         if head:
             return (lastModified, None)
@@ -368,7 +368,7 @@ class PriyomInterface:
         broadcasts = self.store.find(Broadcast, where)
         lastModified = max(
             broadcasts.max(Broadcast.Modified),
-            station.BroadcastDeleted if station is not None else None,
+            station.BroadcastRemoved if station is not None else None,
             station.Schedule.Modified if (station is not None and station.Schedule is not None) else None
         )
         if head:
@@ -396,7 +396,7 @@ class PriyomInterface:
             Broadcast.StationID == station.ID)
         lastModified = max(
             broadcasts.max(Broadcast.Modified),
-            station.BroadcastDeleted
+            station.BroadcastRemoved
         )
         if station.Schedule is not None:
             scheduleLeafs = self.store.find(ScheduleLeaf,
@@ -417,3 +417,54 @@ class PriyomInterface:
             frequencies.group_by(Or(Func("ISNULL", Broadcast.BroadcastEnd), And(Broadcast.BroadcastEnd >= now, Broadcast.BroadcastStart <= now)), Broadcast.BroadcastStart > now, BroadcastFrequency.Frequency, Modulation.Name)
             
             return (lastModified, ((freq, modulation, UPCOMING if isUpcoming == 1 else (ONAIR if lastUse is None else PAST), nextUse if isUpcoming else lastUse) for (lastUse, nextUse, isUpcoming, freq, modulation) in frequencies))
+            
+    def getDuplicateTransmissions(self, txTable, mainStation, matchFields = None, includeOtherStationsWithin = 86400, notModifiedCheck = None, head = False):
+        txItem1 = ClassAlias(txTable.PythonClass, name="txItem1")
+        txItem2 = ClassAlias(txTable.PythonClass, name="txItem2")
+        
+        tx1 = ClassAlias(Transmission, name="tx1")
+        tx2 = ClassAlias(Transmission, name="tx2")
+        
+        bc1 = ClassAlias(Broadcast, name="broadcast1")
+        bc2 = ClassAlias(Broadcast, name="broadcast2")
+        
+        on = txItem1.TransmissionID > txItem2.TransmissionID
+        if matchFields is None:
+            matchFields = txTable.PythonClass.fields
+        for field in txTable.PythonClass.fields:
+            cond = getattr(txItem1, field.FieldName) == getattr(txItem2, field.FieldName)
+            on = And(on, cond)
+        
+        
+        dupes = self.store.using(
+            txItem1, 
+            LeftJoin(tx1, on=(txItem1.TransmissionID == tx1.ID)), 
+            LeftJoin(bc1, on=(tx1.BroadcastID == bc1.ID)),
+            LeftJoin(txItem2, on=on), 
+            LeftJoin(tx2, on=(txItem2.TransmissionID == tx2.ID)),
+            LeftJoin(bc2, on=(tx2.BroadcastID == bc2.ID))
+        ).find((bc1, tx1, txItem1, bc2, tx2, txItem2), 
+            And(
+                bc1.StationID == mainStation.ID,  
+                Or(
+                    bc2.StationID == mainStation.ID,
+                    Func("ABS", (tx2.Timestamp - tx1.Timestamp) <= includeOtherStationsWithin)
+                )
+            )
+        )
+        
+        lastModified = max(
+            dupes.max(tx1.Modified),
+            dupes.max(tx2.Modified),
+            dupes.max(bc1.TransmissionRemoved),
+            dupes.max(bc2.TransmissionRemoved),
+            self.store.find(Station).max(Station.BroadcastRemoved)
+        )
+        if head:
+            return (lastModified, None)
+        if notModifiedCheck is not None:
+            notModifiedCheck(lastModified)
+            
+            
+        return (lastModified, dupes.order_by(Asc(tx1.Timestamp)))
+            

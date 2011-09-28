@@ -1,5 +1,5 @@
 """
-File name: __init__.py
+File name: patch_3.py
 This file is part of: priyomdb
 
 LICENSE
@@ -24,15 +24,24 @@ For feedback and questions about priyomdb please e-mail one of the
 authors:
     Jonas Wielicki <j.wielicki@sotecware.net>
 """
-from UpcomingBroadcasts import UpcomingBroadcastsAPI
-from Import import ImportAPI
-from List import ListAPI
-from Session import SessionAPI
-from ListModulations import ListModulationsAPI
-from TransmissionStats import TransmissionStatsAPI
-from TransmissionsByMonth import TransmissionsByMonthAPI
-from CloseBroadcasts import CloseBroadcastsAPI
-from StationFrequencies import StationFrequenciesAPI
-from InstanciateSchedules import InstanciateSchedulesAPI
-from TransmissionsByYear import TransmissionsByYearAPI
-from DuplicatedTransmissionItems import DuplicatedTransmissionItemsAPI
+
+def apply(store):
+    statements = [
+"""CREATE TABLE `eventClass` (
+    `ID` INT NOT NULL AUTO_INCREMENT,
+    `Title` VARCHAR(255) NOT NULL COMMENT 'title of the event class',
+    PRIMARY KEY (`ID`)
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8""",
+    
+"""CREATE TABLE `events` (
+    `ID` INT NOT NULL AUTO_INCREMENT,
+    `Created` BIGINT NOT NULL COMMENT 'creation date of row',
+    `Modified` BIGINT NOT NULL COMMENT 'last modification date of row',
+    `StationID` INT NOT NULL COMMENT 'station to which the ID is associated',
+    `EventClassID` INT DEFAULT NULL COMMENT 'event class, NULL for raw event',
+    `Description` TEXT NOT NULL COMMENT 'descriptive text of the event',
+    PRIMARY KEY (`ID`)
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8"""
+]
+    for statement in statements:
+        store.execute(statement)

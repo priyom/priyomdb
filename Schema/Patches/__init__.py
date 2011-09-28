@@ -24,15 +24,4 @@ For feedback and questions about priyomdb please e-mail one of the
 authors:
     Jonas Wielicki <j.wielicki@sotecware.net>
 """
-from UpcomingBroadcasts import UpcomingBroadcastsAPI
-from Import import ImportAPI
-from List import ListAPI
-from Session import SessionAPI
-from ListModulations import ListModulationsAPI
-from TransmissionStats import TransmissionStatsAPI
-from TransmissionsByMonth import TransmissionsByMonthAPI
-from CloseBroadcasts import CloseBroadcastsAPI
-from StationFrequencies import StationFrequenciesAPI
-from InstanciateSchedules import InstanciateSchedulesAPI
-from TransmissionsByYear import TransmissionsByYearAPI
-from DuplicatedTransmissionItems import DuplicatedTransmissionItemsAPI
+

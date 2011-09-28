@@ -1,5 +1,5 @@
 """
-File name: __init__.py
+File name: Event.py
 This file is part of: priyomdb
 
 LICENSE
@@ -24,15 +24,24 @@ For feedback and questions about priyomdb please e-mail one of the
 authors:
     Jonas Wielicki <j.wielicki@sotecware.net>
 """
-from UpcomingBroadcasts import UpcomingBroadcastsAPI
-from Import import ImportAPI
-from List import ListAPI
-from Session import SessionAPI
-from ListModulations import ListModulationsAPI
-from TransmissionStats import TransmissionStatsAPI
-from TransmissionsByMonth import TransmissionsByMonthAPI
-from CloseBroadcasts import CloseBroadcastsAPI
-from StationFrequencies import StationFrequenciesAPI
-from InstanciateSchedules import InstanciateSchedulesAPI
-from TransmissionsByYear import TransmissionsByYearAPI
-from DuplicatedTransmissionItems import DuplicatedTransmissionItemsAPI
+from storm.locals import *
+from Station import Station
+from PriyomBase import PriyomBase
+
+class EventClass(object):
+    __storm_table__ = "eventClass"
+    
+    ID = Int(primary=True)
+    Title = Unicode()
+    
+class Event(PriyomBase):
+    __storm_table__ = "event"
+    
+    ID = Int(primary=True)
+    Created = Int()
+    Modified = Int()
+    StationID = Int()
+    Station = Reference(StationID, Station.ID)
+    EventClassID = Int()
+    EventClass = Reference(EventClassID, EventClass.ID)
+    Description = Unicode()

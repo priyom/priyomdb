@@ -36,7 +36,7 @@ from Helpers import TimeUtils
 class Station(PriyomBase, XMLIntf.XMLStorm):
     __storm_table__ = "stations"
     ID = Int(primary = True)
-    BroadcastDeleted = Int()
+    BroadcastRemoved = Int()
     EnigmaIdentifier = Unicode()
     PriyomIdentifier = Unicode()
     Nickname = Unicode()
@@ -150,8 +150,8 @@ class Station(PriyomBase, XMLIntf.XMLStorm):
     def __str__(self):
         return "Station: %s/%s \"%s\"" % (self.EnigmaIdentifier, self.PriyomIdentifier, self.Nickname)
         
-    def broadcastDeleted(self):
-        self.BroadcastDeleted = TimeUtils.now()
+    def broadcastRemoved(self):
+        self.BroadcastRemoved = int(TimeUtils.now())
         
     def __unicode__(self):
         return u"{1}{2}{0}".format(
