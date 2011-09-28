@@ -61,7 +61,8 @@ def get_site_map(priyomInterface):
         "getCloseBroadcasts": CloseBroadcastsAPI(model),
         "getStationFrequencies": StationFrequenciesAPI(model),
         "instanciateSchedules": AuthorizationSelector(InstanciateSchedulesAPI(model), "instanciate"),
-        "getTransmissionsByYear": TransmissionsByYearAPI(model)
+        "getTransmissionsByYear": TransmissionsByYearAPI(model),
+        "getDuplicatedTransmissionItems": DuplicatedTransmissionItemsAPI(model)
     })
     apiMap.mapping[""] = apiMap
     
