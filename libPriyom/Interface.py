@@ -443,7 +443,7 @@ class PriyomInterface:
             LeftJoin(txItem2, on=on), 
             LeftJoin(tx2, on=(txItem2.TransmissionID == tx2.ID)),
             LeftJoin(bc2, on=(tx2.BroadcastID == bc2.ID))
-        ).find((tx1, txItem1, tx2, txItem2), 
+        ).find((bc1, tx1, txItem1, bc2, tx2, txItem2), 
             And(
                 bc1.StationID == mainStation.ID,  
                 Or(
