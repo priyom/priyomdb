@@ -91,4 +91,4 @@ class DuplicatedTransmissionItemsAPI(API):
             
             rootNode.appendChild(node)
         
-        print >>self.out, doc.toxml(encoding=self.encoding)
+        print >>self.out, self.model.domToXml(doc, self.encoding)
