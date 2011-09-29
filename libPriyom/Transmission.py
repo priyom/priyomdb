@@ -153,7 +153,7 @@ class Transmission(PriyomBase, XMLIntf.XMLStorm):
             pass
     
     def __unicode__(self):
-        return u"Transmission with callsign {0} and {1} groups".format(self.Callsign, len(self.blocks))
+        return u"Transmission with callsign {0} and {1} segments".format(self.Callsign, len(self.blocks))
 
 class TransmissionClassBase(object):
     def __getitem__(self, index):
