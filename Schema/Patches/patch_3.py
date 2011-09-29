@@ -1,5 +1,5 @@
 """
-File name: Documentation.py
+File name: patch_3.py
 This file is part of: priyomdb
 
 LICENSE
@@ -24,24 +24,24 @@ For feedback and questions about priyomdb please e-mail one of the
 authors:
     Jonas Wielicki <j.wielicki@sotecware.net>
 """
-from WebStack.Generic import ContentType
-from cfg_priyomhttpd import application, doc, misc
 
-class DocumentationSelector(object):
-    path_encoding = "utf-8"
+def apply(store):
+    statements = [
+"""CREATE TABLE `eventClass` (
+    `ID` INT NOT NULL AUTO_INCREMENT,
+    `Title` VARCHAR(255) NOT NULL COMMENT 'title of the event class',
+    PRIMARY KEY (`ID`)
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8""",
     
-    def __init__(self, resource):
-        self.resource = resource
-    
-    def respond(self, trans):
-        if hasattr(self.resource, "doc"):
-            trans.encoding = "utf-8"
-            breadcrumbs = None
-            if doc.get("breadcrumbs", {}).get("enabled", False):
-                breadcrumbs = list()
-            return self.resource.doc(trans, breadcrumbs)
-        else:
-            trans.rollback()
-            trans.set_response_code(501)
-            trans.set_content_type(ContentType("text/plain", "utf-8"))
-            print >>trans.get_response_stream(), u"Documentation not implemented.".encode("utf-8")
+"""CREATE TABLE `events` (
+    `ID` INT NOT NULL AUTO_INCREMENT,
+    `Created` BIGINT NOT NULL COMMENT 'creation date of row',
+    `Modified` BIGINT NOT NULL COMMENT 'last modification date of row',
+    `StationID` INT NOT NULL COMMENT 'station to which the ID is associated',
+    `EventClassID` INT DEFAULT NULL COMMENT 'event class, NULL for raw event',
+    `Description` TEXT NOT NULL COMMENT 'descriptive text of the event',
+    PRIMARY KEY (`ID`)
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8"""
+]
+    for statement in statements:
+        store.execute(statement)

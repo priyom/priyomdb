@@ -1,9 +1,36 @@
+"""
+File name: Broadcast.py
+This file is part of: priyomdb
+
+LICENSE
+
+The contents of this file are subject to the Mozilla Public License
+Version 1.1 (the "License"); you may not use this file except in
+compliance with the License. You may obtain a copy of the License at
+http://www.mozilla.org/MPL/
+
+Software distributed under the License is distributed on an "AS IS"
+basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+License for the specific language governing rights and limitations under
+the License.
+
+Alternatively, the contents of this file may be used under the terms of
+the GNU General Public license (the  "GPL License"), in which case  the
+provisions of GPL License are applicable instead of those above.
+
+FEEDBACK & QUESTIONS
+
+For feedback and questions about priyomdb please e-mail one of the
+authors:
+    Jonas Wielicki <j.wielicki@sotecware.net>
+"""
 from storm.locals import *
 import XMLIntf
 from Modulation import Modulation
 import datetime
 from PriyomBase import PriyomBase, now
 from Formatting import priyomdate
+from Helpers import TimeUtils
 import re
 
 freqRe = re.compile("([0-9]+(\.[0-9]*)?|\.[0-9]+)\s*(([mkg]?)hz)?", re.I)
@@ -88,7 +115,7 @@ class BroadcastFrequency(object):
 class Broadcast(PriyomBase, XMLIntf.XMLStorm):
     __storm_table__ = "broadcasts"
     ID = Int(primary = True)
-    TransmissionDeleted = Int()
+    TransmissionRemoved = Int()
     StationID = Int()
     Type = Enum(map={
         "data": "data",
@@ -141,7 +168,7 @@ class Broadcast(PriyomBase, XMLIntf.XMLStorm):
     
     def getIsOnAir(self):
         now = datetime.datetime.utcnow()
-        start = datetime.datetime.fromtimestamp(self.BroadcastStart)
+        start = TimeUtils.toDatetime(self.BroadcastStart)
         if now > start:
             if self.BroadcastEnd is None:
                 return True
@@ -195,8 +222,8 @@ class Broadcast(PriyomBase, XMLIntf.XMLStorm):
     def __str__(self):
         return "%s broadcast from %s until %s" % (self.Type, repr(self.BroadcastStart), repr(self.BroadcastEnd))
         
-    def transmissionDeleted(self):
-        self.TransmissionDeleted = now()
+    def transmissionRemoved(self):
+        self.TransmissionRemoved = int(TimeUtils.now())
         
     def __unicode__(self):
         return u"Broadcast at {0} on {1}".format(
