@@ -1,8 +1,45 @@
+"""
+File name: Broadcast.py
+This file is part of: priyomdb
+
+LICENSE
+
+The contents of this file are subject to the Mozilla Public License
+Version 1.1 (the "License"); you may not use this file except in
+compliance with the License. You may obtain a copy of the License at
+http://www.mozilla.org/MPL/
+
+Software distributed under the License is distributed on an "AS IS"
+basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+License for the specific language governing rights and limitations under
+the License.
+
+Alternatively, the contents of this file may be used under the terms of
+the GNU General Public license (the  "GPL License"), in which case  the
+provisions of GPL License are applicable instead of those above.
+
+FEEDBACK & QUESTIONS
+
+For feedback and questions about priyomdb please e-mail one of the
+authors:
+    Jonas Wielicki <j.wielicki@sotecware.net>
+"""
 from storm.locals import *
 import XMLIntf
 from Modulation import Modulation
 import datetime
 from PriyomBase import PriyomBase, now
+from Formatting import priyomdate
+from Helpers import TimeUtils
+import re
+
+freqRe = re.compile("([0-9]+(\.[0-9]*)?|\.[0-9]+)\s*(([mkg]?)hz)?", re.I)
+siPrefixes = {
+    "" : 1,
+    "k": 1000,
+    "m": 1000000,
+    "g": 1000000000
+}
 
 class BroadcastFrequency(object):
     __storm_table__ = "broadcastFrequencies"
@@ -15,6 +52,27 @@ class BroadcastFrequency(object):
     def __init__(self):
         self.Frequency = 0
         self.ModulationID = 0
+        
+    @staticmethod
+    def parseFrequency(freqStr):
+        global freqRe
+        m = freqRe.match(freqStr)
+        if m is None:
+            return None
+        si = m.group(4)
+        return float(m.group(1)) * siPrefixes[si.lower() if si is not None else ""]
+        
+    @staticmethod
+    def formatFrequency(freq):
+        freq = int(freq)
+        if freq > 1000000000:
+            return unicode((freq / 1000000000.0)) + u" GHz"
+        elif freq > 1000000:
+            return unicode((freq / 1000000.0)) + u" MHz"
+        elif freq > 1000:
+            return unicode((freq / 1000.0)) + u" kHz"
+        else:
+            return unicode(freq) + u" Hz"
     
     @staticmethod
     def importFromDom(store, node, broadcast, context):
@@ -47,11 +105,17 @@ class BroadcastFrequency(object):
         frequency.setAttribute("modulation", self.Modulation.Name)
         parentNode.appendChild(frequency)
         
+    def __unicode__(self):
+        return u"{0} ({1})".format(
+            BroadcastFrequency.formatFrequency(self.Frequency),
+            self.Modulation.Name
+        )
+        
 
 class Broadcast(PriyomBase, XMLIntf.XMLStorm):
     __storm_table__ = "broadcasts"
     ID = Int(primary = True)
-    TransmissionDeleted = Int()
+    TransmissionRemoved = Int()
     StationID = Int()
     Type = Enum(map={
         "data": "data",
@@ -65,7 +129,6 @@ class Broadcast(PriyomBase, XMLIntf.XMLStorm):
     Frequencies = ReferenceSet(ID, BroadcastFrequency.BroadcastID)
     
     xmlMapping = {
-        u"StationID": "StationID",
         u"Comment": "Comment",
         u"Type": "Type"
     }
@@ -99,10 +162,13 @@ class Broadcast(PriyomBase, XMLIntf.XMLStorm):
         broadcastFrequency = BroadcastFrequency.importFromDom(Store.of(self), element, self, context)
         if element.hasAttribute("delete"):
             Store.of(self).remove(broadcastFrequency)
+            
+    def _loadStationID(self, node, context):
+        self.Station = context.resolveId(Station, int(XMLIntf.getText(node)))
     
     def getIsOnAir(self):
         now = datetime.datetime.utcnow()
-        start = datetime.datetime.fromtimestamp(self.BroadcastStart)
+        start = TimeUtils.toDatetime(self.BroadcastStart)
         if now > start:
             if self.BroadcastEnd is None:
                 return True
@@ -156,5 +222,11 @@ class Broadcast(PriyomBase, XMLIntf.XMLStorm):
     def __str__(self):
         return "%s broadcast from %s until %s" % (self.Type, repr(self.BroadcastStart), repr(self.BroadcastEnd))
         
-    def transmissionDeleted(self):
-        self.TransmissionDeleted = now()
+    def transmissionRemoved(self):
+        self.TransmissionRemoved = int(TimeUtils.now())
+        
+    def __unicode__(self):
+        return u"Broadcast at {0} on {1}".format(
+            datetime.datetime.fromtimestamp(self.BroadcastStart).strftime(priyomdate),
+            u", ".join((unicode(freq) for freq in self.Frequencies))
+        )
