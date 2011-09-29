@@ -136,13 +136,13 @@ class Resource(object):
         return use
         
     def parsePreferences(self, trans):
-        prefs = self.parsePreferencesList(",".join(trans.get_header_values("Accept-Charset")))
-        charset = self.getCharsetToUse(prefs, response.get("defaultEncodings") or ["utf-8", "utf8"])
-        if charset is None:
-            trans.rollback()
-            trans.set_response_code(400)
-            print >>trans.get_response_stream(), "user agent does not support any charsets"
-        self.encoding = charset
+        #prefs = self.parsePreferencesList(",".join(trans.get_header_values("Accept-Charset")))
+        #charset = self.getCharsetToUse(prefs, response.get("defaultEncodings") or ["utf-8", "utf8"])
+        #if charset is None:
+        #    trans.rollback()
+        #    trans.set_response_code(400)
+        #    print >>trans.get_response_stream(), "user agent does not support any charsets"
+        self.encoding = "utf-8"
         
         prefs = self.parsePreferencesList(",".join(trans.get_header_values("Accept")))
         self.xhtmlContentType = self.getContentTypeToUse(prefs, ["application/xhtml+xml", "application/xml", "text/html"])
