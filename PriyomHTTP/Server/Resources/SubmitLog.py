@@ -236,7 +236,7 @@ class SubmitLogResource(Resource):
         transmission.__storm_loaded__()
         transmission.Callsign = callsign
         transmission.ForeignCallsign.supplement.LangCode = foreignCallsignLang
-        transmission.ForeignCallsign.supplement.ForeignText = foreignCallsignLang
+        transmission.ForeignCallsign.supplement.ForeignText = foreignCallsign
         transmission.Remarks = remarks
         transmission.Timestamp = timestamp
         transmission.RecordingURL = None
