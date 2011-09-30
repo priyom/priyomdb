@@ -155,15 +155,14 @@ class SubmitLogResource(Resource):
             try:
                 items = txClass.parsePlainText(self.queryEx.get("transmission", u""))
             except ValueError as e:
-                yield u""" Parsing failed: {0:s}""".format(e)
+                yield u""" Parsing failed: {0:s}<br />""".format(e)
             except NodeError as e:
-                yield u""" Parsing failed: {0:s}""".format(e)
+                yield u""" Parsing failed: {0:s}<br />""".format(e)
             if items is not None:
                 if len(items) > 0:
-                    yield u""" Parsing ok, creates {0:d} items.""".format(len(items))
+                    yield u""" Parsing ok, creates {0:d} items.<br />""".format(len(items))
                 else:
-                    yield u""" Parsing failed, no items"""
-                    
+                    yield u""" Parsing failed, no items<br />"""
     def insert(self):
         try:
             station = self.store.get(Station, int(self.queryEx["stationId"]))
@@ -177,6 +176,7 @@ class SubmitLogResource(Resource):
             foreignCallsign = self.queryEx["foreignCallsign"]["value"]
             if len(foreignCallsign) != 0 and len(foreignCallsignLang) == 0:
                 raise KeyError("Foreign callsign given but no language code set.")
+            recordingURL = self.queryEx["recording"]
             
             broadcast = self.store.get(Broadcast, int(self.queryEx["broadcast"]))
             if broadcast is None and int(self.queryEx["broadcast"]) != 0:
@@ -236,10 +236,10 @@ class SubmitLogResource(Resource):
         transmission.__storm_loaded__()
         transmission.Callsign = callsign
         transmission.ForeignCallsign.supplement.LangCode = foreignCallsignLang
-        transmission.ForeignCallsign.supplement.ForeignText = foreignCallsignLang
+        transmission.ForeignCallsign.supplement.ForeignText = foreignCallsign
         transmission.Remarks = remarks
         transmission.Timestamp = timestamp
-        transmission.RecordingURL = None
+        transmission.RecordingURL = recordingURL
         
         contents = transmissionClass.parsePlainText(transmissionContents)
         order = 0
@@ -256,8 +256,8 @@ class SubmitLogResource(Resource):
                 value = value[0]
                 setattr(row, key, value)
                 if foreign is not None:
-                    row.supplements[key].LangCode = foreign[0]
-                    row.supplements[key].ForeignText = foreign[0]
+                    row.supplements[key].supplement.LangCode = foreign[0]
+                    row.supplements[key].supplement.ForeignText = foreign[1]
             
             order += 1
             
@@ -337,7 +337,8 @@ Transmission: {2}</pre>""".format(
                 Callsign: <input type="text" name="callsign" value="{8}" /> <br />
                 Foreign callsign language code: <input type="text" name="foreignCallsign[lang]" value="{9}" /><br />
                 Foreign callsign: <input type="text" name="foreignCallsign[value]" value="{10}" /><br />
-                Remarks: <input type="text" name="remarks" value="{6}" style="width: 100%" />
+                Remarks: <input type="text" name="remarks" value="{6}" style="width: 100%" /><br />
+                Recording URL: <input type="text" name="recording" value="{11}" style="width: 100%" />
             </div>
             {2}
             <div class="section">
@@ -360,7 +361,8 @@ Transmission: {2}</pre>""".format(
                 u'<div class="error">{0}</div>'.format(error) if len(error) > 0 else u"",
                 self.queryEx.get("callsign", u""),
                 self.queryEx.get("foreignCallsign", {}).get("lang", u""),
-                self.queryEx.get("foreignCallsign", {}).get("value", u"")
+                self.queryEx.get("foreignCallsign", {}).get("value", u""),
+                self.queryEx.get("recording", u"")
             ).encode(self.encoding, 'replace')
             
         print >>self.out, u"""
