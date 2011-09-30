@@ -155,15 +155,14 @@ class SubmitLogResource(Resource):
             try:
                 items = txClass.parsePlainText(self.queryEx.get("transmission", u""))
             except ValueError as e:
-                yield u""" Parsing failed: {0:s}""".format(e)
+                yield u""" Parsing failed: {0:s}<br />""".format(e)
             except NodeError as e:
-                yield u""" Parsing failed: {0:s}""".format(e)
+                yield u""" Parsing failed: {0:s}<br />""".format(e)
             if items is not None:
                 if len(items) > 0:
-                    yield u""" Parsing ok, creates {0:d} items.""".format(len(items))
+                    yield u""" Parsing ok, creates {0:d} items.<br />""".format(len(items))
                 else:
-                    yield u""" Parsing failed, no items"""
-                    
+                    yield u""" Parsing failed, no items<br />"""
     def insert(self):
         try:
             station = self.store.get(Station, int(self.queryEx["stationId"]))
@@ -257,8 +256,8 @@ class SubmitLogResource(Resource):
                 value = value[0]
                 setattr(row, key, value)
                 if foreign is not None:
-                    row.supplements[key].LangCode = foreign[0]
-                    row.supplements[key].ForeignText = foreign[0]
+                    row.supplements[key].supplement.LangCode = foreign[0]
+                    row.supplements[key].supplement.ForeignText = foreign[1]
             
             order += 1
             
