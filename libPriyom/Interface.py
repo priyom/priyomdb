@@ -336,7 +336,7 @@ class PriyomInterface:
         if notModifiedCheck is not None:
             notModifiedCheck(lastModified)
         if limiter is not None:
-            transmissions = limiter(transmissions)
+            transmissions = limiter(transmissions.order_by(Asc(Transmission.Timestamp)))
         return (lastModified, (transmission for (transmission, broadcast) in transmissions))
         
     def getTransmissionStats(self, stationId, notModifiedCheck = None, head = False):
