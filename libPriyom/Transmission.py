@@ -214,6 +214,9 @@ class TransmissionClassBase(object):
             store = Store.of(supplement.supplement)
             if store is not None:
                 store.remove(supplement.supplement)
+    
+    def __unicode__(self):
+        return u" ".join((getattr(self, field.FieldName) for field in self.fields))
 
 def NewTransmissionClass(table):
     cls = types.ClassType(table.TableName.encode("utf-8"), (TransmissionClassBase, ), {})
