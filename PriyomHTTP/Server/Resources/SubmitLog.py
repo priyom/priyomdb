@@ -177,7 +177,7 @@ class SubmitLogResource(Resource):
             foreignCallsign = self.queryEx["foreignCallsign"]["value"]
             if len(foreignCallsign) != 0 and len(foreignCallsignLang) == 0:
                 raise KeyError("Foreign callsign given but no language code set.")
-            recordingURL = self.queryEx["recordingURL"]
+            recordingURL = self.queryEx["recording"]
             
             broadcast = self.store.get(Broadcast, int(self.queryEx["broadcast"]))
             if broadcast is None and int(self.queryEx["broadcast"]) != 0:
