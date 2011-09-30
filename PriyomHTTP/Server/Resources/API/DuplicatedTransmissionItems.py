@@ -27,16 +27,31 @@ authors:
 from WebStack.Generic import ContentType
 from libPriyom import *
 from API import API, CallSyntax, Argument
+import xml.dom.minidom as dom
 
 class DupeRecord(object):
     def __init__(self, doc, node):
         self.node = node
         self.doc = doc
+        self.items = []
         
-    def add(self, broadcast, transmission):
+    def add(self, broadcast, transmission, item):
+        if transmission.ID in self.items:
+            return
+        self.items.append(transmission.ID)
+        
         node = self.doc.createElementNS(XMLIntf.namespace, "duplicate-entry")
         broadcast.toDom(node)
         transmission.toDom(node)
+        contents = XMLIntf.getChild(XMLIntf.getChild(node, "transmission"), "Contents")
+        index = transmission.blocks.index(item)
+        
+        for group in filter(lambda node: node.nodeType == dom.Node.ELEMENT_NODE and node.tagName == "group", contents.childNodes):
+            if index == 0:
+                group.setAttribute("highlighted", "true")
+                break
+            index -= 1
+        
         self.node.appendChild(node)
         
 
@@ -87,23 +102,23 @@ class DuplicatedTransmissionItemsAPI(API):
         dupeDict = {}
         
         for bc1, tx1, txItem1, bc2, tx2, txItem2 in items:
-            if tx1.ID in dupeDict:
-                if tx2.ID in dupeDict:
-                    continue
-                rec = dupeDict[tx1.ID]
-                rec.add(bc2, tx2)
-                dupeDict[tx2.ID] = rec
-            elif tx2.ID in dupeDict:
-                rec = dupeDict[tx2.ID]
-                rec.add(bc1, tx1)
-                dupeDict[tx1.ID] = rec
+            if matchFields is None:
+                key = unicode(txItem1)
+            else:
+                key = u" ".join((getattr(txItem1, field) for field in matchFields))
+            if key in dupeDict:
+                rec = dupeDict[key]
+                rec.add(bc1, tx1, txItem1)
+                rec.add(bc2, tx2, txItem2)
+                dupeDict[key] = rec
+                continue
             
             node = doc.createElementNS(XMLIntf.namespace, "duplicated-transmission")
+            #node.setAttribute("key", key)
             rec = DupeRecord(doc, node)
-            rec.add(bc1, tx1)
-            rec.add(bc2, tx2)
-            dupeDict[tx1.ID] = rec
-            dupeDict[tx2.ID] = rec
+            rec.add(bc1, tx1, txItem1)
+            rec.add(bc2, tx2, txItem2)
+            dupeDict[key] = rec
             rootNode.appendChild(node)
         
         print >>self.out, self.model.domToXml(doc, self.encoding)
