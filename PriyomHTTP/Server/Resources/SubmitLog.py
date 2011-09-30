@@ -177,6 +177,7 @@ class SubmitLogResource(Resource):
             foreignCallsign = self.queryEx["foreignCallsign"]["value"]
             if len(foreignCallsign) != 0 and len(foreignCallsignLang) == 0:
                 raise KeyError("Foreign callsign given but no language code set.")
+            recordingURL = self.queryEx["recording"]
             
             broadcast = self.store.get(Broadcast, int(self.queryEx["broadcast"]))
             if broadcast is None and int(self.queryEx["broadcast"]) != 0:
@@ -239,7 +240,7 @@ class SubmitLogResource(Resource):
         transmission.ForeignCallsign.supplement.ForeignText = foreignCallsign
         transmission.Remarks = remarks
         transmission.Timestamp = timestamp
-        transmission.RecordingURL = None
+        transmission.RecordingURL = recordingURL
         
         contents = transmissionClass.parsePlainText(transmissionContents)
         order = 0
@@ -337,7 +338,8 @@ Transmission: {2}</pre>""".format(
                 Callsign: <input type="text" name="callsign" value="{8}" /> <br />
                 Foreign callsign language code: <input type="text" name="foreignCallsign[lang]" value="{9}" /><br />
                 Foreign callsign: <input type="text" name="foreignCallsign[value]" value="{10}" /><br />
-                Remarks: <input type="text" name="remarks" value="{6}" style="width: 100%" />
+                Remarks: <input type="text" name="remarks" value="{6}" style="width: 100%" /><br />
+                Recording URL: <input type="text" name="recording" value="{11}" style="width: 100%" />
             </div>
             {2}
             <div class="section">
@@ -360,7 +362,8 @@ Transmission: {2}</pre>""".format(
                 u'<div class="error">{0}</div>'.format(error) if len(error) > 0 else u"",
                 self.queryEx.get("callsign", u""),
                 self.queryEx.get("foreignCallsign", {}).get("lang", u""),
-                self.queryEx.get("foreignCallsign", {}).get("value", u"")
+                self.queryEx.get("foreignCallsign", {}).get("value", u""),
+                self.queryEx.get("recording", u"")
             ).encode(self.encoding, 'replace')
             
         print >>self.out, u"""
