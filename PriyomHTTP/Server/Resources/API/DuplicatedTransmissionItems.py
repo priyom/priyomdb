@@ -28,6 +28,18 @@ from WebStack.Generic import ContentType
 from libPriyom import *
 from API import API, CallSyntax, Argument
 
+class DupeRecord(object):
+    def __init__(self, doc, node):
+        self.node = node
+        self.doc = doc
+        
+    def add(self, broadcast, transmission):
+        node = self.doc.createElementNS(XMLIntf.namespace, "duplicate-entry")
+        broadcast.toDom(node)
+        transmission.toDom(node)
+        self.node.appendChild(node)
+        
+
 class DuplicatedTransmissionItemsAPI(API):
     title = u"getDuplicatedTransmissionItems"
     shortDescription = u"get a list of duplicated transmission items"
@@ -69,26 +81,29 @@ class DuplicatedTransmissionItemsAPI(API):
         if self.head:
             return
         
-        dupeTuples = set()
-        
         doc = self.model.getExportDoc("duplicated-transmissions")
         rootNode = doc.documentElement
         
+        dupeDict = {}
+        
         for bc1, tx1, txItem1, bc2, tx2, txItem2 in items:
-            dupeTuple = (tx1.ID, tx2.ID)
-            if dupeTuple in dupeTuples:
-                continue
+            if tx1.ID in dupeDict:
+                if tx2.ID in dupeDict:
+                    continue
+                rec = dupeDict[tx1.ID]
+                rec.add(bc2, tx2)
+                dupeDict[tx2.ID] = rec
+            elif tx2.ID in dupeDict:
+                rec = dupeDict[tx2.ID]
+                rec.add(bc1, tx1)
+                dupeDict[tx1.ID] = rec
+            
             node = doc.createElementNS(XMLIntf.namespace, "duplicated-transmission")
-            nodeA = doc.createElementNS(XMLIntf.namespace, "first")
-            bc1.toDom(nodeA)
-            tx1.toDom(nodeA)
-            node.appendChild(nodeA)
-            
-            nodeB = doc.createElementNS(XMLIntf.namespace, "second")
-            bc2.toDom(nodeB)
-            tx2.toDom(nodeB)
-            node.appendChild(nodeB)
-            
+            rec = DupeRecord(doc, node)
+            rec.add(bc1, tx1)
+            rec.add(bc2, tx2)
+            dupeDict[tx1.ID] = rec
+            dupeDict[tx2.ID] = rec
             rootNode.appendChild(node)
         
         print >>self.out, self.model.domToXml(doc, self.encoding)
