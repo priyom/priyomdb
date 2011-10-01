@@ -74,18 +74,19 @@ class XMLStorm(object):
 def SubElement(parent, nsLessTagName, attrib={}, xmlns=namespace, **extra):
     return ElementTree.SubElement(parent, u"{{{0}}}{1}".format(xmlns, nsLessTagName), attrib=attrib, **extra)
 
-def appendTextElement(parentNode, name, value, useNamespace = namespace):
+def appendTextElement(parentNode, name, value, useNamespace=namespace, attrib={}, **extra):
     node = None
     if useNamespace is not None:
-        node = SubElement(parentNode, name, value, xmlns=useNamespace)
+        node = SubElement(parentNode, name, xmlns=useNamespace, attrib=attrib, **extra)
     else:
-        node = ElementTree.SubElement(parentNode, name, value)
+        node = ElementTree.SubElement(parentNode, name, attrib=attrib, **extra)
+    node.text = value
     return node
 
-def appendTextElements(parentNode, data, xmlns=namespace, noneHandler = None):
+def appendTextElements(parentNode, data, xmlns=namespace, attrib={}, noneHandler=None, **extra):
     builder = ElementTree.SubElement
     if xmlns is not None:
-        builder = lambda parent, tag, **extra: SubElement(parent, tag, attrib=extra.get("attrib", {}), xmlns=xmlns, **extra)
+        builder = lambda parent, tag, attrib, **extra: SubElement(parent, tag, attrib=attrib, xmlns=xmlns, **extra)
     for (name, value) in data:
         if value is None:
             if noneHandler is not None:
@@ -94,7 +95,7 @@ def appendTextElements(parentNode, data, xmlns=namespace, noneHandler = None):
                     continue
             else:
                 continue
-        builder(parent, name).text = unicode(value)
+        builder(parentNode, name, attrib, **extra).text = unicode(value)
 
 def appendDateElement(parentNode, name, value, useNamespace = namespace):
     date = TimeUtils.fromTimestamp(value)

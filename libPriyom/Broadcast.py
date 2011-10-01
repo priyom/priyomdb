@@ -100,10 +100,9 @@ class BroadcastFrequency(object):
             self.Modulation.Name = node.getAttribute("modulation")
     
     def toDom(self, parentNode):
-        doc = parentNode.ownerDocument
-        frequency = XMLIntf.buildTextElementNS(doc, "frequency", unicode(self.Frequency), XMLIntf.namespace)
-        frequency.setAttribute("modulation", self.Modulation.Name)
-        parentNode.appendChild(frequency)
+        XMLIntf.appendTextElement(parentNode, u"frequency", unicode(self.Frequency), attrib={
+            u"modulatiom": self.Modulation.Name
+        })
         
     def __unicode__(self):
         return u"{0} ({1})".format(
@@ -180,20 +179,19 @@ class Broadcast(PriyomBase, XMLIntf.XMLStorm):
         
     
     def toDom(self, parentNode, flags=None):
-        doc = parentNode.ownerDocument
-        broadcast = doc.createElementNS(XMLIntf.namespace, "broadcast")
+        broadcast = XMLIntf.SubElement(parentNode, u"broadcast")
         
-        XMLIntf.appendTextElement(broadcast, "ID", unicode(self.ID))
-        XMLIntf.appendDateElement(broadcast, "Start", self.BroadcastStart)
+        XMLIntf.appendTextElement(broadcast, u"ID", unicode(self.ID))
+        XMLIntf.appendDateElement(broadcast, u"Start", self.BroadcastStart)
         if self.BroadcastEnd is not None:
-            XMLIntf.appendDateElement(broadcast, "End", self.BroadcastEnd)
+            XMLIntf.appendDateElement(broadcast, u"End", self.BroadcastEnd)
         XMLIntf.appendTextElements(broadcast,
             [
-                ("StationID", unicode(self.StationID)),
-                ("Type", self.Type),
-                ("Confirmed", "" if self.Confirmed else None),
-                ("on-air", "" if self.getIsOnAir() else None),
-                ("has-transmissions", "" if self.Transmissions.count() > 0 else None)
+                (u"StationID", unicode(self.StationID)),
+                (u"Type", self.Type),
+                (u"Confirmed", "" if self.Confirmed else None),
+                (u"on-air", "" if self.getIsOnAir() else None),
+                (u"has-transmissions", "" if self.Transmissions.count() > 0 else None)
             ]
         )
         for frequency in self.Frequencies:

@@ -131,7 +131,7 @@ class Transmission(PriyomBase, XMLIntf.XMLStorm):
     def toDom(self, parentNode, flags=None):
         transmission = XMLIntf.SubElement(parentNode, u"transmission")
         XMLIntf.SubElement(transmission, u"ID").text = unicode(self.ID)
-        self._metadataToDom(doc, transmission)
+        self._metadataToDom(transmission)
         
         contents = XMLIntf.SubElement(transmission, u"Contents")
         for block in self.blocks:
