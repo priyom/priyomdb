@@ -24,12 +24,13 @@ For feedback and questions about priyomdb please e-mail one of the
 authors:
     Jonas Wielicki <j.wielicki@sotecware.net>
 """
-import xml.dom.minidom as dom
+import xml.etree.ElementTree as ElementTree
 import datetime
 import Formatting
 from Helpers import TimeUtils
 
-namespace = "http://priyom.org/station-db"
+namespace = "http://api.priyom.org/priyomdb"
+ElementTree.register_namespace(u"priyom", namespace)
 debugXml = False
 
 class NoneHandlers:
@@ -69,34 +70,22 @@ class XMLStorm(object):
                     
     def fromDom(self, node, context):
         self.loadProperties(node, context)
-    
-def buildTextElementNS(doc, name, value, namespace):
-    node = doc.createElementNS(namespace, name)
-    if len(value) > 0:
-        node.appendChild(doc.createTextNode(value))
-    return node
-    
-def buildTextElement(doc, name, value):
-    node = doc.createElement(name)
-    if len(value) > 0:
-        node.appendChild(doc.createTextNode(value))
-    return node
+        
+def SubElement(parent, nsLessTagName, attrib={}, xmlns=namespace, **extra):
+    return ElementTree.SubElement(parent, u"{{{0}}}{1}".format(xmlns, nsLessTagName), attrib=attrib, **extra)
 
-def appendTextElement(parentNode, name, value, useNamespace = namespace, doNotAppend = False):
+def appendTextElement(parentNode, name, value, useNamespace = namespace):
     node = None
     if useNamespace is not None:
-        node = buildTextElementNS(parentNode.ownerDocument, name, value, useNamespace)
+        node = SubElement(parentNode, name, value, xmlns=useNamespace)
     else:
-        node = buildTextElement(parentNode.ownerDocument, name, value)
-    if not doNotAppend:
-        parentNode.appendChild(node)
+        node = ElementTree.SubElement(parentNode, name, value)
     return node
 
-def appendTextElements(parentNode, data, useNamespace = namespace, noneHandler = None):
-    doc = parentNode.ownerDocument
-    builder = buildTextElement
-    if useNamespace is not None:
-        builder = lambda doc, name, value: buildTextElementNS(doc, name, value, useNamespace)
+def appendTextElements(parentNode, data, xmlns=namespace, noneHandler = None):
+    builder = ElementTree.SubElement
+    if xmlns is not None:
+        builder = lambda parent, tag, **extra: SubElement(parent, tag, attrib=extra.get("attrib", {}), xmlns=xmlns, **extra)
     for (name, value) in data:
         if value is None:
             if noneHandler is not None:
@@ -105,26 +94,10 @@ def appendTextElements(parentNode, data, useNamespace = namespace, noneHandler =
                     continue
             else:
                 continue
-        parentNode.appendChild(builder(doc, name, value))
+        builder(parent, name).text = unicode(value)
 
-def appendDateElement(parentNode, name, value, useNamespace = namespace, doNotAppend = False):
+def appendDateElement(parentNode, name, value, useNamespace = namespace):
     date = TimeUtils.fromTimestamp(value)
-    node = appendTextElement(parentNode, name, date.strftime(Formatting.priyomdate), useNamespace, True)
-    node.setAttribute("unix", unicode(value))
-    if not doNotAppend:
-        parentNode.appendChild(node)
+    node = appendTextElement(parentNode, name, date.strftime(Formatting.priyomdate), useNamespace = useNamespace)
+    node.set(u"unix", unicode(value))
     return node
-    
-def getChild(node, tagName):
-    for child in node.childNodes:
-        if child.nodeType == dom.Node.ELEMENT_NODE:
-            if child.tagName == tagName:
-                return child
-    return None
-
-def getText(node):
-    s = ""
-    for child in node.childNodes:
-        if child.nodeType == dom.Node.TEXT_NODE:
-            s = s + child.data
-    return s
