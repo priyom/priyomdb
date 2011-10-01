@@ -188,9 +188,9 @@ class TransmissionClassBase(object):
                 u"class": kind
             }).text = value
             supplement = self.supplements[field.FieldName]
-            node = supplement.toDom(group, u"item")
-            if node is not None:
-                node.set(u"class", kind)
+            node = supplement.toDom(group, u"item", {
+                u"class": kind
+            })
         
     def fromDom(self, node, context):
         fields = iter((field for field in self.fields))
