@@ -24,7 +24,7 @@ For feedback and questions about priyomdb please e-mail one of the
 authors:
     Jonas Wielicki <j.wielicki@sotecware.net>
 """
-import xml.dom.minidom as dom
+import xml.etree.ElementTree as ElementTree
 from storm.locals import *
 import XMLIntf
 from Foreign import ForeignHelper
@@ -110,36 +110,32 @@ class Transmission(PriyomBase, XMLIntf.XMLStorm):
             block = table.PythonClass(store)
             block.fromDom(group, context)
         
-    def _metadataToDom(self, doc, parentNode):
+    def _metadataToDom(self, parentNode):
         XMLIntf.appendTextElements(parentNode,
-            [
-                ("BroadcastID", unicode(self.Broadcast.ID)),
-                ("ClassID", unicode(self.Class.ID)),
-                ("Callsign", unicode(self.Callsign))
-            ]
+            (
+                ("BroadcastID", self.Broadcast.ID),
+                ("ClassID", self.Class.ID),
+                ("Callsign", self.Callsign)
+            )
         )
         self.ForeignCallsign.toDom(parentNode, "Callsign")
         XMLIntf.appendDateElement(parentNode, "Timestamp", self.Timestamp)
         XMLIntf.appendTextElements(parentNode,
-            [
+            (
                 ("Recording", self.RecordingURL),
                 ("Remarks", self.Remarks)
-            ]
+            )
         )
         
     
     def toDom(self, parentNode, flags=None):
-        doc = parentNode.ownerDocument
-        transmission = doc.createElementNS(XMLIntf.namespace, "transmission")
-        XMLIntf.appendTextElement(transmission, "ID", unicode(self.ID))
+        transmission = XMLIntf.SubElement(parentNode, u"transmission")
+        XMLIntf.SubElement(transmission, u"ID").text = unicode(self.ID)
         self._metadataToDom(doc, transmission)
         
-        contents = doc.createElementNS(XMLIntf.namespace, "Contents")
+        contents = XMLIntf.SubElement(transmission, u"Contents")
         for block in self.blocks:
             block.toDom(contents)
-        transmission.appendChild(contents)
-        
-        parentNode.appendChild(transmission)
         
     def loadDomElement(self, node, context):
         try:
@@ -181,20 +177,20 @@ class TransmissionClassBase(object):
         self.initSupplements()
         
     def toDom(self, parentNode):
-        doc = parentNode.ownerDocument
-        group = doc.createElementNS(XMLIntf.namespace, "group")
-        group.setAttribute("class", self.TransmissionClassTable.XMLGroupClass)
-        group.setAttribute("name", self.TransmissionClassTable.TableName)
+        group = XMLIntf.SubElement(parentNode, u"group", {
+            u"class": self.TransmissionClassTable.XMLGroupClass,
+            u"name": self.TransmissionClassTable.TableName
+        })
         
         for (field, value) in self:
             kind = field.Kind
-            XMLIntf.appendTextElement(group, "item", value).setAttribute("class", kind)
+            XMLIntf.SubElement(group, u"item", {
+                u"class": kind
+            }).text = value
             supplement = self.supplements[field.FieldName]
-            node = supplement.toDom(group, "item")
+            node = supplement.toDom(group, u"item")
             if node is not None:
-                node.setAttribute("class", kind)
-            
-        parentNode.appendChild(group)
+                node.set(u"class", kind)
         
     def fromDom(self, node, context):
         fields = iter((field for field in self.fields))
