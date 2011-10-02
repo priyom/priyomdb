@@ -10,6 +10,8 @@ class Serializer(object):
         self.encoding = None
         
     def registerNamespacePrefix(self, prefix, uri):
+        if len(prefix) > 0 and prefix[0] == u":":
+            prefix = prefix[1:]
         if len(prefix) > 0 and prefix[-1] == u":":
             prefix = prefix[:-1]
         if len(prefix) == 0:
@@ -19,7 +21,7 @@ class Serializer(object):
             if value == prefix:
                 del self.persistentNamespaceMap[key]
                 break
-        self.persistentNamespaceMap[uri] = prefix+u":"
+        self.persistentNamespaceMap[uri] = prefix
         
     def unregisterNamespacePrefix(self, uri):
         if uri in self.persistentNamespaceMap:
@@ -88,7 +90,7 @@ class Serializer(object):
             prefix = self.persistentNamespaceMap[uri]
             self.namespaceMap[uri] = prefix
         else:
-            prefix = "ns{0}:".format(self.namespaceCounter)
+            prefix = ":ns{0}".format(self.namespaceCounter)
             self.namespaceMap[uri] = prefix
             self.namespaceCounter += 1
         return prefix
@@ -134,10 +136,10 @@ class Serializer(object):
                 tmpPrefix = True
             else:
                 prefix = self.namespaceMap[namespace]
-            qname = "{0}{1}".format(prefix, tag)
+            qname = "{0}{2}{1}".format(prefix, tag, ":" if len(prefix) > 0 else "")
         
         attribs = " ".join(itertools.chain(
-            ('{0}xmlns="{1}"'.format(key, self.encodeAttrib(self.decode(value))) for key, value in sorted(namespaceAttribs.iteritems(), key=lambda x: x[0])),
+            ('xmlns{2}{0}="{1}"'.format(key, self.encodeAttrib(self.decode(value)), ":" if len(key) > 0 else "") for key, value in sorted(namespaceAttribs.iteritems(), key=lambda x: x[0])),
             ('{0}="{1}"'.format(key, self.encodeAttrib(value)) for key, value in element.items())
         ))
         
