@@ -37,7 +37,7 @@ buzzer = store.get(Station, 1)
 test = store.get(Station, 2)
 intf = PriyomInterface(store)
 
-tree = ElementTree.ElementTree(Element(u"{{{0}}}priyom-db-export".format(XMLIntf.namespace)))
+tree = ElementTree.ElementTree(ElementTree.Element(u"{{{0}}}priyom-db-export".format(XMLIntf.namespace)))
 #intf.exportStationToDom(buzzer, None, doc)
 #print(doc.toprettyxml())
 sched = intf.scheduleMaintainer
