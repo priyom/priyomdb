@@ -124,7 +124,7 @@ class Station(PriyomBase, XMLIntf.XMLStorm):
                 else:
                     scheduleNode.set("confirmed", "false")
             elif self.ScheduleConfirmed:
-                XMLIntf.SubElement(station, u"schedule", {
+                XMLIntf.SubElement(station, u"schedule", attrib={
                     u"confirmed": u"true"
                 })
             
