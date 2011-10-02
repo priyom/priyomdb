@@ -48,5 +48,5 @@ class ListAPI(API):
         
         # flags must not be enabled here; otherwise a permission leak
         # is possible.
-        print >>self.out, self.model.exportListToXml(items, self.cls, flags = frozenset(), encoding=self.encoding)
+        self.model.exportListToFile(self.out, items, self.cls, flags = frozenset(), encoding=self.encoding)
 

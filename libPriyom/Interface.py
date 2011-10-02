@@ -28,7 +28,7 @@ from storm.locals import *
 from storm.expr import *
 import Imports
 import XMLIntf
-from xml.etree.ElementTree import ElementTree
+import xml.etree.ElementTree as ElementTree
 from Modulation import Modulation
 from Broadcast import BroadcastFrequency, Broadcast
 from Transmission import Transmission, TransmissionClass, TransmissionClassTable, TransmissionClassTableField
@@ -79,10 +79,10 @@ class PriyomInterface:
     def _getClassDoc(self, classType, doc):
         return self._createDocumentOptional(doc, self.Class2RootNode[classType])
         
-    def _exportToDomSimple(self, obj, rootName, flags = None, doc = None):
-        thisDoc = self._getClassDoc(type(obj), doc)
-        obj.toDom(thisDoc.getroot(), flags)
-        return thisDoc
+    def _exportToDomSimple(self, obj, rootName, flags = None, tree = None):
+        tree = self._getClassDoc(type(obj), tree)
+        obj.toDom(tree.getroot(), flags)
+        return tree
         
     def exportTransmissionToDom(self, transmission, flags = None, doc = None):
         return self._exportToDomSimple(transmission, "priyom-transmission-export", flags, doc)
@@ -96,14 +96,14 @@ class PriyomInterface:
     def exportBroadcastToDom(self, broadcast, flags = None, doc = None):
         return self._exportToDomSimple(broadcast, "priyom-broadcast-export", flags, doc)
         
-    def exportToDom(self, obj, flags = None, doc = None):
+    def exportToETree(self, obj, flags = None, doc = None):
         return self._exportToDomSimple(obj, self.Class2RootNode[type(obj)], flags, doc)
         
-    def exportListToDom(self, list, classType, flags = None, doc = None):
-        doc = self._getClassDoc(classType, doc)
+    def exportListToETree(self, list, classType, flags = None, doc = None):
+        tree = self._getClassDoc(classType, doc)
         for obj in list:
-            obj.toDom(doc.getroot(), flags)
-        return doc
+            obj.toDom(tree.getroot(), flags)
+        return tree
         
     def getImportContext(self):
         return Imports.ImportContext(self.store)
@@ -245,9 +245,9 @@ class PriyomInterface:
     def normalizeDate(self, dateTime):
         return datetime(year=dateTime.year, month=dateTime.month, day=dateTime.day)
         
-    def importTransaction(self, doc):
+    def importTransaction(self, tree):
         context = self.getImportContext()
-        for node in (node for node in doc.getroot()):
+        for node in tree.getroot():
             tag = node.tag
             tagPart = tag.partition("}")
             if len(tagPart[1]) == 0:

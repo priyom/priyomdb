@@ -69,6 +69,6 @@ class UpcomingBroadcastsAPI(API):
             trans.set_header_value("Warning", """199 api.priyom.org "Currently not all upcoming broadcasts from all affected schedules are instanciated up to date. Maybe your timeLimit is too high for this to ever happen" """)
         broadcasts.order_by(Asc(Broadcast.BroadcastStart))
         
-        doc = self.model.exportListToDom(broadcasts, Broadcast, flags=frozenset())
-        doc.documentElement.setAttribute("valid-until", unicode(long(validUntil)))
-        print >>self.out, doc.toxml(self.encoding)
+        doc = self.model.exportListToETree(broadcasts, Broadcast, flags=frozenset())
+        doc.getroot().set(u"valid-until", unicode(long(validUntil)))
+        self.model.etreeToFile(self.out, doc, encoding=self.encoding)
