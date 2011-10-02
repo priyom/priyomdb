@@ -252,15 +252,12 @@ class ScheduleLeaf(object):
         Store.of(self).remove(self)
     
     def toDom(self, parentNode):
-        doc = parentNode.ownerDocument
-        leaf = doc.createElementNS(XMLIntf.namespace, "leaf")
+        leaf = XMLIntf.SubElement(parentNode, u"leaf")
         XMLIntf.appendTextElements(leaf, {
             "kind": self.BroadcastType,
             "station-id": self.StationID
         })
-        # self.Frequency.toDom(leaf)
         for frequency in self.Frequencies:
             frequency.toDom(leaf)
-        parentNode.appendChild(leaf)
 
 Schedule.Leaves = ReferenceSet(Schedule.ID, ScheduleLeaf.ScheduleID)
