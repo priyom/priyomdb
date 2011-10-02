@@ -73,12 +73,13 @@ class Station(PriyomBase, XMLIntf.XMLStorm):
         if self.getIsOnAir():
             XMLIntf.SubElement(parentNode, u"on-air")
         
-    def _broadcastsFromDom(self, node, context):
-        for child in node.childNodes:
-            if child.nodeType != dom.Node.ELEMENT_NODE:
+    def _broadcastsFromDom(self, element, context):
+        for child in element:
+            tag = XMLIntf.checkAndStripNamespace(element, context=context)
+            if tag is None:
                 continue
-            if child.tagName == "broadcast":
-                broadcast = context.importFromDomNode(child, Broadcast)
+            if tag == u"broadcast":
+                broadcast = context.importFromETree(child, Broadcast)
                 if broadcast is None:
                     continue
                 if broadcast.Station != self and broadcast.ScheduleLeaf is not None and broadcast.ScheduleLeaf.Station != self:
@@ -86,21 +87,21 @@ class Station(PriyomBase, XMLIntf.XMLStorm):
                 else:
                     broadcast.Station = self
         
-    def _transmissionsFromDom(self, node, context):
+    def _transmissionsFromDom(self, element, context):
         context.log("Cannot import transmissions using station import. Please import transmissions directly or as part of broadcast imports.")
         pass
         
-    def _scheduleFromDom(self, node, context):
-        self.Schedule = context.importFromDomNode(node, Schedule)
-        self.ScheduleConfirmed = node.getAttribute("confirmed") == "true"
+    def _scheduleFromDom(self, element, context):
+        self.Schedule = context.importFromETree(element, Schedule)
+        self.ScheduleConfirmed = element.get(u"confirmed") == "true"
         
-    def loadDomElement(self, node, context):
+    def loadElement(self, tag, element, context):
         try:
             {
-                "broadcasts": self._broadcastsFromDom,
-                "transmissions": self._transmissionsFromDom,
-                "schedule": self._scheduleFromDom
-            }[node.tagName](node, context)
+                u"broadcasts": self._broadcastsFromDom,
+                u"transmissions": self._transmissionsFromDom,
+                u"schedule": self._scheduleFromDom
+            }[tag](element, context)
         except KeyError:
             pass
         

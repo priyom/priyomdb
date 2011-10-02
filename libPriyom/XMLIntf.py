@@ -29,44 +29,56 @@ import datetime
 import Formatting
 from Helpers import TimeUtils
 
-namespace = "http://api.priyom.org/priyomdb"
+namespace = u"http://api.priyom.org/priyomdb"
+importNamespace = u"http://api.priyom.org/priyomdb/import"
 ElementTree.register_namespace(u"priyom", namespace)
+ElementTree.register_namespace(u"priyom-import", importNamespace)
 debugXml = False
+
+def checkAndStripNamespace(element, namespace=importNamespace, context = None):
+    part = element.tag.partition("}")
+    if len(part[1]) == 0:
+        if context is not None:
+            context.log("Encountered non-namespaced element: {0}. Expected namespace: {1}".format(element.tag, namespace))
+        return None
+    if part[0][1:] != namespace:
+        if context is not None:
+            context.log("Unexpected namespace {0} on tag {2}. Expected namespace: {1}".format(part[0][1:], namespace, part[2]))
+        return None
+    return part[2]
 
 class NoneHandlers:
     @staticmethod
     def asTag(name):
         return ""
         
+
 class XMLStorm(object):
-    def loadProperty(self, tagName, data, element, context):
+    def loadProperty(self, tag, element, context):
         if debugXml:
             context.log("Failed to map property: %s" % (tagName))
             # print()
-        self.loadDomElement(element, context)
+        self.loadElement(tag, element, context)
         
-    def loadDomElement(self, element, context):
+    def loadElement(self, tag, element, context):
         pass
     
-    def loadProperties(self, node, context):
-        for child in node.childNodes:
-            if child.nodeType == dom.Node.ELEMENT_NODE:
-                if len(child.childNodes) == 1 and child.childNodes[0].nodeType == dom.Node.TEXT_NODE:
-                    if child.tagName in self.xmlMapping:
-                        mapped = self.xmlMapping[child.tagName]
-                        if type(mapped) == tuple:
-                            setattr(self, mapped[0], mapped[1](child.childNodes[0].data))
-                        else:
-                            setattr(self, mapped, child.childNodes[0].data)
+    def loadProperties(self, parentElement, context):
+        for element in parentElement:
+            tag = checkAndStripNamespace(node, importNamespace, context)
+            if tag is None:
+                continue
+            if len(child) > 0:
+                self.loadElement(tag, child, context)
+            else:
+                mapping = self.xmlMapping.get(tag, None)
+                if mapping is not None:
+                    if type(mapping) == tuple:
+                        setattr(self, mapped[0], mapped[1](child.text))
                     else:
-                        self.loadProperty(child.tagName, child.childNodes[0].data, child, context)
-                elif len(child.childNodes) == 0:
-                    if child.tagName in self.xmlMapping:
-                        setattr(self, self.xmlMapping[child.tagName], u"")
-                    else:
-                        self.loadDomElement(child, context)
+                        setattr(self, mapped, child.text)
                 else:
-                    self.loadDomElement(child, context)
+                    self.loadProperty(tag, child, context)
                     
     def fromDom(self, node, context):
         self.loadProperties(node, context)

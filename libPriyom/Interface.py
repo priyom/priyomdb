@@ -247,8 +247,17 @@ class PriyomInterface:
         
     def importTransaction(self, doc):
         context = self.getImportContext()
-        for node in (node for node in doc.documentElement.childNodes if node.nodeType == dom.Node.ELEMENT_NODE):
-            if node.tagName == "delete":
+        for node in (node for node in doc.getroot()):
+            tag = node.tag
+            tagPart = tag.partition("}")
+            if len(tagPart[1]) == 0:
+                context.log("Encountered non-namespaced tag: {0}".format(tag))
+                continue
+            if tagPart[0][1:] != XMLIntf.namespace:
+                context.log("Encountered tag with wrong namespace: {0}. Only namespace supported is {1}".format(tag, XMLIntf.importNamespace))
+                continue
+            tag = tagPart[2]
+            if node.tag == u"delete":
                 try:
                     clsName = node.getAttribute("type")
                     id = node.getAttribute("id")
@@ -285,11 +294,11 @@ class PriyomInterface:
                         "broadcast": Broadcast,
                         "station": Station,
                         "schedule": Schedule
-                    }[node.tagName]
+                    }[tag]
                 except KeyError:
                     context.log("Invalid transaction node: %s" % node.tagName)
                     continue
-                context.importFromDomNode(node, cls)
+                context.importFromETree(node, cls)
         return context
         
     def getStation(self, stationDesignator, notModifiedCheck = None, head = False):
