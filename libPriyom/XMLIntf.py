@@ -58,7 +58,7 @@ class XMLStorm(object):
         if debugXml:
             context.log("Failed to map property: %s" % (tagName))
             # print()
-        self.loadDomElement(element, context)
+        self.loadElement(tag, element, context)
         
     def loadElement(self, tag, element, context):
         pass
