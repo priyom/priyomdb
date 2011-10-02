@@ -61,7 +61,7 @@ class ImportContext(object):
         return obj
     
     def importFromETree(self, element, cls):
-        idNode = element.find(u"{{{0}}}ID".format(XMLIntf.importNamespace)
+        idNode = element.find(u"{{{0}}}ID".format(XMLIntf.importNamespace))
         if idNode is None:
             if node.get(u"id") is not None:
                 return self.resolveId(int(node.get(u"id")))
