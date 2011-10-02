@@ -34,18 +34,3 @@ class Modulation(object):
     
     def toDom(self, parentNode):
         XMLIntf.appendTextElement(parentNode, u"modulation", self.Name)
-
-"""class Frequency(object):
-    __storm_table__ = "frequencies"
-    ID = Int(primary = True)
-    Frequency = Int()
-    ModulationID = Int()
-    Modulation = Reference(ModulationID, Modulation.ID)
-    
-    def toDom(self, parentNode):
-        doc = parentNode.ownerDocument
-        frequency = XMLIntf.buildTextElementNS(doc, "frequency", unicode(self.Frequency), XMLIntf.namespace)
-        frequency.setAttribute("modulation", self.Modulation.Name)
-        parentNode.appendChild(frequency)
-
-"""
