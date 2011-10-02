@@ -48,8 +48,8 @@ class ListModulationsAPI(API):
         self.model.limitResults(items)
         
         doc = self.model.getExportDoc("priyom-modulations")
-        rootNode = doc.documentElement
+        rootNode = doc.getroot()
         for modulation in items:
             modulation.toDom(rootNode)
-        print >>self.out, doc.toxml(encoding=self.encoding)
+        self.model.etreeToFile(self.out, doc, encoding=self.encoding)
 

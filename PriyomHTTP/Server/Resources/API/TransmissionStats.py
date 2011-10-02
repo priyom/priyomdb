@@ -49,12 +49,12 @@ class TransmissionStatsAPI(API):
             return
         
         doc = self.model.getExportDoc("transmission-stats")
-        rootNode = doc.documentElement
+        rootNode = doc.getroot()
         
         for month in months:
-            node = XMLIntf.buildTextElementNS(doc, "transmission-count", str(month[2]), XMLIntf.namespace)
-            node.setAttribute("year", str(month[0]))
-            node.setAttribute("month", str(month[1]))
-            rootNode.appendChild(node)
+            XMLIntf.appendTextElement(rootNode, u"transmission-count", unicode(month[2]), attrib={
+                u"year": unicode(month[0]),
+                u"month": unicode(month[1])
+            })
         
-        print >>self.out, self.model.domToXml(doc, self.encoding)
+        self.model.etreeToFile(self.out, doc, encoding=self.encoding)
