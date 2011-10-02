@@ -51,16 +51,16 @@ class StationFrequenciesAPI(API):
             return
         
         doc = self.model.getExportDoc("station-frequencies")
-        rootNode = doc.documentElement
+        rootNode = doc.getroot()
         
         for (freq, modulation, state, timestamp) in frequencies:
-            node = XMLIntf.buildTextElementNS(doc, "station-frequency", unicode(freq), XMLIntf.namespace)
-            node.setAttribute("modulation", modulation)
-            node.setAttribute("state", state)
+            node = XMLIntf.appendTextElement(rootNode, u"station-frequency", unicode(freq), attrib={
+                u"modulation": modulation,
+                u"state": state
+            })
             if state != ONAIR:
-                node.setAttribute("unix", unicode(timestamp))
-            rootNode.appendChild(node)
+                node.set(u"unix", unicode(timestamp))
         
-        print >>self.out, doc.toxml(encoding=self.encoding)
+        self.model.etreeToFile(self.out, doc, encoding=self.encoding)
 
 

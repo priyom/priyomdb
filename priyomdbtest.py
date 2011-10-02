@@ -28,8 +28,10 @@ authors:
 from storm.locals import *
 from libPriyom import *
 from libPriyom.Helpers.ScheduleMaintainer import ScheduleMaintainer
-import xml.dom.minidom as dom
+import xml.etree.ElementTree as ElementTree
 from cfg_priyomhttpd import database
+from ElementTreeHelper.Serializer import Serializer
+import sys
 
 db = create_database(database["stormURL"])
 store = Store(db)
@@ -37,7 +39,9 @@ buzzer = store.get(Station, 1)
 test = store.get(Station, 2)
 intf = PriyomInterface(store)
 
-doc = dom.getDOMImplementation().createDocument(XMLIntf.namespace, "priyom-db-export", None)
+tree = ElementTree.ElementTree(ElementTree.Element(u"{{{0}}}priyom-db-export".format(XMLIntf.namespace)))
 #intf.exportStationToDom(buzzer, None, doc)
 #print(doc.toprettyxml())
 sched = intf.scheduleMaintainer
+
+ser = Serializer()

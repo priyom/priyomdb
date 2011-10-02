@@ -53,5 +53,5 @@ class CloseBroadcastsAPI(API):
         if self.head:
             return
         
-        print >>self.out, self.model.exportListToXml(broadcasts, Broadcast, encoding=self.encoding)
+        self.model.exportListToFile(self.out, broadcasts, Broadcast, encoding=self.encoding)
         

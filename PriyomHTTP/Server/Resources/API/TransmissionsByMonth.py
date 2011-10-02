@@ -57,5 +57,5 @@ class TransmissionsByMonthAPI(API):
         if self.head:
             return
         
-        print >>self.out, self.model.exportListToXml(transmissions, Transmission, encoding=self.encoding)
+        self.model.exportListToFile(self.out, transmissions, Transmission, encoding=self.encoding)
 

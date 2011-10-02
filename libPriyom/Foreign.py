@@ -55,13 +55,10 @@ class ForeignHelper:
     def hasForeign(self):
         return (self.supplement.ForeignText is not None) and (self.supplement.ForeignText != "")
         
-    def toDom(self, parentNode, name):
+    def toDom(self, parentNode, name, attrib={}):
         if self.hasForeign():
-            doc = parentNode.ownerDocument
-            node = doc.createElementNS(XMLIntf.namespace, name)
-            node.appendChild(doc.createTextNode(self.supplement.ForeignText))
-            node.setAttribute("lang", self.supplement.LangCode)
-            parentNode.appendChild(node)
+            node = XMLIntf.SubElement(parentNode, name, attrib=attrib, lang=self.supplement.LangCode)
+            node.text = self.supplement.ForeignText
             return node
         else:
             return None

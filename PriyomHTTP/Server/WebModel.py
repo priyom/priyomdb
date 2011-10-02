@@ -25,9 +25,8 @@ authors:
     Jonas Wielicki <j.wielicki@sotecware.net>
 """
 from storm.locals import AutoReload
-import xml.dom.minidom as dom
+import xml.etree.ElementTree as ElementTree
 import time
-import json
 from datetime import datetime, timedelta
 from libPriyom import Transmission, Station, Broadcast, Schedule, TimeUtils
 from APIDatabase import Variable
@@ -35,6 +34,8 @@ import re
 import cStringIO
 import io
 from cfg_priyomhttpd import application, misc
+from ElementTreeHelper.Serializer import Serializer
+import libPriyom.XMLIntf as XMLIntf
 
 weekdayname = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 monthname = [None, 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
@@ -94,11 +95,12 @@ class WebModel(object):
     def __init__(self, priyomInterface):
         self.priyomInterface = priyomInterface
         self.store = self.priyomInterface.store
+        self.serializer = XMLIntf.Serializer()
         self.currentFlags = None
         self.limit = None
         self.offset = None
         self.distinct = False
-        self.resetStore()
+        self.resetStore()        
         
     def setCurrentFlags(self, flags):
         self.currentFlags = frozenset(flags)
@@ -140,30 +142,26 @@ class WebModel(object):
             return int(TimeUtils.now())
         return self.varLastUpdate.Value
         
-    def domToXml(self, dom, encoding):
-        writer = Encoder(encoding)
-        dom.writexml(writer)
-        str = writer.getvalue()
-        writer.close()
-        return str
+    def etreeToFile(self, file, etree, encoding="UTF-8", defaultNamespace=XMLIntf.namespace):
+        self.serializer.serializeTree(file, etree, encoding=encoding, xmlHeader=True, defaultNamespace=defaultNamespace, headerNamespaces=True)
         
-    def exportToDom(self, obj, flags = None):
+    def exportToETree(self, obj, flags = None):
         if flags is None:
             flags = self.currentFlags
-        return self.priyomInterface.exportToDom(obj, flags)
+        return self.priyomInterface.exportToETree(obj, flags)
     
-    def exportToXml(self, obj, flags = None, encoding=None):
-        return self.domToXml(self.exportToDom(obj, flags), encoding)
+    def exportToFile(self, file, obj, flags = None, encoding=None):
+        self.etreeToFile(file, self.exportToETree(obj, flags=flags), encoding=encoding)
         
-    def exportListToDom(self, list, classType, flags = None):
+    def exportListToETree(self, list, classType, flags = None):
         if flags is None:
             flags = self.currentFlags
-        return self.priyomInterface.exportListToDom(list, classType, flags)
+        return self.priyomInterface.exportListToETree(list, classType, flags)
+    
+    def exportListToFile(self, file, list, classType, flags=None, encoding=None):
+        self.etreeToFile(file, self.exportListToETree(list, classType, flags), encoding=encoding)
         
-    def exportListToXml(self, list, classType, flags = None, encoding=None):
-        return self.domToXml(self.exportListToDom(list, classType, flags), encoding)
-        
-    def getExportDoc(self, rootNodeName):
+    def getExportTree(self, rootNodeName):
         return self.priyomInterface.createDocument(rootNodeName)
         
     def limitResults(self, resultSet):
@@ -204,23 +202,16 @@ class WebModel(object):
     def parseHTTPTimestamp(self, httpDate):
         return TimeUtils.toTimestamp(self.parseHTTPDate(httpDate))
         
-    def importFromXml(self, doc, context = None, flags = None):
-        context = self.priyomInterface.importTransaction(doc)
+    def importFromETree(self, tree, context = None, flags = None):
+        context = self.priyomInterface.importTransaction(tree)
         self.varLastUpdate.Value = unicode(int(TimeUtils.now()))
         self.store.commit()
         self.resetStore()
         return context
         
     def importFromXmlStr(self, data, context = None, flags = None):
-        doc = dom.parseString(data)
-        return self.importFromXml(doc, context, flags)
-        
-    def importFromJson(self, tree, context = None, flags = None):
-        raise Exception('JSON import not supported yet.')
-        
-    def importFromJsonStr(self, data, context = None, flags = None):
-        tree = json.loads(data)
-        return self.importFromJson(tree, context, flags)
+        tree = ElementTree.XML(data)
+        return self.importFromETree(tree, context, flags)
         
     def formatHTMLTitle(self, pageTitle, appNameSuffix = u""):
         return u"""{0}{1}{2}""".format(

@@ -28,7 +28,7 @@ from storm.locals import *
 from storm.expr import *
 import Imports
 import XMLIntf
-import xml.dom.minidom as dom
+import xml.etree.ElementTree as ElementTree
 from Modulation import Modulation
 from Broadcast import BroadcastFrequency, Broadcast
 from Transmission import Transmission, TransmissionClass, TransmissionClassTable, TransmissionClassTableField
@@ -56,12 +56,12 @@ class NoPriyomInterfaceError(Exception):
 
 class PriyomInterface:
     Class2RootNode = {
-        Transmission: "priyom-transmission-export",
-        Schedule: "priyom-schedule-export",
-        Station: "priyom-station-export",
-        Broadcast: "priyom-broadcast-export",
-        TransmissionClass: "priyom-generic-export",
-        TransmissionClassTable: "priyom-generic-export"
+        Transmission: u"priyom-transmission-export",
+        Schedule: u"priyom-schedule-export",
+        Station: u"priyom-station-export",
+        Broadcast: u"priyom-broadcast-export",
+        TransmissionClass: u"priyom-generic-export",
+        TransmissionClassTable: u"priyom-generic-export"
     }
     
     def __init__(self, store):
@@ -71,7 +71,7 @@ class PriyomInterface:
         self.scheduleMaintainer = ScheduleMaintainer(self)
         
     def createDocument(self, rootNodeName):
-        return dom.getDOMImplementation().createDocument(XMLIntf.namespace, rootNodeName, None)
+        return ElementTree.ElementTree(ElementTree.Element(u"{{{0}}}{1}".format(XMLIntf.namespace, rootNodeName)))
         
     def _createDocumentOptional(self, givendoc, rootNodeName):
         return self.createDocument(rootNodeName) if givendoc is None else givendoc
@@ -79,10 +79,10 @@ class PriyomInterface:
     def _getClassDoc(self, classType, doc):
         return self._createDocumentOptional(doc, self.Class2RootNode[classType])
         
-    def _exportToDomSimple(self, obj, rootName, flags = None, doc = None):
-        thisDoc = self._getClassDoc(type(obj), doc)
-        obj.toDom(thisDoc.documentElement, flags)
-        return thisDoc
+    def _exportToDomSimple(self, obj, rootName, flags = None, tree = None):
+        tree = self._getClassDoc(type(obj), tree)
+        obj.toDom(tree.getroot(), flags)
+        return tree
         
     def exportTransmissionToDom(self, transmission, flags = None, doc = None):
         return self._exportToDomSimple(transmission, "priyom-transmission-export", flags, doc)
@@ -96,21 +96,14 @@ class PriyomInterface:
     def exportBroadcastToDom(self, broadcast, flags = None, doc = None):
         return self._exportToDomSimple(broadcast, "priyom-broadcast-export", flags, doc)
         
-    def exportToDom(self, obj, flags = None, doc = None):
-        """return {
-            Transmission: self.exportTransmissionToDom,
-            Schedule: self.exportScheduleToDom,
-            Station: self.exportStationToDom,
-            Broadcast: self.exportBroadcastToDom,
-            TransmissionClass: self.exportTrans
-        }[type(obj)](obj, flags, doc)"""
+    def exportToETree(self, obj, flags = None, doc = None):
         return self._exportToDomSimple(obj, self.Class2RootNode[type(obj)], flags, doc)
         
-    def exportListToDom(self, list, classType, flags = None, doc = None):
-        doc = self._getClassDoc(classType, doc)
+    def exportListToETree(self, list, classType, flags = None, doc = None):
+        tree = self._getClassDoc(classType, doc)
         for obj in list:
-            obj.toDom(doc.documentElement, flags)
-        return doc
+            obj.toDom(tree.getroot(), flags)
+        return tree
         
     def getImportContext(self):
         return Imports.ImportContext(self.store)
@@ -252,10 +245,19 @@ class PriyomInterface:
     def normalizeDate(self, dateTime):
         return datetime(year=dateTime.year, month=dateTime.month, day=dateTime.day)
         
-    def importTransaction(self, doc):
+    def importTransaction(self, tree):
         context = self.getImportContext()
-        for node in (node for node in doc.documentElement.childNodes if node.nodeType == dom.Node.ELEMENT_NODE):
-            if node.tagName == "delete":
+        for node in tree.getroot():
+            tag = node.tag
+            tagPart = tag.partition("}")
+            if len(tagPart[1]) == 0:
+                context.log("Encountered non-namespaced tag: {0}".format(tag))
+                continue
+            if tagPart[0][1:] != XMLIntf.namespace:
+                context.log("Encountered tag with wrong namespace: {0}. Only namespace supported is {1}".format(tag, XMLIntf.importNamespace))
+                continue
+            tag = tagPart[2]
+            if node.tag == u"delete":
                 try:
                     clsName = node.getAttribute("type")
                     id = node.getAttribute("id")
@@ -292,11 +294,11 @@ class PriyomInterface:
                         "broadcast": Broadcast,
                         "station": Station,
                         "schedule": Schedule
-                    }[node.tagName]
+                    }[tag]
                 except KeyError:
                     context.log("Invalid transaction node: %s" % node.tagName)
                     continue
-                context.importFromDomNode(node, cls)
+                context.importFromETree(node, cls)
         return context
         
     def getStation(self, stationDesignator, notModifiedCheck = None, head = False):
