@@ -28,7 +28,7 @@ from storm.locals import *
 from storm.expr import *
 import Imports
 import XMLIntf
-import xml.dom.minidom as dom
+from xml.etree.ElementTree import ElementTree
 from Modulation import Modulation
 from Broadcast import BroadcastFrequency, Broadcast
 from Transmission import Transmission, TransmissionClass, TransmissionClassTable, TransmissionClassTableField
@@ -56,12 +56,12 @@ class NoPriyomInterfaceError(Exception):
 
 class PriyomInterface:
     Class2RootNode = {
-        Transmission: "priyom-transmission-export",
-        Schedule: "priyom-schedule-export",
-        Station: "priyom-station-export",
-        Broadcast: "priyom-broadcast-export",
-        TransmissionClass: "priyom-generic-export",
-        TransmissionClassTable: "priyom-generic-export"
+        Transmission: u"priyom-transmission-export",
+        Schedule: u"priyom-schedule-export",
+        Station: u"priyom-station-export",
+        Broadcast: u"priyom-broadcast-export",
+        TransmissionClass: u"priyom-generic-export",
+        TransmissionClassTable: u"priyom-generic-export"
     }
     
     def __init__(self, store):
@@ -71,7 +71,7 @@ class PriyomInterface:
         self.scheduleMaintainer = ScheduleMaintainer(self)
         
     def createDocument(self, rootNodeName):
-        return dom.getDOMImplementation().createDocument(XMLIntf.namespace, rootNodeName, None)
+        return ElementTree.ElementTree(ElementTree.Element(u"{{{0}}}{1}".format(XMLIntf.namespace, rootNodeName)))
         
     def _createDocumentOptional(self, givendoc, rootNodeName):
         return self.createDocument(rootNodeName) if givendoc is None else givendoc
@@ -81,7 +81,7 @@ class PriyomInterface:
         
     def _exportToDomSimple(self, obj, rootName, flags = None, doc = None):
         thisDoc = self._getClassDoc(type(obj), doc)
-        obj.toDom(thisDoc.documentElement, flags)
+        obj.toDom(thisDoc.getroot(), flags)
         return thisDoc
         
     def exportTransmissionToDom(self, transmission, flags = None, doc = None):
@@ -97,19 +97,12 @@ class PriyomInterface:
         return self._exportToDomSimple(broadcast, "priyom-broadcast-export", flags, doc)
         
     def exportToDom(self, obj, flags = None, doc = None):
-        """return {
-            Transmission: self.exportTransmissionToDom,
-            Schedule: self.exportScheduleToDom,
-            Station: self.exportStationToDom,
-            Broadcast: self.exportBroadcastToDom,
-            TransmissionClass: self.exportTrans
-        }[type(obj)](obj, flags, doc)"""
         return self._exportToDomSimple(obj, self.Class2RootNode[type(obj)], flags, doc)
         
     def exportListToDom(self, list, classType, flags = None, doc = None):
         doc = self._getClassDoc(classType, doc)
         for obj in list:
-            obj.toDom(doc.documentElement, flags)
+            obj.toDom(doc.getroot(), flags)
         return doc
         
     def getImportContext(self):
