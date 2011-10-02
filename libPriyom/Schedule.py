@@ -230,10 +230,9 @@ class ScheduleLeafFrequency(object):
             self.Modulation.Name = node.getAttribute("modulation")
     
     def toDom(self, parentNode):
-        doc = parentNode.ownerDocument
-        frequency = XMLIntf.buildTextElementNS(doc, "frequency", unicode(self.Frequency), XMLIntf.namespace)
-        frequency.setAttribute("modulation", self.Modulation.Name)
-        parentNode.appendChild(frequency)
+        XMLIntf.appendTextElement(parentNode, u"frequency", unicode(self.Frequency), attrib={
+            u"modulation": self.Modulation.Name
+        })
 
     
 class ScheduleLeaf(object):
