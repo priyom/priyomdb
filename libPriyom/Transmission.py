@@ -74,20 +74,22 @@ class Transmission(PriyomBase, XMLIntf.XMLStorm):
         
         self.ForeignCallsign = ForeignHelper(self, "Callsign")
         
-    def _loadCallsign(self, node, context):
+    def _loadCallsign(self, element, context):
         if self.ForeignCallsign is None:
             self.ForeignCallsign = ForeignHelper(self, "Callsign")
-        if node.getAttribute("lang") is not None:
-            self.ForeignCallsign.supplement.ForeignText = XMLIntf.getText(node)
-            self.ForeignCallsign.supplement.LangCode = unicode(node.getAttribute("lang"), "utf-8")
-        else:
-            self.Callsign = XMLIntf.getText(node)
-            
-    def _loadBroadcastID(self, node, context):
-        self.Broadcast = context.resolveId(Broadcast, int(XMLIntf.getText(node)))
         
-    def _loadClassID(self, node, context):
-        self.Class = context.resolveId(TransmissionClass, int(XMLIntf.getText(node)))
+        lang = element.get(u"lang")
+        if lang is not None:
+            self.ForeignCallsign.supplement.ForeignText = unicode(element.text)
+            self.ForeignCallsign.supplement.LangCode = unicode(lang)
+        else:
+            self.Callsign = unicode(element.text)
+            
+    def _loadBroadcastID(self, element, context):
+        self.Broadcast = context.resolveId(Broadcast, int(element.text))
+        
+    def _loadClassID(self, element, context):
+        self.Class = context.resolveId(TransmissionClass, int(element.text))
         
     """
         Note that loading the contents is, in contrast to most other 
@@ -102,10 +104,10 @@ class Transmission(PriyomBase, XMLIntf.XMLStorm):
             print("Invalid class id: %d" % (self.ClassID))
             return False
         
-        for group in filter(lambda x: (x.nodeType == dom.Node.ELEMENT_NODE) and (x.tagName == u"group"), node.childNodes):
-            table = store.find(TransmissionClassTable, TransmissionClassTable.TableName == group.getAttribute(u"name")).any()
+        for group in node.iterfind("{{{0}}}group".format(XMLIntf.importNamespace)):
+            table = store.find(TransmissionClassTable, TransmissionClassTable.TableName == unicode(group.get(u"name"))).any()
             if table is None:
-                print("Invalid transmission class table: %s" % (group.getAttribute(u"name")))
+                print("Invalid transmission class table: %s" % (group.get(u"name")))
                 return False
             block = table.PythonClass(store)
             block.fromDom(group, context)
@@ -113,17 +115,17 @@ class Transmission(PriyomBase, XMLIntf.XMLStorm):
     def _metadataToDom(self, parentNode):
         XMLIntf.appendTextElements(parentNode,
             (
-                ("BroadcastID", self.Broadcast.ID),
-                ("ClassID", self.Class.ID),
-                ("Callsign", self.Callsign)
+                (u"BroadcastID", self.Broadcast.ID),
+                (u"ClassID", self.Class.ID),
+                (u"Callsign", self.Callsign)
             )
         )
-        self.ForeignCallsign.toDom(parentNode, "Callsign")
-        XMLIntf.appendDateElement(parentNode, "Timestamp", self.Timestamp)
+        self.ForeignCallsign.toDom(parentNode, u"Callsign")
+        XMLIntf.appendDateElement(parentNode, u"Timestamp", self.Timestamp)
         XMLIntf.appendTextElements(parentNode,
             (
-                ("Recording", self.RecordingURL),
-                ("Remarks", self.Remarks)
+                (u"Recording", self.RecordingURL),
+                (u"Remarks", self.Remarks)
             )
         )
         
@@ -137,14 +139,14 @@ class Transmission(PriyomBase, XMLIntf.XMLStorm):
         for block in self.blocks:
             block.toDom(contents)
         
-    def loadDomElement(self, node, context):
+    def loadElement(self, tag, element, context):
         try:
             {
                 u"BroadcastID": self._loadBroadcastID,
                 u"ClassID": self._loadClassID,
                 u"Callsign": self._loadCallsign,
                 u"Contents": self._loadContents
-            }[node.tagName](node, context)
+            }[tag](element, context)
         except KeyError:
             pass
     
@@ -192,17 +194,17 @@ class TransmissionClassBase(object):
                 u"class": kind
             })
         
-    def fromDom(self, node, context):
+    def fromDom(self, element, context):
         fields = iter((field for field in self.fields))
         field = None
-        for item in filter(lambda x: (x.nodeType == dom.Node.ELEMENT_NODE) and (x.tagName == u"item"), node.childNodes):
-            langCode = item.getAttribute("lang")
+        for item in element.iterfind(u"{{{0}}}item".format(XMLIntf.importNamespace)):
+            langCode = item.get(u"lang")
             if langCode is None or len(langCode) == 0:
                 field = next(fields)
-                setattr(self, field.FieldName, XMLIntf.getText(item))
+                setattr(self, field.FieldName, unicode(item.text))
             else:
                 supplement = self.supplements[field.FieldName]
-                supplement.ForeignText = XMLIntf.getText(item)
+                supplement.ForeignText = unicode(item.text)
                 supplement.LangCode = unicode(langCode)
     
     def deleteForeignSupplements(self):

@@ -60,7 +60,7 @@ class XMLStorm(object):
             # print()
         self.loadDomElement(element, context)
         
-    def loadElement(self, element, context):
+    def loadElement(self, tag, element, context):
         pass
     
     def loadProperties(self, parentElement, context):
@@ -69,7 +69,7 @@ class XMLStorm(object):
             if tag is None:
                 continue
             if len(child) > 0:
-                self.loadElement(child, context)
+                self.loadElement(tag, child, context)
             else:
                 mapping = self.xmlMapping.get(tag, None)
                 if mapping is not None:
