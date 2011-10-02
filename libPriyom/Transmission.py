@@ -243,15 +243,13 @@ class TransmissionClassTableField(object):
     MaxLength = Int()
     
     def toDom(self, parentNode, flags = None):
-        doc = parentNode.ownerDocument
-        fieldNode = doc.createElementNS(XMLIntf.namespace, "field")
-        XMLIntf.appendTextElements(fieldNode, [
-            ("Number", unicode(self.FieldNumber)),
-            ("Name", self.FieldName),
-            ("Kind", self.Kind),
-            ("MaxLength", unicode(self.MaxLength))
-        ])
-        parentNode.appendChild(fieldNode)
+        fieldNode = XMLIntf.SubElement(parentNode, u"field")
+        XMLIntf.appendTextElements(fieldNode, (
+            (u"Number", unicode(self.FieldNumber)),
+            (u"Name", self.FieldName),
+            (u"Kind", self.Kind),
+            (u"MaxLength", unicode(self.MaxLength))
+        ))
 
 class TransmissionClassTable(object):
     __storm_table__ = "transmissionClassTables"
@@ -266,19 +264,16 @@ class TransmissionClassTable(object):
         self.PythonClass = NewTransmissionClass(self)
         
     def toDom(self, parentNode, flags = None):
-        doc = parentNode.ownerDocument
-        tableNode = doc.createElementNS(XMLIntf.namespace, "table")
-        XMLIntf.appendTextElements(tableNode, [
+        tableNode = XMLIntf.SubElement(parentNode, u"table")
+        XMLIntf.appendTextElements(tableNode, (
             ("TableName", self.TableName),
             ("DisplayName", self.DisplayName),
             ("XMLGroupClass", self.XMLGroupClass)
-        ])
+        ))
         
-        fieldsNode = doc.createElementNS(XMLIntf.namespace, "fields")
+        fieldsNode = XMLIntf.SubElement(tableNode, u"fields")
         for field in self.Fields:
             field.toDom(fieldsNode, flags)
-        tableNode.appendChild(fieldsNode)
-        parentNode.appendChild(tableNode)
 
 class TransmissionClass(PriyomBase):
     __storm_table__ = "transmissionClasses"
@@ -292,18 +287,15 @@ class TransmissionClass(PriyomBase):
         self.tables = [table for table in self.Tables]
         
     def toDom(self, parentNode, flags = None):
-        doc = parentNode.ownerDocument
-        classNode = doc.createElementNS(XMLIntf.namespace, "transmission-class")
-        XMLIntf.appendTextElements(classNode, [
-            ("ID", unicode(self.ID)),
-            ("DisplayName", self.DisplayName)
-        ])
+        classNode = XMLIntf.SubElement(parentNode, u"transmission-class")
+        XMLIntf.appendTextElements(classNode, (
+            (u"ID", unicode(self.ID)),
+            (u"DisplayName", self.DisplayName)
+        ))
         
-        tablesNode = doc.createElementNS(XMLIntf.namespace, "tables")
+        tablesNode = XMLIntf.SubElement(classNode, u"tables")
         for table in self.Tables:
             table.toDom(tablesNode, flags)
-        classNode.appendChild(tablesNode)
-        parentNode.appendChild(classNode)
         
     def parseNode(self, node, s):
         expr = node.getExpression()
