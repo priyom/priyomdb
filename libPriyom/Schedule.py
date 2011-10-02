@@ -150,9 +150,6 @@ class Schedule(PriyomBase, XMLIntf.XMLStorm):
                 leaf.toDom(leaves)
         
         return schedule
-    
-    def _schedulesFromDom(self, node, context):
-        
                 
     def _loadRepeat(self, element, context):
         self.ScheduleKind = unicode(element.get(u"step"))
