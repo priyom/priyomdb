@@ -147,7 +147,7 @@ class WebModel(object):
             flags = self.currentFlags
         return self.priyomInterface.exportToETree(obj, flags)
     
-    def exportToFile(self, obj, flags = None, encoding=None):
+    def exportToFile(self, file, obj, flags = None, encoding=None):
         self.etreeToFile(file, self.exportToETree(obj, flags=flags), encoding=encoding)
         
     def exportListToETree(self, list, classType, flags = None):
