@@ -201,8 +201,6 @@ class Broadcast(PriyomBase, XMLIntf.XMLStorm):
             for transmission in self.Transmissions:
                 transmission.toDom(broadcast, flags)
         
-        parentNode.appendChild(broadcast)
-        
     def loadDomElement(self, node, context):
         print("loading %s" % node.tagName)
         try:
