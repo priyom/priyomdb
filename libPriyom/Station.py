@@ -29,7 +29,7 @@ import XMLIntf
 from Schedule import Schedule
 import Imports
 from Broadcast import Broadcast
-import xml.dom.minidom as dom
+import xml.etree.ElementTree as ElementTree
 from PriyomBase import PriyomBase
 from Helpers import TimeUtils
 
@@ -57,23 +57,21 @@ class Station(PriyomBase, XMLIntf.XMLStorm):
         u"Location": "Location"
     }
     
-    def _metadataToDom(self, doc, parentNode):
-        #metadata = doc.createElementNS(XMLIntf.namespace, "station-metadata")
+    def _metadataToDom(self, parentNode):
         XMLIntf.appendTextElements(parentNode,
             [
-                ("EnigmaIdentifier", self.EnigmaIdentifier),
-                ("PriyomIdentifier", self.PriyomIdentifier),
-                ("Nickname", self.Nickname),
-                ("Description", self.Description),
-                ("Status", self.Status)
+                (u"EnigmaIdentifier", self.EnigmaIdentifier),
+                (u"PriyomIdentifier", self.PriyomIdentifier),
+                (u"Nickname", self.Nickname),
+                (u"Description", self.Description),
+                (u"Status", self.Status)
             ],
-            noneHandler = lambda name: ""
+            noneHandler = lambda name: u""
         )
         if self.Location is not None:
-            XMLIntf.appendTextElement(parentNode, "Location", self.Location)
+            XMLIntf.appendTextElement(parentNode, u"Location", self.Location)
         if self.getIsOnAir():
-            parentNode.appendChild(doc.createElementNS(XMLIntf.namespace, "on-air"))
-        #parentNode.appendChild(metadata)
+            XMLIntf.SubElement(parentNode, u"on-air")
         
     def _broadcastsFromDom(self, node, context):
         for child in node.childNodes:
@@ -113,39 +111,27 @@ class Station(PriyomBase, XMLIntf.XMLStorm):
         return False
     
     def toDom(self, parentNode, flags = None):
-        doc = parentNode.ownerDocument
-        station = doc.createElementNS(XMLIntf.namespace, "station")
-        XMLIntf.appendTextElement(station, "ID", unicode(self.ID))
+        station = XMLIntf.SubElement(parentNode, u"station")
+        XMLIntf.appendTextElement(station, u"ID", unicode(self.ID))
         if flags is None or not "no-metadata" in flags:
-            self._metadataToDom(doc, station)
+            self._metadataToDom(station)
         
         if flags is None or "schedule" in flags:
             if self.Schedule is not None:
                 scheduleNode = self.Schedule.toDom(station, self.ID)
                 if self.ScheduleConfirmed:
-                    scheduleNode.setAttribute("confirmed", "true")
+                    scheduleNode.set("confirmed", "true")
                 else:
-                    scheduleNode.setAttribute("confirmed", "false")
+                    scheduleNode.set("confirmed", "false")
             elif self.ScheduleConfirmed:
-                scheduleNode = doc.createElementNS(XMLIntf.namespace, "schedule")
-                scheduleNode.setAttribute("confirmed", "true")
-                station.appendChild(scheduleNode)
+                XMLIntf.SubElement(station, u"schedule", {
+                    u"confirmed": u"true"
+                })
             
         if flags is None or "broadcasts" in flags:
-            broadcasts = doc.createElementNS(XMLIntf.namespace, "broadcasts")
+            broadcasts = XMLIntf.SubElement(parentNode, u"broadcasts")
             for broadcast in self.Broadcasts:
                 broadcast.toDom(broadcasts, flags)
-            station.appendChild(broadcasts)
-        
-        """
-        if flags is None or ("transmissions" in flags and not ("broadcasts" in flags and "broadcast-transmissions" in flags)):
-            transmissions = doc.createElementNS(XMLIntf.namespace, "transmissions")
-            for transmission in self.Transmissions:
-                transmission.toDom(transmissions, flags)
-            station.appendChild(transmissions)
-        """
-        
-        parentNode.appendChild(station)
         
     def __str__(self):
         return "Station: %s/%s \"%s\"" % (self.EnigmaIdentifier, self.PriyomIdentifier, self.Nickname)
