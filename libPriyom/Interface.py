@@ -28,7 +28,7 @@ from storm.locals import *
 from storm.expr import *
 import Imports
 import XMLIntf
-from xml.etree.ElementTree import ElementTree
+import xml.etree.ElementTree as ElementTree
 from Modulation import Modulation
 from Broadcast import BroadcastFrequency, Broadcast
 from Transmission import Transmission, TransmissionClass, TransmissionClassTable, TransmissionClassTableField
