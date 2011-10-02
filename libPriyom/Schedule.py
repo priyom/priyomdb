@@ -25,7 +25,7 @@ authors:
     Jonas Wielicki <j.wielicki@sotecware.net>
 """
 from storm.locals import *
-import xml.dom.minidom as dom
+from xml.etree.ElementTree import ElementTree
 import XMLIntf
 from Modulation import Modulation
 import datetime
@@ -38,12 +38,12 @@ class Schedule(PriyomBase, XMLIntf.XMLStorm):
     ParentID = Int()
     Name = Unicode()
     ScheduleKind = Enum(map={
-        "once": "once",
-        "year": "year",
-        "month": "month",
-        "week": "week",
-        "day": "day",
-        "hour": "hour"
+        u"once": u"once",
+        u"year": u"year",
+        u"month": u"month",
+        u"week": u"week",
+        u"day": u"day",
+        u"hour": u"hour"
     })
     Skip = Int()
     Every = Int()
@@ -83,26 +83,25 @@ class Schedule(PriyomBase, XMLIntf.XMLStorm):
         return start.strftime("%H:%Mz"), end.strftime("%H:%Mz")
         
     def _formatHour(self, start, end):
-        return start.strftime("minute %M"), end.strftime("minute %M")
+        return start.strftime("%M"), end.strftime("%M")
     
     def toDom(self, parentNode, stationId = None):
-        doc = parentNode.ownerDocument
         store = Store.of(self)
-        schedule = doc.createElementNS(XMLIntf.namespace, "schedule")
+        schedule = XMLIntf.SubElement(u"schedule")
         
         XMLIntf.appendTextElements(schedule,
-            [
+            (
                 ("id", unicode(self.ID)),
                 ("name", self.Name)
-            ]
+            )
         )
-        if self.ScheduleKind == "once":
-            XMLIntf.appendTextElement(schedule, "no-repeat", "")
+        if self.ScheduleKind == u"once":
+            XMLIntf.SubElement(schedule, u"no-repeat")
         else:
-            repeat = XMLIntf.appendTextElement(schedule, "repeat", unicode(self.Every), doNotAppend = True)
-            repeat.setAttribute("step", self.ScheduleKind)
-            repeat.setAttribute("skip", unicode(self.Skip))
-            schedule.appendChild(repeat)
+            XMLIntf.appendTextElement(schedule, u"repeat", unicode(self.Every), attrib={
+                u"step": self.ScheduleKind,
+                u"skip": unicode(self.Skip)
+            })
         
         start = datetime.datetime.fromtimestamp(self.StartTimeOffset)
         start = start - datetime.timedelta(hours=1)
@@ -123,19 +122,20 @@ class Schedule(PriyomBase, XMLIntf.XMLStorm):
             "hour": self._formatHour(start, end)
         }[self.ScheduleKind]
         
-        startOffset = XMLIntf.appendTextElement(schedule, "start-offset", startStr)
-        startOffset.setAttribute("seconds", unicode(self.StartTimeOffset))
+        XMLIntf.appendTextElement(schedule, u"start-offset", startStr, attrib={
+            u"seconds": unicode(self.StartTimeOffset)
+        })
         
         if self.EndTimeOffset is not None:
-            endOffset = XMLIntf.appendTextElement(schedule, "end-offset", endStr)
-            endOffset.setAttribute("seconds", unicode(self.EndTimeOffset))
-            
-        schedules = doc.createElementNS(XMLIntf.namespace, "schedules")
+            XMLIntf.appendTextElement(schedule, u"end-offset", endStr, attrib={
+                u"seconds": unicode(self.EndTimeOffset)
+            })
+        
+        schedules = XMLIntf.SubElement(schedule, u"schedules")
         for _schedule in self.Children:
             _schedule.toDom(schedules, stationId)
-        schedule.appendChild(schedules)
         
-        leaves = doc.createElementNS(XMLIntf.namespace, "leaves")
+        leaves = XMLIntf.SubElement(schedule, u"leaves")
         if stationId is not None:
             leavesSelect = store.find(ScheduleLeaf, 
                 (ScheduleLeaf.StationID == stationId) and (ScheduleLeaf.ScheduleID == self.ID))
@@ -144,9 +144,7 @@ class Schedule(PriyomBase, XMLIntf.XMLStorm):
         else:
             for leaf in self.Leaves:
                 leaf.toDom(leaves)
-        schedule.appendChild(leaves)
-                
-        parentNode.appendChild(schedule)
+        
         return schedule
         
     def _leavesFromDom(self, node, context):
