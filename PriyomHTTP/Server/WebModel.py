@@ -34,6 +34,8 @@ import re
 import cStringIO
 import io
 from cfg_priyomhttpd import application, misc
+from ElementTreeHelper.Serializer import Serializer
+import libPriyom.XMLIntf as XMLIntf
 
 weekdayname = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 monthname = [None, 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
@@ -93,11 +95,12 @@ class WebModel(object):
     def __init__(self, priyomInterface):
         self.priyomInterface = priyomInterface
         self.store = self.priyomInterface.store
+        self.serializer = XMLIntf.Serializer()
         self.currentFlags = None
         self.limit = None
         self.offset = None
         self.distinct = False
-        self.resetStore()
+        self.resetStore()        
         
     def setCurrentFlags(self, flags):
         self.currentFlags = frozenset(flags)
@@ -139,8 +142,8 @@ class WebModel(object):
             return int(TimeUtils.now())
         return self.varLastUpdate.Value
         
-    def etreeToFile(self, file, etree, encoding="UTF-8"):
-        etree.write(file, encoding=encoding, xml_declaration=True, method="xml")
+    def etreeToFile(self, file, etree, encoding="UTF-8", defaultNamespace=XMLIntf.namespace):
+        self.serializer.serializeTree(file, etree, encoding=encoding, xmlHeader=True, defaultNamespace=defaultNamespace, headerNamespaces=True)
         
     def exportToETree(self, obj, flags = None):
         if flags is None:

@@ -30,6 +30,8 @@ from libPriyom import *
 from libPriyom.Helpers.ScheduleMaintainer import ScheduleMaintainer
 import xml.etree.ElementTree as ElementTree
 from cfg_priyomhttpd import database
+from ElementTreeHelper.Serializer import Serializer
+import sys
 
 db = create_database(database["stormURL"])
 store = Store(db)
@@ -41,3 +43,5 @@ tree = ElementTree.ElementTree(ElementTree.Element(u"{{{0}}}priyom-db-export".fo
 #intf.exportStationToDom(buzzer, None, doc)
 #print(doc.toprettyxml())
 sched = intf.scheduleMaintainer
+
+ser = Serializer()
