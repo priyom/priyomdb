@@ -33,7 +33,7 @@ class Modulation(object):
     Name = Unicode()
     
     def toDom(self, parentNode):
-        XMLIntf.appendTextElement(parentNode, "modulation", self.Name)
+        XMLIntf.appendTextElement(parentNode, u"modulation", self.Name)
 
 """class Frequency(object):
     __storm_table__ = "frequencies"
