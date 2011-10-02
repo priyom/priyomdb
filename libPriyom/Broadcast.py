@@ -75,15 +75,18 @@ class BroadcastFrequency(object):
             return unicode(freq) + u" Hz"
     
     @staticmethod
-    def importFromDom(store, node, broadcast, context):
-        frequency = int(XMLIntf.getText(node))
-        modname = node.getAttribute("modulation")
+    def importFromDom(store, element, broadcast, context):
+        frequency = int(element.text)
+        modname = node.get(u"modulation")
         checklist = store.find(BroadcastFrequency, 
-            (BroadcastFrequency.Frequency == frequency) and
-            (BroadcastFrequency.BroadcastID == broadcast.ID))
-        for broadcastFrequency in checklist:
-            if broadcastFrequency.Modulation.Name == modname:
-                return broadcastFrequency
+            BroadcastFrequency.Frequency == frequency,
+            BroadcastFrequency.BroadcastID == broadcast.ID,
+            BroadcastFrequency.ModulationID == Modulation.ID,
+            Modulation.Name == unicode(modname)
+        )
+        freq = checklist.any()
+        if freq is not None:
+            return freq
         
         obj = BroadcastFrequency()
         store.add(obj)
@@ -91,13 +94,13 @@ class BroadcastFrequency(object):
         obj.fromDom(node, context)
         return obj
     
-    def fromDom(self, node, context):
-        self.Frequency = int(XMLIntf.getText(node))
-        self.Modulation = Store.of(self).find(Modulation, Modulation.Name == node.getAttribute("modulation")).any()
+    def fromDom(self, element, context):
+        self.Frequency = int(element.text)
+        self.Modulation = Store.of(self).find(Modulation, Modulation.Name == node.get(u"modulation")).any()
         if self.Modulation is None:
             self.Modulation = Modulation()
             Store.of(self).add(self.Modulation)
-            self.Modulation.Name = node.getAttribute("modulation")
+            self.Modulation.Name = node.get(u"modulation")
     
     def toDom(self, parentNode):
         XMLIntf.appendTextElement(parentNode, u"frequency", unicode(self.Frequency), attrib={
@@ -140,30 +143,30 @@ class Broadcast(PriyomBase, XMLIntf.XMLStorm):
         self.Comment = None
         self.StationID = 0
         
-    def _dummy(self, element):
+    def _dummy(self, element, context):
         pass
         
     def _loadStart(self, element, context):
-        time = long(element.getAttribute("unix"))
+        time = long(element.get(u"unix"))
         self.BroadcastStart = time
         
     def _loadEnd(self, element, context):
-        time = long(element.getAttribute("unix"))
+        time = long(element.get(u"unix"))
         self.BroadcastEnd = time
         
     def _loadConfirmed(self, element, context):
-        if element.hasAttribute("delete"):
+        if element.get("delete") is not None:
             self.Confirmed = False
         else:
             self.Confirmed = True
     
     def _loadFrequency(self, element, context):
         broadcastFrequency = BroadcastFrequency.importFromDom(Store.of(self), element, self, context)
-        if element.hasAttribute("delete"):
+        if element.get("delete") is not None:
             Store.of(self).remove(broadcastFrequency)
             
     def _loadStationID(self, node, context):
-        self.Station = context.resolveId(Station, int(XMLIntf.getText(node)))
+        self.Station = context.resolveId(Station, int(node.text))
     
     def getIsOnAir(self):
         now = datetime.datetime.utcnow()
@@ -201,8 +204,7 @@ class Broadcast(PriyomBase, XMLIntf.XMLStorm):
             for transmission in self.Transmissions:
                 transmission.toDom(broadcast, flags)
         
-    def loadDomElement(self, node, context):
-        print("loading %s" % node.tagName)
+    def loadElement(self, tag, element, context):
         try:
             {
                 u"Start": self._loadStart,
@@ -211,7 +213,7 @@ class Broadcast(PriyomBase, XMLIntf.XMLStorm):
                 u"on-air": self._dummy,
                 u"has-transmissions": self._dummy,
                 u"frequency": self._loadFrequency
-            }[node.tagName](node, context)
+            }[tag](element, context)
         except KeyError:
             pass
         
