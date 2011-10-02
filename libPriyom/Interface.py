@@ -298,7 +298,7 @@ class PriyomInterface:
                 except KeyError:
                     context.log("Invalid transaction node: %s" % node.tagName)
                     continue
-                context.importFromDomNode(node, cls)
+                context.importFromETree(node, cls)
         return context
         
     def getStation(self, stationDesignator, notModifiedCheck = None, head = False):

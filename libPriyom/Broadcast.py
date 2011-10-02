@@ -75,7 +75,7 @@ class BroadcastFrequency(object):
             return unicode(freq) + u" Hz"
     
     @staticmethod
-    def importFromDom(store, element, broadcast, context):
+    def importFromETree(store, element, broadcast, context):
         frequency = int(element.text)
         modname = node.get(u"modulation")
         checklist = store.find(BroadcastFrequency, 
@@ -161,7 +161,7 @@ class Broadcast(PriyomBase, XMLIntf.XMLStorm):
             self.Confirmed = True
     
     def _loadFrequency(self, element, context):
-        broadcastFrequency = BroadcastFrequency.importFromDom(Store.of(self), element, self, context)
+        broadcastFrequency = BroadcastFrequency.importFromETree(Store.of(self), element, self, context)
         if element.get("delete") is not None:
             Store.of(self).remove(broadcastFrequency)
             

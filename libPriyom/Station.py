@@ -79,7 +79,7 @@ class Station(PriyomBase, XMLIntf.XMLStorm):
             if tag is None:
                 continue
             if tag == u"broadcast":
-                broadcast = context.importFromDomNode(child, Broadcast)
+                broadcast = context.importFromETree(child, Broadcast)
                 if broadcast is None:
                     continue
                 if broadcast.Station != self and broadcast.ScheduleLeaf is not None and broadcast.ScheduleLeaf.Station != self:
@@ -92,8 +92,8 @@ class Station(PriyomBase, XMLIntf.XMLStorm):
         pass
         
     def _scheduleFromDom(self, element, context):
-        self.Schedule = context.importFromDomNode(node, Schedule)
-        self.ScheduleConfirmed = node.get(u"confirmed") == "true"
+        self.Schedule = context.importFromETree(element, Schedule)
+        self.ScheduleConfirmed = element.get(u"confirmed") == "true"
         
     def loadElement(self, tag, element, context):
         try:
