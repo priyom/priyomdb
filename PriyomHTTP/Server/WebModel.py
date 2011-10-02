@@ -34,6 +34,7 @@ import re
 import cStringIO
 import io
 from cfg_priyomhttpd import application, misc
+from ElementTreeHelper.Serializer import Serializer
 
 weekdayname = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 monthname = [None, 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
@@ -93,11 +94,12 @@ class WebModel(object):
     def __init__(self, priyomInterface):
         self.priyomInterface = priyomInterface
         self.store = self.priyomInterface.store
+        self.serializer = XMLIntf.Serializer()
         self.currentFlags = None
         self.limit = None
         self.offset = None
         self.distinct = False
-        self.resetStore()
+        self.resetStore()        
         
     def setCurrentFlags(self, flags):
         self.currentFlags = frozenset(flags)

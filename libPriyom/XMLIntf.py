@@ -28,12 +28,34 @@ import xml.etree.ElementTree as ElementTree
 import datetime
 import Formatting
 from Helpers import TimeUtils
+import ElementTreeHelper.Serializer
+
+__all__ = [
+    'checkAndStripNamespace', 
+    'Serializer', 
+    'SubElement', 
+    'appendDateElement', 
+    'appendTextElement', 
+    'appendTextElements', 
+    'XMLStorm', 
+    'NoneHandlers', 
+    'namespace', 
+    'importNamespace', 
+    'debugXml'
+]
 
 namespace = u"http://api.priyom.org/priyomdb"
 importNamespace = u"http://api.priyom.org/priyomdb/import"
-ElementTree.register_namespace(u"priyom", namespace)
-ElementTree.register_namespace(u"priyom-import", importNamespace)
 debugXml = False
+
+_serializer = ElementTreeHelper.Serializer.Serializer()
+_serializer.registerNamespacePrefix(u"priyom", namespace)
+_serializer.registerNamespacePrefix(u"priyom-import", importNamespace)
+_serializer.registerNamespacePrefix(u"xhtml", u"http://www.w3.org/1999/xhtml")
+
+def Serializer():
+    global _serializer
+    return _serializer
 
 def checkAndStripNamespace(element, namespace=importNamespace, context = None):
     part = element.tag.partition("}")
