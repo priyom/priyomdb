@@ -39,11 +39,11 @@ def checkAndStripNamespace(element, namespace=importNamespace, context = None):
     part = element.tag.partition("}")
     if len(part[1]) == 0:
         if context is not None:
-            context.log("Encountered non-namespaced element: {0}. Expected namespace: {1}".format(element.tag, namespace)
+            context.log("Encountered non-namespaced element: {0}. Expected namespace: {1}".format(element.tag, namespace))
         return None
     if part[0][1:] != namespace:
         if context is not None:
-            context.log("Unexpected namespace {0} on tag {2}. Expected namespace: {1}".format(part[0][1:], namespace, part[2])
+            context.log("Unexpected namespace {0} on tag {2}. Expected namespace: {1}".format(part[0][1:], namespace, part[2]))
         return None
     return part[2]
 

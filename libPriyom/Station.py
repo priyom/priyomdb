@@ -75,7 +75,7 @@ class Station(PriyomBase, XMLIntf.XMLStorm):
         
     def _broadcastsFromDom(self, element, context):
         for child in element:
-            tag = XMLIntf.checkAndStripNamespace(element, context=context):
+            tag = XMLIntf.checkAndStripNamespace(element, context=context)
             if tag is None:
                 continue
             if tag == u"broadcast":
