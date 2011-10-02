@@ -50,6 +50,10 @@ class Schedule(PriyomBase, XMLIntf.XMLStorm):
     StartTimeOffset = Int()
     EndTimeOffset = Int()
     
+    xmlMapping = {
+        u"Name": u"Name"
+    }
+    
     @staticmethod
     def checkNestable(parentKind, childKind):
         if parentKind == "once":
@@ -146,27 +150,52 @@ class Schedule(PriyomBase, XMLIntf.XMLStorm):
                 leaf.toDom(leaves)
         
         return schedule
+    
+    def _schedulesFromDom(self, node, context):
         
-    def _leavesFromDom(self, node, context):
-        for node in (node for node in node.childNodes if node.nodeType == dom.Node.ELEMENT_NODE):
-            if node.tagName != "leaf":
+                
+    def _loadRepeat(self, element, context):
+        self.ScheduleKind = unicode(element.get(u"step"))
+        self.Skip = int(element.get(u"skip"))
+        self.Every = int(element.text)
+        
+    def _loadStartOffset(self, element, context):
+        self.StartTimeOffset = int(element.get(u"seconds"))
+        
+    def _loadEndOffset(self, element, context):
+        self.EndTimeOffset = int(element.get(u"seconds"))
+    
+    def _loadLeaves(self, element, context):
+        for leaf in list(self.Leaves):
+            leaf.delete()
+        for child in element:
+            tag = XMLIntf.checkAndStripNamespace(child, XMLIntf.importNamespace, context)
+            if tag is None:
+                continue
+            if tag != u"leaf":
                 context.log("Found invalid node in schedule.leaves. Skipping.")
                 continue
+            
             leaf = ScheduleLeaf()
             self.store.add(leaf)
             leaf.Schedule = self
-            leaf.fromDom(leaf)
-            
-    def _schedulesFromDom(self, node, context):
-        for node in (node for node in node.childNodes if node.nodeType == dom.Node.ELEMENT_NODE):
-            if node.tagName != "schedule-reference":
+            leaf.fromDom(child)
+    
+    def _loadSchedules(self, element, context):
+        for child in element:
+            tag = XMLIntf.checkAndStripNamespace(child, XMLIntf.importNamespace, context)
+            if tag is None:
+                continue
+            if tag != "schedule-reference":
                 context.log("Found invalid node in schedule.schedules. Skipping.")
                 continue
+            
             try:
-                id = int(node.getAttribute("id"))
+                id = int(child.get(u"id"))
             except:
                 context.log("Schedule references in schedule.schedules must consist only of <schedule id=\"id\" />")
                 continue
+            
             schedule = self.store.get(Schedule, id)
             if schedule is not None:
                 if schedule.Parent is not None:
@@ -176,26 +205,19 @@ class Schedule(PriyomBase, XMLIntf.XMLStorm):
                     context.log("Cannot nest a \"%s\" schedule into a \"%s\" schedule." % (self.ScheduleKind, schedule.ScheduleKind))
                     continue
                 schedule.Parent = self
+
         
-    def loadDomElement(self, node, context):
-        if node.tagName == "repeat":
-            self.ScheduleKind = node.getAttribute("step")
-            self.Skip = node.getAttribute("skip")
-            self.Every = XMLIntf.getText(node)
-        elif node.tagName == "name":
-            self.Name = XMLIntf.getText(node)
-        elif node.tagName == "start-offset":
-            self.StartTimeOffset = node.getAttribute("seconds")
-        elif node.tagName == "end-offset":
-            self.EndTimeOffset = node.getAttribute("seconds")
-        elif node.tagName == "leaves":
-            for leaf in list(self.Leaves):
-                leaf.delete()
-            self._leavesFromDom(node, context)
-        elif node.tagName == "schedules":
-            for schedule in list(self.Children):
-                schedule.Parent = None
-            self._schedulesFromDom(node, context)
+    def loadElement(self, tag, element, context):
+        try:
+            {
+                u"repeat": self._loadRepeat,
+                u"start-offset": self._loadStartOffset,
+                u"end-offset": self._loadEndOffset,
+                u"leaves": self._loadLeaves,
+                u"schedules": self._loadSchedules
+            }[tag](element, context)
+        except KeyError:
+            pass
             
     def touch(self, newModified = None):
         super(Schedule, self).touch(newModified)
@@ -221,13 +243,13 @@ class ScheduleLeafFrequency(object):
     ModulationID = Int()
     Modulation = Reference(ModulationID, Modulation.ID)
     
-    def fromDom(self, node, context):
-        self.Frequency = int(XMLIntf.getText(node))
-        self.Modulation = Store.of(self).find(Modulation, Modulation.Name == node.getAttribute("modulation")).any()
+    def fromDom(self, element, context):
+        self.Frequency = int(element.text)
+        self.Modulation = Store.of(self).find(Modulation, Modulation.Name == element.get(u"modulation")).any()
         if self.Modulation is None:
             self.Modulation = Modulation()
             Store.of(self).add(self.Modulation)
-            self.Modulation.Name = node.getAttribute("modulation")
+            self.Modulation.Name = node.get(u"modulation")
     
     def toDom(self, parentNode):
         XMLIntf.appendTextElement(parentNode, u"frequency", unicode(self.Frequency), attrib={
