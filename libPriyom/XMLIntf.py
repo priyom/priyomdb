@@ -29,8 +29,10 @@ import datetime
 import Formatting
 from Helpers import TimeUtils
 
-namespace = "http://api.priyom.org/priyomdb"
+namespace = u"http://api.priyom.org/priyomdb"
+importNamespace = u"http://api.priyom.org/priyomdb/import"
 ElementTree.register_namespace(u"priyom", namespace)
+ElementTree.register_namespace(u"priyom-import", importNamespace)
 debugXml = False
 
 class NoneHandlers:
