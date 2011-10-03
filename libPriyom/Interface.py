@@ -232,8 +232,8 @@ class PriyomInterface:
             if transmissions.count() > 0:
                 return False
         store.find(BroadcastFrequency, BroadcastFrequency.BroadcastID == obj.ID).remove()
-        if self.Station is not None:
-            self.Station.broadcastRemoved()
+        if obj.Station is not None:
+            obj.Station.broadcastRemoved()
         store.remove(obj)
         return True
         
