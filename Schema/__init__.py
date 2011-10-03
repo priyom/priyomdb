@@ -159,9 +159,8 @@ DatabaseSchema = Schema(
     PRIMARY KEY (`ID`)
 ) ENGINE=MyISAM  DEFAULT CHARSET=utf8;""",
 
-"""CREATE TABLE `transmissionClassTables` (
+"""CREATE TABLE `transmissionTables` (
     `ID` INT NOT NULL AUTO_INCREMENT,
-    `TransmissionClassID` INT NOT NULL COMMENT 'references transmissionClasses entry',
     `TableName` VARCHAR(255) NOT NULL COMMENT 'name of table to use',
     `DisplayName` VARCHAR(255) NOT NULL COMMENT 'display name for backend use',
     `XMLGroupClass` VARCHAR(255) NOT NULL COMMENT 'class attribute contents for xml output',
@@ -169,9 +168,15 @@ DatabaseSchema = Schema(
     KEY `TransmissionClassID` (`TransmissionClassID`)
 ) ENGINE=MyISAM  DEFAULT CHARSET=utf8;""",
 
-"""CREATE TABLE `transmissionClassTableFields` (
+"""CREATE TABLE `transmissionClassTables` (
+    `ClassID` INT NOT NULL,
+    `TableID` INT NOT NULL,
+    PRIMARY KEY (`ClassID`, `TableID`)
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8;"""
+
+"""CREATE TABLE `transmissionTableFields` (
     `ID` INT NOT NULL AUTO_INCREMENT,
-    `TransmissionClassTableID` INT NOT NULL COMMENT 'references transmissionClassTables entry',
+    `TransmissionTableID` INT NOT NULL COMMENT 'references transmissionTables entry',
     `FieldNumber` INT NOT NULL COMMENT 'index of the field, not counting the first three fields, starting at 0',
     `FieldName` VARCHAR(255) NOT NULL,
     `Kind` ENUM('number','codeword','plaintext','other') NOT NULL DEFAULT 'other' COMMENT 'for xml output mostly, kind of fields contents',
@@ -257,7 +262,8 @@ DatabaseSchema = Schema(
     ],
     [
 """DROP TABLE `transmissions`;""",
-"""DROP TABLE `transmissionClassTableFields`;""",
+"""DROP TABLE `transmissionTableFields`;""",
+"""DROP TABLE `transmissionTables`;""",
 """DROP TABLE `transmissionClassTables`;""",
 """DROP TABLE `transmissionClasses`;""",
 """DROP TABLE `transmissionParserNodeField`;""",
@@ -282,7 +288,8 @@ DatabaseSchema = Schema(
     ],
     [
 """DELETE FROM `transmissions`;""",
-"""DELETE FROM `transmissionClassTableFields`;""",
+"""DELETE FROM `transmissionTables`;""",
+"""DELETE FROM `transmissionTableFields`;""",
 """DELETE FROM `transmissionClassTables`;""",
 """DELETE FROM `transmissionClasses`;""",
 """DELETE FROM `transmissionParserNodeField`;""",

@@ -31,7 +31,7 @@ import XMLIntf
 import xml.dom.minidom as dom
 from Modulation import Modulation
 from Broadcast import BroadcastFrequency, Broadcast
-from Transmission import Transmission, TransmissionClass, TransmissionClassTable, TransmissionClassTableField
+from Transmission import Transmission, TransmissionClass, TransmissionTable, TransmissionTableField
 from Schedule import Schedule, ScheduleLeaf
 from Station import Station
 from Foreign import ForeignSupplement
@@ -61,7 +61,7 @@ class PriyomInterface:
         Station: "priyom-station-export",
         Broadcast: "priyom-broadcast-export",
         TransmissionClass: "priyom-generic-export",
-        TransmissionClassTable: "priyom-generic-export"
+        TransmissionTable: "priyom-generic-export"
     }
     
     def __init__(self, store):
@@ -150,7 +150,7 @@ class PriyomInterface:
             staleForeignSupplementCount += len(staleForeignSupplements)
             
         staleTXItemCount = 0
-        for table in self.store.find(TransmissionClassTable):
+        for table in self.store.find(TransmissionTable):
             staleTXItems = list((str(t[0]) for t in self.store.execute("""SELECT `{0}`.ID FROM `{0}` LEFT OUTER JOIN transmissions ON (`{0}`.TransmissionID = transmissions.ID) WHERE transmissions.ID IS NULL""".format(table.TableName))))
             staleTXItemCount += len(staleTXItems)
             if len(staleTXItems) > 0:
