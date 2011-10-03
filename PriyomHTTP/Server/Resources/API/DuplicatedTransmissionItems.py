@@ -61,7 +61,7 @@ class DuplicatedTransmissionItemsAPI(API):
     
     docArgs = [
         Argument(u"stationId", u"station id", u"select the station at which to look", metavar="stationid"),
-        Argument(u"classTableId", u"class table id", u"select the transmission class table to look at", metavar="classtableid"),
+        Argument(u"tableId", u"class table id", u"select the transmission class table to look at", metavar="classtableid"),
         Argument(u"equalFields", u"comma separated list", u"transmission item fields to look at (all if omitted)", metavar="equalfields", optional=True),
         Argument(u"includeOtherStationsWithin", u"integer seconds", u"how many seconds transmissions of other stations with same contents may be away to be selected", metavar="seconds", optional=True)
     ]
