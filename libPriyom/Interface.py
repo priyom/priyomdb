@@ -150,7 +150,7 @@ class PriyomInterface:
             staleForeignSupplementCount += len(staleForeignSupplements)
             
         staleTXItemCount = 0
-        for table in self.store.find(TransmissionClassTable):
+        for table in self.store.find(TransmissionTable):
             staleTXItems = list((str(t[0]) for t in self.store.execute("""SELECT `{0}`.ID FROM `{0}` LEFT OUTER JOIN transmissions ON (`{0}`.TransmissionID = transmissions.ID) WHERE transmissions.ID IS NULL""".format(table.TableName))))
             staleTXItemCount += len(staleTXItems)
             if len(staleTXItems) > 0:
