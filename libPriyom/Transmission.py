@@ -103,7 +103,7 @@ class Transmission(PriyomBase, XMLIntf.XMLStorm):
             return False
         
         for group in filter(lambda x: (x.nodeType == dom.Node.ELEMENT_NODE) and (x.tagName == u"group"), node.childNodes):
-            table = store.find(TransmissionClassTable, TransmissionClassTable.TableName == group.getAttribute(u"name")).any()
+            table = store.find(TransmissionTable, TransmissionTable.TableName == group.getAttribute(u"name")).any()
             if table is None:
                 print("Invalid transmission class table: %s" % (group.getAttribute(u"name")))
                 return False
@@ -183,8 +183,8 @@ class TransmissionClassBase(object):
     def toDom(self, parentNode):
         doc = parentNode.ownerDocument
         group = doc.createElementNS(XMLIntf.namespace, "group")
-        group.setAttribute("class", self.TransmissionClassTable.XMLGroupClass)
-        group.setAttribute("name", self.TransmissionClassTable.TableName)
+        group.setAttribute("class", self.TransmissionTable.XMLGroupClass)
+        group.setAttribute("name", self.TransmissionTable.TableName)
         
         for (field, value) in self:
             kind = field.Kind
@@ -226,16 +226,16 @@ def NewTransmissionClass(table):
     cls.Transmission = Reference(cls.TransmissionID, Transmission.ID)
     cls.Order = Int()
     cls.fields = []
-    cls.TransmissionClassTable = table
+    cls.TransmissionTable = table
     for field in table.Fields:
         cls.fields.append(field)
         setattr(cls, field.FieldName, Unicode())
     return cls
 
-class TransmissionClassTableField(object):
-    __storm_table__ = "transmissionClassTableFields"
+class TransmissionTableField(object):
+    __storm_table__ = "transmissionTableFields"
     ID = Int(primary = True)
-    TransmissionClassTableID = Int()
+    TransmissionTableID = Int()
     FieldNumber = Int()
     FieldName = Unicode()
     Kind = Enum(map={
@@ -257,14 +257,13 @@ class TransmissionClassTableField(object):
         ])
         parentNode.appendChild(fieldNode)
 
-class TransmissionClassTable(object):
-    __storm_table__ = "transmissionClassTables"
+class TransmissionTable(object):
+    __storm_table__ = "transmissionTables"
     ID = Int(primary = True)
-    TransmissionClassID = Int()
     TableName = Unicode()
     DisplayName = Unicode()
     XMLGroupClass = Unicode()
-    Fields = ReferenceSet(ID, TransmissionClassTableField.TransmissionClassTableID)
+    Fields = ReferenceSet(ID, TransmissionTableField.TransmissionTableID)
     
     def __storm_loaded__(self):
         self.PythonClass = NewTransmissionClass(self)
@@ -290,7 +289,6 @@ class TransmissionClass(PriyomBase):
     DisplayName = Unicode()
     RootParserNodeID = Int()
     RootParserNode = Reference(RootParserNodeID, TransmissionParserNode.ID)
-    Tables = ReferenceSet(ID, TransmissionClassTable.TransmissionClassID)
     
     def __storm_loaded__(self):
         self.tables = [table for table in self.Tables]
@@ -343,5 +341,18 @@ class TransmissionClass(PriyomBase):
             items.extend(self.parseNode(child, groups[child.ParentGroup]))
         return items
         
+class TransmissionClassTable(object):
+    __storm_table__ = "transmissionClassTables"
+    __storm_primary__ = "ClassID", "TableID"
+    ClassID = Int()
+    TableID = Int()
+
+TransmissionClass.Tables = ReferenceSet(
+    TransmissionClass.ID,
+    TransmissionClassTable.ClassID,
+    TransmissionClassTable.TableID,
+    TransmissionTable.ID
+)
+
 Transmission.Class = Reference(Transmission.ClassID, TransmissionClass.ID)
-TransmissionParserNode.Table = Reference(TransmissionParserNode.TableID, TransmissionClassTable.ID)
+TransmissionParserNode.Table = Reference(TransmissionParserNode.TableID, TransmissionTable.ID)
