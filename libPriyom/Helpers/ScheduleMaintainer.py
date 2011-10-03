@@ -1,3 +1,29 @@
+"""
+File name: ScheduleMaintainer.py
+This file is part of: priyomdb
+
+LICENSE
+
+The contents of this file are subject to the Mozilla Public License
+Version 1.1 (the "License"); you may not use this file except in
+compliance with the License. You may obtain a copy of the License at
+http://www.mozilla.org/MPL/
+
+Software distributed under the License is distributed on an "AS IS"
+basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+License for the specific language governing rights and limitations under
+the License.
+
+Alternatively, the contents of this file may be used under the terms of
+the GNU General Public license (the  "GPL License"), in which case  the
+provisions of GPL License are applicable instead of those above.
+
+FEEDBACK & QUESTIONS
+
+For feedback and questions about priyomdb please e-mail one of the
+authors:
+    Jonas Wielicki <j.wielicki@sotecware.net>
+"""
 from storm.locals import *
 from ..Broadcast import Broadcast, BroadcastFrequency
 from ..Schedule import Schedule, ScheduleLeaf
@@ -5,6 +31,7 @@ from ..Station import Station
 from time import mktime
 from datetime import datetime, timedelta
 from ..Limits import limits
+import TimeUtils
 
 class ScheduleMaintainerError(Exception):
     pass
@@ -44,14 +71,6 @@ class ScheduleMaintainer(object):
     def __init__(self, interface):
         self.interface = interface
         self.store = self.interface.store
-        
-    @staticmethod
-    def now():
-        return int(mktime(datetime.utcnow().timetuple()))
-        
-    @staticmethod
-    def toTimestamp(datetime):
-        return int(mktime(datetime.timetuple()))
         
     @staticmethod
     def incYear(dt, by):
@@ -194,7 +213,7 @@ class ScheduleMaintainer(object):
         station.ScheduleUpToDateUntil = end
         
     def updateSchedule(self, station, until, limit = None):
-        now = ScheduleMaintainer.now()
+        now = TimeUtils.now()
         if station.Schedule is None:
             return until
         if until is None or (until - now) > limits.schedule.maxLookahead:
