@@ -201,6 +201,12 @@ class SubmitLogResource(Resource):
                     timestamp = int(TimeUtils.now())
         except KeyError as e:
             return unicode(e)
+        try:
+            contents = transmissionClass.parsePlainText(transmissionContents)
+        except ValueError as e:
+            return unicode(e)
+        except NodeError as e:
+            return unicode(e)
             
         if broadcast is None:
             broadcast = Broadcast()
@@ -241,7 +247,6 @@ class SubmitLogResource(Resource):
         transmission.Timestamp = timestamp
         transmission.RecordingURL = recordingURL
         
-        contents = transmissionClass.parsePlainText(transmissionContents)
         order = 0
         for rowData in contents:
             tableClass = rowData[0].PythonClass

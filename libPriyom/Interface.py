@@ -31,7 +31,7 @@ import XMLIntf
 import xml.dom.minidom as dom
 from Modulation import Modulation
 from Broadcast import BroadcastFrequency, Broadcast
-from Transmission import Transmission, TransmissionClass, TransmissionClassTable, TransmissionClassTableField
+from Transmission import Transmission, TransmissionClass, TransmissionTable, TransmissionTableField
 from Schedule import Schedule, ScheduleLeaf
 from Station import Station
 from Foreign import ForeignSupplement
@@ -61,7 +61,7 @@ class PriyomInterface:
         Station: "priyom-station-export",
         Broadcast: "priyom-broadcast-export",
         TransmissionClass: "priyom-generic-export",
-        TransmissionClassTable: "priyom-generic-export"
+        TransmissionTable: "priyom-generic-export"
     }
     
     def __init__(self, store):
@@ -114,6 +114,49 @@ class PriyomInterface:
         
     def getImportContext(self):
         return Imports.ImportContext(self.store)
+        
+    def garbageCollection(self):
+        staleBroadcasts = list((str(t[0]) for t in self.store.execute("""SELECT broadcasts.ID FROM broadcasts LEFT OUTER JOIN stations ON (broadcasts.StationID = stations.ID) WHERE stations.ID IS NULL""")))
+        if len(staleBroadcasts) > 0:
+            self.store.execute("""DELETE FROM broadcasts WHERE ID IN ({0})""".format(",".join(staleBroadcasts)))
+        
+        staleTransmissions = list((str(t[0]) for t in self.store.execute("""SELECT transmissions.ID FROM transmissions LEFT OUTER JOIN broadcasts ON (transmissions.BroadcastID = broadcasts.ID) WHERE broadcasts.ID IS NULL""")))
+        if len(staleTransmissions) > 0:
+            self.store.execute("""DELETE FROM transmissions WHERE ID IN ({0})""".format(",".join(staleTransmissions)))
+            
+        staleBroadcastFrequencies = list((str(t[0]) for t in self.store.execute("""SELECT broadcastFrequencies.ID FROM broadcastFrequencies LEFT OUTER JOIN broadcasts ON (broadcastFrequencies.BroadcastID = broadcasts.ID) WHERE broadcasts.ID IS NULL""")))
+        if len(staleBroadcastFrequencies) > 0:
+            self.store.execute("""DELETE FROM broadcastFrequencies WHERE ID IN ({0})""".format(",".join(staleBroadcastFrequencies)))
+        
+        foreignSupplementTables = {}
+        staleForeignSupplements = list()
+        for id, localID, fieldName in self.store.execute("""SELECT t.ID, t.LocalID, t.FieldName FROM foreignSupplement as t"""):
+            partitioned = fieldName.partition(".")
+            if len(partitioned[2]) == 0:
+                staleForeignSupplements.append(str(id))
+                continue
+            tableName = partitioned[0]
+            if not tableName in foreignSupplementTables:
+                foreignSupplementTables[tableName] = list()
+            foreignSupplementTables[tableName].append((localID, id))
+        if len(staleForeignSupplements) > 0:
+            self.store.execute("""DELETE FROM foreignSupplement WHERE ID IN ({0})""".format(",".join(staleForeignSupplements)))
+        
+        staleForeignSupplementCount = len(staleForeignSupplements)
+        for table, items in foreignSupplementTables.iteritems():
+            staleForeignSupplements = list((str(t[0]) for t in self.store.execute("""SELECT foreignSupplement.ID FROM foreignSupplement LEFT OUTER JOIN `{0}` ON (foreignSupplement.LocalID = `{0}`.ID) WHERE (`{0}`.ID IS NULL) AND (foreignSupplement.ID IN ({1}))""".format(table, ",".join((str(item[1]) for item in items))))))
+            if len(staleForeignSupplements) > 0:
+                self.store.execute("""DELETE FROM foreignSupplement WHERE ID IN ({0})""".format(",".join(staleForeignSupplements)))
+            staleForeignSupplementCount += len(staleForeignSupplements)
+            
+        staleTXItemCount = 0
+        for table in self.store.find(TransmissionTable):
+            staleTXItems = list((str(t[0]) for t in self.store.execute("""SELECT `{0}`.ID FROM `{0}` LEFT OUTER JOIN transmissions ON (`{0}`.TransmissionID = transmissions.ID) WHERE transmissions.ID IS NULL""".format(table.TableName))))
+            staleTXItemCount += len(staleTXItems)
+            if len(staleTXItems) > 0:
+                self.store.execute("""DELETE FROM `{0}` WHERE ID IN ({1})""".format(table.TableName, ",".join(staleTXItems)))
+        
+        return (len(staleBroadcasts), len(staleTransmissions), staleForeignSupplementCount, staleTXItemCount)
         
     def deleteTransmissionBlock(self, obj, force = False):
         store = self.store
@@ -189,8 +232,8 @@ class PriyomInterface:
             if transmissions.count() > 0:
                 return False
         store.find(BroadcastFrequency, BroadcastFrequency.BroadcastID == obj.ID).remove()
-        if self.Station is not None:
-            self.Station.broadcastRemoved()
+        if obj.Station is not None:
+            obj.Station.broadcastRemoved()
         store.remove(obj)
         return True
         
@@ -335,6 +378,7 @@ class PriyomInterface:
             return (lastModified, None)
         if notModifiedCheck is not None:
             notModifiedCheck(lastModified)
+        transmissions.order_by(Asc(Transmission.Timestamp))
         if limiter is not None:
             transmissions = limiter(transmissions)
         return (lastModified, (transmission for (transmission, broadcast) in transmissions))
