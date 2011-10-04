@@ -47,4 +47,7 @@ table.frequency-table .buttons {
     background-color: transparent;
 }
 
+div.error {
+    font-weight: bold;
+}
 

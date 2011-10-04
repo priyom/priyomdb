@@ -195,11 +195,10 @@ class SubmitLogResource(Resource):
             if timestamp is None:
                 timestamp = int(TimeUtils.now())
             else:
-                try:
-                    timestamp = TimeUtils.toTimestamp(datetime.strptime(timestamp, Formatting.priyomdate))
-                except ValueError:
-                    timestamp = int(TimeUtils.now())
+                timestamp = TimeUtils.toTimestamp(datetime.strptime(timestamp, Formatting.priyomdate))
         except KeyError as e:
+            return unicode(e)
+        except ValueError as e:
             return unicode(e)
         try:
             contents = transmissionClass.parsePlainText(transmissionContents)
@@ -304,6 +303,7 @@ Transmission: {2}</pre>""".format(
                 timestamp = TimeUtils.toTimestamp(datetime.strptime(timestamp, Formatting.priyomdate))
             except ValueError:
                 timestamp = int(TimeUtils.now())
+                error = u"Timestamp parsing failed. Please re-enter the timestamp!"
         
         print >>self.out, u"""<!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml">
