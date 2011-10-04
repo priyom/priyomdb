@@ -192,12 +192,9 @@ class SubmitLogResource(Resource):
                 raise KeyError("No transmission class with id #{0}".format(self.queryEx["transmissionClass"]))
             transmissionContents = self.queryEx["transmission"]
             
-            if timestamp is None:
-                timestamp = int(TimeUtils.now())
-            else:
-                timestamp = TimeUtils.toTimestamp(datetime.strptime(timestamp, Formatting.priyomdate))
+            timestamp = TimeUtils.toTimestamp(datetime.strptime(timestamp, Formatting.priyomdate))
         except KeyError as e:
-            return unicode(e)
+            return u"Missing submit data: {0}".format(unicode(e))
         except ValueError as e:
             return unicode(e)
         try:
