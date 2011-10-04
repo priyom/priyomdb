@@ -27,7 +27,7 @@ authors:
 from storm.locals import *
 from Modulation import Modulation
 from Broadcast import BroadcastFrequency, Broadcast
-from Transmission import Transmission, TransmissionClass, TransmissionClassTable, TransmissionClassTableField
+from Transmission import Transmission, TransmissionClass, TransmissionTable, TransmissionTableField
 from Schedule import Schedule, ScheduleLeaf
 from Station import Station
 from Foreign import ForeignSupplement
