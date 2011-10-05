@@ -106,7 +106,7 @@ class PlotColourCard(PlotPunchCard):
                 )
             yield items
             
-    def interpolateMatrixMirrored(self, subdivision, matrix):
+    def interpolateMatrixMirrored(self, subdivision, matrix, mirrorMode):
         xcount = len(matrix)
         if xcount == 0:
             yield None
@@ -116,7 +116,9 @@ class PlotColourCard(PlotPunchCard):
             yield None
             return
         
-        for x in xrange(int(-0.5*subdivision),int((xcount-1)*subdivision+1)):
+        mirrorMode = 0.5 if mirrorMode == 2 else 1.0
+        
+        for x in xrange(int(-0.5*subdivision),int((xcount-mirrorMode)*subdivision+1)):
             oldx = float(x)/float(subdivision)
             x0 = int(math.floor(oldx))
             x1 = x0+1
@@ -128,7 +130,7 @@ class PlotColourCard(PlotPunchCard):
                 x1 = x1 + xcount
             elif x1 >= xcount:
                 x1 = x1 - xcount
-            items = list(xrange(int(-0.5*subdivision), int((ycount-1)*subdivision+1)))
+            items = list(xrange(int(-0.5*subdivision), int((ycount-mirrorMode)*subdivision+1)))
             for idx, y in itertools.izip(xrange(len(items)), items):
                 oldy = float(y)/float(subdivision)
                 y0 = int(math.floor(oldy))
@@ -162,7 +164,8 @@ class PlotColourCard(PlotPunchCard):
         
         if subdivision > 1:
             if mirrored:
-                newdata = list(self.interpolateMatrixMirrored(subdivision, self.matrix))
+                mirrorMode = 1 if mirrored == True or mirrored == 1 else 2
+                newdata = list(self.interpolateMatrixMirrored(subdivision, self.matrix, mirrorMode))
             else:
                 newdata = list(self.interpolateMatrix(subdivision, self.matrix))
         else:
@@ -171,11 +174,11 @@ class PlotColourCard(PlotPunchCard):
             xlist = [float(i)/float(subdivision) for i in xrange(0,(xcount-1)*subdivision+1)]
             ylist = [float(i)/float(subdivision) for i in xrange(0,(ycount-1)*subdivision+1)]
         else:
-            xlist = [float(i)/float(subdivision) for i in xrange(int(-0.5*subdivision),int((xcount-1)*subdivision+1))]
-            ylist = [float(i)/float(subdivision) for i in xrange(int(-0.5*subdivision),int((ycount-1)*subdivision+1))]
+            xlist = [float(i)/float(subdivision) for i in xrange(int(-0.5*subdivision),int((xcount-1./float(mirrorMode))*subdivision+1))]
+            ylist = [float(i)/float(subdivision) for i in xrange(int(-0.5*subdivision),int((ycount-1./float(mirrorMode))*subdivision+1))]
         
         cs = ax.contourf(xlist, ylist, newdata, levels)
-        cbar = figure.colorbar(cs, ax=ax, shrink=0.8, pad=0., fraction=0.05)
+        cbar = figure.colorbar(cs, ax=ax, shrink=0.8, pad=(0. if not mirrored or mirrorMode == 1 else 0.01), fraction=0.05)
         for tick in cbar.ax.xaxis.get_major_ticks() + cbar.ax.yaxis.get_major_ticks():
             tick.label1.set_font_properties(fontProp)
             tick.label2.set_font_properties(fontProp)
