@@ -219,28 +219,31 @@ class APIFileResource(object):
                     APIFileResource.Timestamp == timestamp
                 ).any()
                 if item is None:
-                    store.find(
-                        APIFileResource, 
-                        APIFileResource.ReferenceTable == refTable,
-                        APIFileResource.LocalID == id,
-                        APIFileResource.ResourceType == resourceType
-                    ).remove()
+                    for resource in store.find(
+                                        APIFileResource, 
+                                        APIFileResource.ReferenceTable == refTable,
+                                        APIFileResource.LocalID == id,
+                                        APIFileResource.ResourceType == resourceType
+                                    ):
+                        os.unlink(resource.FileName)
                     item = APIFileResource(refTable, id, resourceType, timestamp, fileFormat)
                     store.add(item)
-                    store.flush()
                     store.execute("UNLOCK TABLES")
+                    store.flush()
                     try:
                         createCallback(item)
                     except:
                         store.execute("LOCK TABLES `api-fileResources` WRITE")
                         store.remove(item)
+                        store.execute("UNLOCK TABLES")
                         raise
         finally:
             store.execute("UNLOCK TABLES")
         if not os.path.isfile(item.FileName):
+            store.execute("LOCK TABLES `api-fileResources` WRITE")
             store.remove(item)
-            return None
-            #return APIFileResource.createOrFind(store, refTable, id, resourceType, timestamp, fileFormat, createCallback)
+            store.execute("UNLOCK TABLES")
+            return APIFileResource.createOrFind(store, refTable, id, resourceType, timestamp, fileFormat, createCallback)
         return item
     
 APIKey.Capabilities = ReferenceSet(
