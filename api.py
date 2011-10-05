@@ -28,7 +28,17 @@ import sys
 sys.path.append('/etc/priyomdb/')
 from cfg_priyomhttpd import application, database
 sys.path.append(application["root"])
-
+import os
+import os.path
+mplconfig = application.get("mplconfigdir", u"{0}/runtime/mpl").format(application["root"])
+os.environ["MPLCONFIGDIR"] = mplconfig
+if not os.path.isdir(mplconfig):
+    os.makedirs(mplconfig)
+plots = application.get("plotdir", u"{0}/runtime/plots").format(application["root"])
+if not os.path.isdir(plots):
+    os.makedirs(plots)
+application["mplconfigdir"] = mplconfig
+application["plots"] = plots
 
 
 from WebStack.Adapters.WSGI import WSGIAdapter

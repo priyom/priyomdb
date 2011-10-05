@@ -1,5 +1,5 @@
 """
-File name: __init__.py
+File name: patch_5.py
 This file is part of: priyomdb
 
 LICENSE
@@ -24,16 +24,21 @@ For feedback and questions about priyomdb please e-mail one of the
 authors:
     Jonas Wielicki <j.wielicki@sotecware.net>
 """
-from UpcomingBroadcasts import UpcomingBroadcastsAPI
-from Import import ImportAPI
-from List import ListAPI
-from Session import SessionAPI
-from ListModulations import ListModulationsAPI
-from TransmissionStats import TransmissionStatsAPI
-from TransmissionsByMonth import TransmissionsByMonthAPI
-from CloseBroadcasts import CloseBroadcastsAPI
-from StationFrequencies import StationFrequenciesAPI
-from InstanciateSchedules import InstanciateSchedulesAPI
-from TransmissionsByYear import TransmissionsByYearAPI
-from DuplicatedTransmissionItems import DuplicatedTransmissionItemsAPI
-from Plot import PlotAPI
+
+def apply(store):
+    statements = [
+"""CREATE TABLE IF NOT EXISTS `api-fileResources` (
+    `ID` INT NOT NULL AUTO_INCREMENT,
+    `ReferenceTable` VARCHAR(64) NOT NULL,
+    `LocalID` INT NOT NULL,
+    `ResourceType` VARCHAR(64) NOT NULL,
+    `Timestamp` BIGINT NOT NULL,
+    `FileName` VARCHAR(255) NOT NULL,
+    PRIMARY KEY (`ID`)
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8"""
+]
+    for statement in statements:
+        store.execute(statement)
+
+
+
