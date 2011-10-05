@@ -29,9 +29,10 @@ from libPriyom import *
 from API import API, CallSyntax, Argument
 from ...APIDatabase import APIFileResource
 import mmap
+from cfg_priyomhttpd import application
 
 class PlotAPI(API):
-    def __init__(self, model, dataSource, renderer, queryArgs, resourceType, cls, idOrKey, fileFormat=u"{0}/plots/{1}.png", contentType=ContentType("image/png"), allowNoId=False, **kwargs):
+    def __init__(self, model, dataSource, renderer, queryArgs, resourceType, cls, idOrKey, fileFormat=u"{0}/{{1}}.png", contentType=ContentType("image/png"), allowNoId=False, **kwargs):
         super(API, self).__init__(model)
         self.dataSource = dataSource
         self.renderer = renderer
@@ -43,13 +44,13 @@ class PlotAPI(API):
         self.resourceType = resourceType
         cls.Modified
         self.allowNoId = allowNoId
-        self.fileFormat = fileFormat
+        self.fileFormat = fileFormat.format(application["plots"])
         self.contentType = contentType
         
     def plot(self, resource):
         tmpArgs = self.plotArgs.copy()
         tmpArgs.update(self.args)
-        self.renderer.plotGraph(self.dataSource, resource.FileName, dpi=72, format="png", transparent=True, **args)
+        self.renderer.plotGraph(self.dataSource, resource.FileName, dpi=72, format="png", transparent=True, **tmpArgs)
         
     def handle(self, trans):
         args = {}
@@ -60,18 +61,18 @@ class PlotAPI(API):
                 self.parameterError(queryName, unicode(e))
             except ValueError as e:
                 self.parameterError(queryName, unicode(e))
-        if type(idOrKey) == int:
-            id = idOrKey
+        if type(self.idOrKey) == int:
+            id = self.idOrKey
         else:
-            id = int(args.get(idOrKey, 0))
+            id = int(args.get(self.idOrKey, 0))
         if id == 0:
             if not self.allowNoId:
                 self.parameterError(u"", u"No id specified")
-            lastModified = self.store.find(cls).max(cls.Modified)
+            lastModified = self.store.find(self.cls).max(cls.Modified)
         else:
-            obj = self.store.get(cls, id)
+            obj = self.store.get(self.cls, id)
             if obj is None:
-                self.parameterError(u"", u"Could not find {0} with id {1}.".format(unicode(cls), id)
+                self.parameterError(u"", u"Could not find {0} with id {1}.".format(unicode(self.cls), id))
             lastModified = obj.Modified
         
         trans.set_content_type(self.contentType)
@@ -79,10 +80,10 @@ class PlotAPI(API):
         self.autoNotModified(lastModified)
         
         self.args = args
-        item = APIFileResource.createOrFind(cls.__storm_table__, id, resourceType, lastModified, self.fileFormat, self.plot)
+        item = APIFileResource.createOrFind(self.store, unicode(self.cls.__storm_table__), id, self.resourceType, lastModified, self.fileFormat, self.plot)
         if item is not None:
             img = open(item.FileName, "rb")
-            map = mmap.mmap(img, 0, flags=mmap.MAP_SHARED, prot=mmap.PROT_READ)
+            map = mmap.mmap(img.fileno(), 0, flags=mmap.MAP_SHARED, prot=mmap.PROT_READ)
             print >>self.out, map.read(map.size())
             map.close()
             img.close()
