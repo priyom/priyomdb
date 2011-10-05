@@ -171,6 +171,63 @@ class APINews(object):
     
     def html_row(self):
         return u"""<tr><td>%s</td><th>%s</th><td><p>%s</p></td></tr>""" % (datetime.fromtimestamp(self.Timestamp).strftime(priyomdate), self.Title, self.Contents)
+        
+class APIFileResource(object):
+    __storm_table__ = "api-fileResources"
+    
+    ID = Int(primary=True)
+    ReferenceTable = Unicode()
+    LocalID = Int()
+    ResourceType = Unicode()
+    Timestamp = Int()
+    FileName = Unicode()
+    
+    def __init__(self, refTable, id, resourceType, timestamp, fileFormat):
+        self.ReferenceTable = refTable
+        self.LocalID = id
+        self.ResourceType = resourceType
+        self.Timestamp = timestamp
+        
+        hash = sha256(refTable)
+        hash.update(unicode(id))
+        hash.update(resourceType)
+        hash.update(unicode(timestamp))
+        digest = hash.hexdigest()
+        
+        self.FileName = fileFormat.format(digest)
+    
+    @staticmethod
+    def createOrFind(store, refTable, id, resourceType, timestamp, fileFormat, createCallback):
+        store.execute("LOCK TABLES `api-fileResources` READ")
+        item = store.find(
+            APIFileResource,
+            APIFileResource.ReferenceTable == refTable,
+            APIFileResource.LocalID == id,
+            APIFileResource.ResourceType == resourceType,
+            APIFileResource.Timestamp == timestamp
+        ).any()
+        if item is None:
+            store.execute("LOCK TABLES `api-fileResources` WRITE")
+            item = store.find(
+                APIFileResource,
+                APIFileResource.ReferenceTable == refTable,
+                APIFileResource.LocalID == id,
+                APIFileResource.ResourceType == resourceType,
+                APIFileResource.Timestamp == timestamp
+            ).any()
+            if item is None:
+                store.find(
+                    APIFileResource, 
+                    APIFileResource.ReferenceTable == refTable,
+                    APIFileResource.LocalID == id,
+                    APIFileResource.ResourceType == resourceType
+                ).remove()
+                item = APIFileResource(refTable, id, resourceType, timestamp, fileFormat)
+                store.add(item)
+                createCallback(item)
+                store.flush()
+        store.execute("UNLOCK TABLES")
+        return item
     
 APIKey.Capabilities = ReferenceSet(
     APIKey.ID, 
