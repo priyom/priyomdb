@@ -86,6 +86,26 @@ def get_site_map(priyomInterface):
                     u"punchcard-mw",
                     libPriyom.Station,
                     "stationId",
+                    allowNoId=True),
+                "hourWeekColourCard": PlotAPI(model, 
+                    PlotDataSources.PlotDataWeekHourPunch(model.store), 
+                    Plots.PlotColourCard(), 
+                    [
+                        ("stationId", int, "stationId")
+                    ],
+                    u"colourcard-hw",
+                    libPriyom.Station,
+                    "stationId",
+                    allowNoId=True),
+                "hourMonthColourCard": PlotAPI(model, 
+                    PlotDataSources.PlotDataMonthHourPunch(model.store), 
+                    Plots.PlotColourCard(), 
+                    [
+                        ("stationId", int, "stationId")
+                    ],
+                    u"colourcard-mw",
+                    libPriyom.Station,
+                    "stationId",
                     allowNoId=True)
             })
         })
