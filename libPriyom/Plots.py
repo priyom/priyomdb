@@ -25,7 +25,8 @@ class PlotPunchCard(PlotRenderer):
         
     def _doPlot(self, figure, ax, fontProp, 
             scale=200.,
-            blobColour=(0., 0., 0., 1.0)):
+            blobColour=(0., 0., 0., 1.0),
+            **kwargs):
         
         xcount = len(self.matrix[0])
         ycount = len(self.matrix)
@@ -157,7 +158,8 @@ class PlotColourCard(PlotPunchCard):
             gridColour=(0.6, 0.6, 0.6, 1.0),
             subdivision=1,
             levels=23,
-            mirrored=False):
+            mirrored=False,
+            **kwargs):
         
         xcount = len(self.matrix[0])
         ycount = len(self.matrix)
