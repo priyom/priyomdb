@@ -20,7 +20,7 @@ class PlotDataSource(object):
 
 class PlotDataPunch(PlotDataSource):
     def getLastModified(self, stationId = None, **kwargs):
-        if stationId is None:
+        if stationId is None or stationId == 0:
             return self.store.find(Transmission).max(Transmission.Modified)
         else:
             return self.store.find(Transmission, 
