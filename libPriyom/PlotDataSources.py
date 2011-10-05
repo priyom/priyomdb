@@ -3,7 +3,7 @@ from storm.expr import *
 from Transmission import Transmission
 from Broadcast import Broadcast
 
-__all__ = ['PlotDataSource', 'PlotDataPunch', 'PlotDataWeekHourPunch']
+__all__ = ['PlotDataSource', 'PlotDataPunch', 'PlotDataWeekHourPunch', 'PlotDataMonthHourPunch']
 
 class PlotDataSource(object):
     def __init__(self, store):
@@ -41,8 +41,8 @@ class PlotDataPunch(PlotDataSource):
         labelColour=(0., 0., 0., 1.0), 
         **kwargs):
         
-        figure.set_figheight(4)
-        figure.set_figwidth(12.5)
+        figure.set_figheight(self.height)
+        figure.set_figwidth(self.width)
         
         tickargs = {
             "color": labelColour
@@ -74,6 +74,9 @@ class PlotDataWeekHourPunch(PlotDataPunch):
     xborder = 0.05
     yborder = 0.06
     
+    width = 12.5
+    height = 4
+    
     xcount = 24
     ycount = 7
     
@@ -83,6 +86,35 @@ class PlotDataWeekHourPunch(PlotDataPunch):
     def select(self, stationId = None, **kwargs):
         cols = (
             Func("DAYOFWEEK", Func("FROM_UNIXTIME", Transmission.Timestamp)),
+            Func("HOUR", Func("FROM_UNIXTIME", Transmission.Timestamp))
+        )
+        data = None
+        if stationId is None:
+            data = self.store.find(cols)
+        else:
+            data = self.store.find(
+                cols,
+                Transmission.BroadcastID == Broadcast.ID,
+                Broadcast.StationID == stationId
+            )
+        return data
+
+class PlotDataMonthHourPunch(PlotDataPunch):
+    xborder=0.05
+    yborder=0.04
+    
+    width = 12.5
+    height = 6
+    
+    xcount = 24
+    ycount = 12
+    
+    xtickLabels = PlotDataWeekHourPunch.xtickLabels
+    ytickLabels = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Oct", "Sep", "Nov", "Dec"]
+    
+    def select(self, stationId = None, **kwargs):
+        cols = (
+            Func("MONTH", Func("FROM_UNIXTIME", Transmission.Timestamp)),
             Func("HOUR", Func("FROM_UNIXTIME", Transmission.Timestamp))
         )
         data = None

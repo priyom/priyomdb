@@ -26,7 +26,11 @@ class PlotPunchCard(PlotRenderer):
     def _doPlot(self, figure, ax, fontProp, 
             scale=200.,
             blobColour=(0., 0., 0., 1.0)):
-        coords = list(itertools.product(range(0,7), range(0,24)))
+        
+        xcount = len(self.matrix[0])
+        ycount = len(self.matrix)
+        
+        coords = list(itertools.product(range(0,ycount), range(0,xcount)))
         xlist = [item[1] for item in coords]
         ylist = [item[0] for item in coords]
         matrix = self.matrix
@@ -101,18 +105,74 @@ class PlotColourCard(PlotPunchCard):
                     oldy-y0
                 )
             yield items
+            
+    def interpolateMatrixMirrored(self, subdivision, matrix):
+        xcount = len(matrix)
+        if xcount == 0:
+            yield None
+            return
+        ycount = len(matrix[0])
+        if ycount == 0:
+            yield None
+            return
+        
+        for x in xrange(int(-0.5*subdivision),int((xcount-1)*subdivision+1)):
+            oldx = float(x)/float(subdivision)
+            x0 = int(math.floor(oldx))
+            x1 = x0+1
+            if x0 < 0:
+                x0 = x0 + xcount
+            elif x0 >= xcount:
+                x0 = x0 - xcount
+            if x1 < 0:
+                x1 = x1 + xcount
+            elif x1 >= xcount:
+                x1 = x1 - xcount
+            items = list(xrange(int(-0.5*subdivision), int((ycount-1)*subdivision+1)))
+            for idx, y in itertools.izip(xrange(len(items)), items):
+                oldy = float(y)/float(subdivision)
+                y0 = int(math.floor(oldy))
+                y1 = y0 + 1
+                if y0 < 0:
+                    y0 = y0 + ycount
+                elif y0 >= ycount:
+                    y0 = y0 - ycount
+                if y1 < 0:
+                    y1 = y1 + ycount
+                elif y1 >= ycount:
+                    y1 = y1 - ycount
+                items[idx] = self.interpolate(
+                    matrix[x0][y0],
+                    matrix[x1][y0],
+                    matrix[x0][y1],
+                    matrix[x1][y1],
+                    oldx-int(math.floor(oldx)),
+                    oldy-int(math.floor(oldy))
+                )
+            yield items
     
     def _doPlot(self, figure, ax, fontProp,
             gridColour=(0.6, 0.6, 0.6, 1.0),
             subdivision=1,
-            levels=23):
+            levels=23,
+            mirrored=False):
         
-        xlist = [float(i)/float(subdivision) for i in xrange(0,23*subdivision+1)]
-        ylist = [float(i)/float(subdivision) for i in xrange(0,6*subdivision+1)]
+        xcount = len(self.matrix[0])
+        ycount = len(self.matrix)
+        
         if subdivision > 1:
-            newdata = list(self.interpolateMatrix(subdivision, self.matrix))
+            if mirrored:
+                newdata = list(self.interpolateMatrixMirrored(subdivision, self.matrix))
+            else:
+                newdata = list(self.interpolateMatrix(subdivision, self.matrix))
         else:
             newdata = self.matrix
+        if not mirrored:
+            xlist = [float(i)/float(subdivision) for i in xrange(0,(xcount-1)*subdivision+1)]
+            ylist = [float(i)/float(subdivision) for i in xrange(0,(ycount-1)*subdivision+1)]
+        else:
+            xlist = [float(i)/float(subdivision) for i in xrange(int(-0.5*subdivision),int((xcount-1)*subdivision+1))]
+            ylist = [float(i)/float(subdivision) for i in xrange(int(-0.5*subdivision),int((ycount-1)*subdivision+1))]
         
         cs = ax.contourf(xlist, ylist, newdata, levels)
         cbar = figure.colorbar(cs, ax=ax, shrink=0.8, pad=0., fraction=0.05)
