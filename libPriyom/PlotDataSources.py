@@ -9,6 +9,9 @@ class PlotDataSource(object):
     def __init__(self, store):
         self.store = store
         
+    def getLastModified(self, **kwargs):
+        return 0
+        
     def getData(self, *args, **kwargs):
         pass
     
@@ -16,6 +19,14 @@ class PlotDataSource(object):
         pass
 
 class PlotDataPunch(PlotDataSource):
+    def getLastModified(self, stationId = None, **kwargs):
+        if stationId is None:
+            return self.store.find(Transmission).max(Transmission.Modified)
+        else:
+            return self.store.find(Transmission, 
+                Transmission.BroadcastID == Broadcast.ID,
+                Broadcast.StationID == stationId).max(Transmission.Modified)
+    
     def select(self, **kwargs):
         return []
     
