@@ -179,7 +179,9 @@ class PlotColourCard(PlotPunchCard):
             xlist = [float(i)/float(subdivision) for i in xrange(int(-0.5*subdivision),int((xcount-1./float(mirrorMode))*subdivision+1))]
             ylist = [float(i)/float(subdivision) for i in xrange(int(-0.5*subdivision),int((ycount-1./float(mirrorMode))*subdivision+1))]
         
+        
         cs = ax.contourf(xlist, ylist, newdata, levels)
+        ax.contour(xlist, ylist, newdata, levels)
         cbar = figure.colorbar(cs, ax=ax, shrink=0.8, pad=(0. if not mirrored or mirrorMode == 1 else 0.01), fraction=0.06)
         for tick in cbar.ax.xaxis.get_major_ticks() + cbar.ax.yaxis.get_major_ticks():
             tick.label1.set_font_properties(fontProp)
