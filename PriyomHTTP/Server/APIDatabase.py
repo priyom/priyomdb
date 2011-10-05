@@ -32,6 +32,7 @@ from datetime import datetime
 from libPriyom.Formatting import priyomdate
 import netaddr
 from libPriyom.Helpers import TimeUtils
+from cfg_priyomhttpd import application
 
 rnd = random.SystemRandom()
 
@@ -194,7 +195,7 @@ class APIFileResource(object):
         hash.update(unicode(timestamp))
         digest = hash.hexdigest()
         
-        self.FileName = fileFormat.format(digest)
+        self.FileName = fileFormat.format(application["root"], digest)
     
     @staticmethod
     def createOrFind(store, refTable, id, resourceType, timestamp, fileFormat, createCallback):
