@@ -96,6 +96,9 @@ def get_site_map(priyomInterface):
                     u"colourcard-hw",
                     libPriyom.Station,
                     "stationId",
+                    subdivision=32,
+                    levels=23,
+                    mirrored=2,
                     allowNoId=True),
                 "hourMonthColourCard": PlotAPI(model, 
                     PlotDataSources.PlotDataMonthHourPunch(model.store), 
@@ -106,6 +109,9 @@ def get_site_map(priyomInterface):
                     u"colourcard-mw",
                     libPriyom.Station,
                     "stationId",
+                    subdivision=32,
+                    levels=23,
+                    mirrored=2,
                     allowNoId=True)
             })
         })
