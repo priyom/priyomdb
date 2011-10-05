@@ -225,7 +225,8 @@ class APIFileResource(object):
                                         APIFileResource.LocalID == id,
                                         APIFileResource.ResourceType == resourceType
                                     ):
-                        os.unlink(resource.FileName)
+                        if os.path.isfile(resource.FileName):
+                            os.unlink(resource.FileName)
                     item = APIFileResource(refTable, id, resourceType, timestamp, fileFormat)
                     store.add(item)
                     store.execute("UNLOCK TABLES")
