@@ -32,6 +32,8 @@ from datetime import datetime
 from libPriyom.Formatting import priyomdate
 import netaddr
 from libPriyom.Helpers import TimeUtils
+from cfg_priyomhttpd import application
+import os.path
 
 rnd = random.SystemRandom()
 
@@ -171,6 +173,78 @@ class APINews(object):
     
     def html_row(self):
         return u"""<tr><td>%s</td><th>%s</th><td><p>%s</p></td></tr>""" % (datetime.fromtimestamp(self.Timestamp).strftime(priyomdate), self.Title, self.Contents)
+        
+class APIFileResource(object):
+    __storm_table__ = "api-fileResources"
+    
+    ID = Int(primary=True)
+    ReferenceTable = Unicode()
+    LocalID = Int()
+    ResourceType = Unicode()
+    Timestamp = Int()
+    FileName = Unicode()
+    
+    def __init__(self, refTable, id, resourceType, timestamp, fileFormat):
+        self.ReferenceTable = refTable
+        self.LocalID = id
+        self.ResourceType = resourceType
+        self.Timestamp = timestamp
+        
+        hash = sha256(refTable)
+        hash.update(unicode(id))
+        hash.update(resourceType)
+        hash.update(unicode(timestamp))
+        digest = hash.hexdigest()
+        
+        self.FileName = fileFormat.format(application["root"], digest)
+    
+    @staticmethod
+    def createOrFind(store, refTable, id, resourceType, timestamp, fileFormat, createCallback):
+        store.execute("LOCK TABLES `api-fileResources` READ")
+        try:
+            item = store.find(
+                APIFileResource,
+                APIFileResource.ReferenceTable == refTable,
+                APIFileResource.LocalID == id,
+                APIFileResource.ResourceType == resourceType,
+                APIFileResource.Timestamp == timestamp
+            ).any()
+            if item is None:
+                store.execute("LOCK TABLES `api-fileResources` WRITE")
+                item = store.find(
+                    APIFileResource,
+                    APIFileResource.ReferenceTable == refTable,
+                    APIFileResource.LocalID == id,
+                    APIFileResource.ResourceType == resourceType,
+                    APIFileResource.Timestamp == timestamp
+                ).any()
+                if item is None:
+                    for resource in store.find(
+                                        APIFileResource, 
+                                        APIFileResource.ReferenceTable == refTable,
+                                        APIFileResource.LocalID == id,
+                                        APIFileResource.ResourceType == resourceType
+                                    ):
+                        os.unlink(resource.FileName)
+                    item = APIFileResource(refTable, id, resourceType, timestamp, fileFormat)
+                    store.add(item)
+                    store.execute("UNLOCK TABLES")
+                    store.flush()
+                    try:
+                        createCallback(item)
+                    except:
+                        store.execute("LOCK TABLES `api-fileResources` WRITE")
+                        store.remove(item)
+                        store.execute("UNLOCK TABLES")
+                        raise
+        finally:
+            store.execute("UNLOCK TABLES")
+        if not os.path.isfile(item.FileName):
+            store.execute("LOCK TABLES `api-fileResources` WRITE")
+            store.remove(item)
+            store.execute("UNLOCK TABLES")
+            return APIFileResource.createOrFind(store, refTable, id, resourceType, timestamp, fileFormat, createCallback)
+        return item
     
 APIKey.Capabilities = ReferenceSet(
     APIKey.ID, 

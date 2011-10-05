@@ -34,6 +34,8 @@ import libPriyom
 from Resources import *
 from Resources.API import *
 from Selectors import *
+import libPriyom.Plots as Plots
+import libPriyom.PlotDataSources as PlotDataSources
 import os.path
 
 from cfg_priyomhttpd import application, response
@@ -62,7 +64,57 @@ def get_site_map(priyomInterface):
         "getStationFrequencies": StationFrequenciesAPI(model),
         "instanciateSchedules": AuthorizationSelector(InstanciateSchedulesAPI(model), "instanciate"),
         "getTransmissionsByYear": TransmissionsByYearAPI(model),
-        "getDuplicatedTransmissionItems": DuplicatedTransmissionItemsAPI(model)
+        "getDuplicatedTransmissionItems": DuplicatedTransmissionItemsAPI(model),
+        "plot": MapSelector("plots", {
+            "station": MapSelector("station", {
+                "hourWeekPunchCard": PlotAPI(model, 
+                    PlotDataSources.PlotDataWeekHourPunch(model.store), 
+                    Plots.PlotPunchCard(), 
+                    [
+                        ("stationId", int, "stationId")
+                    ],
+                    u"punchcard-hw",
+                    libPriyom.Station,
+                    "stationId",
+                    allowNoId=True),
+                "hourMonthPunchCard": PlotAPI(model, 
+                    PlotDataSources.PlotDataMonthHourPunch(model.store), 
+                    Plots.PlotPunchCard(), 
+                    [
+                        ("stationId", int, "stationId")
+                    ],
+                    u"punchcard-mw",
+                    libPriyom.Station,
+                    "stationId",
+                    allowNoId=True),
+                "hourWeekColourCard": PlotAPI(model, 
+                    PlotDataSources.PlotDataWeekHourPunch(model.store), 
+                    Plots.PlotColourCard(), 
+                    [
+                        ("stationId", int, "stationId")
+                    ],
+                    u"colourcard-hw",
+                    libPriyom.Station,
+                    "stationId",
+                    subdivision=32,
+                    levels=23,
+                    mirrored=2,
+                    allowNoId=True),
+                "hourMonthColourCard": PlotAPI(model, 
+                    PlotDataSources.PlotDataMonthHourPunch(model.store), 
+                    Plots.PlotColourCard(), 
+                    [
+                        ("stationId", int, "stationId")
+                    ],
+                    u"colourcard-mw",
+                    libPriyom.Station,
+                    "stationId",
+                    subdivision=32,
+                    levels=23,
+                    mirrored=2,
+                    allowNoId=True)
+            })
+        })
     })
     apiMap.mapping[""] = apiMap
     
