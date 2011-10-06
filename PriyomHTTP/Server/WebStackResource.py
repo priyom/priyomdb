@@ -38,6 +38,12 @@ import libPriyom.Plots as Plots
 import libPriyom.PlotDataSources as PlotDataSources
 import os.path
 
+def intOrNone(str):
+    if str.lower() == "none":
+        return None
+    else:
+        return int(str)
+
 from cfg_priyomhttpd import application, response
 #from Resources.API.FindStations import FindStations
 #from Resources.API.FindBroadcasts import FindBroadcasts
@@ -73,20 +79,14 @@ def get_site_map(priyomInterface):
                     [
                         ("stationId", int, "stationId")
                     ],
-                    u"punchcard-hw",
-                    libPriyom.Station,
-                    "stationId",
-                    allowNoId=True),
+                    u"punchcard-hw"),
                 "hourMonthPunchCard": PlotAPI(model, 
                     PlotDataSources.PlotDataMonthHourPunch(model.store), 
                     Plots.PlotPunchCard(), 
                     [
                         ("stationId", int, "stationId")
                     ],
-                    u"punchcard-mw",
-                    libPriyom.Station,
-                    "stationId",
-                    allowNoId=True),
+                    u"punchcard-mw"),
                 "hourWeekColourCard": PlotAPI(model, 
                     PlotDataSources.PlotDataWeekHourPunch(model.store), 
                     Plots.PlotColourCard(), 
@@ -94,12 +94,9 @@ def get_site_map(priyomInterface):
                         ("stationId", int, "stationId")
                     ],
                     u"colourcard-hw",
-                    libPriyom.Station,
-                    "stationId",
                     subdivision=32,
                     levels=23,
-                    mirrored=2,
-                    allowNoId=True),
+                    mirrored=2),
                 "hourMonthColourCard": PlotAPI(model, 
                     PlotDataSources.PlotDataMonthHourPunch(model.store), 
                     Plots.PlotColourCard(), 
@@ -107,22 +104,18 @@ def get_site_map(priyomInterface):
                         ("stationId", int, "stationId")
                     ],
                     u"colourcard-mw",
-                    libPriyom.Station,
-                    "stationId",
                     subdivision=32,
                     levels=23,
-                    mirrored=2,
-                    allowNoId=True)
+                    mirrored=2)
             }),
             "uptime": PlotAPI(model,
                 PlotDataSources.PlotDataUptime(model.store),
                 Plots.PlotStackedGraph(),
-                [],
+                [
+                    ("years", intOrNone, "years", 5)
+                ],
                 u"uptime",
-                libPriyom.Station,
-                0,
-                years=5,
-                allowNoId=True)
+                years=5)
         })
     })
     apiMap.mapping[""] = apiMap
