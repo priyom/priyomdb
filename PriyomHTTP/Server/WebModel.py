@@ -108,7 +108,7 @@ class WebModel(object):
         def valid_storm_object(id):
             obj = store.get(type, id)
             if obj is None:
-                raise ValueError(u"{0} does not identify a valid {1}".format(id, type)
+                raise ValueError(u"{0} does not identify a valid {1}".format(id, type))
             return obj
         return valid_storm_object
         
