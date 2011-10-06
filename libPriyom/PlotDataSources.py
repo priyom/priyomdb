@@ -54,7 +54,7 @@ class PlotDataUptime(PlotDataSource):
                 prevStation = item[0]
             l.append(item[1:])
         if l is not None:
-            yield (item[0], l)
+            yield (prevStation, l)
             
     def _getMonthList(self, data):
         mapping = dict()
