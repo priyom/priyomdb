@@ -331,7 +331,7 @@ class PlotStackedGraph(PlotRenderer):
         i = 0
         for station, data in self.data:
             durations = [duration for year, month, duration in data]
-            plot = ax.bar(coords, durations, 1.0, color=defaultColours[i])
+            plot = ax.bar(coords, durations, 1.0, color=defaultColours[i], bottom=bottom)
             stationPlots.append(plot[0])
             bottom = [prevBottom+currHeight for prevBottom, currHeight in itertools.izip(bottom, durations)]
             i += 1
