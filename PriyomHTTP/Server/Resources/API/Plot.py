@@ -57,7 +57,8 @@ class PlotAPI(API):
                         args[kwName] = tuple[3]
                     else:
                         self.parameterError(queryName, u"must be {0}".format(typecast))
-                args[kwName] = self.query[queryName] if typecast is None else typecast(self.query[queryName])
+                else:
+                    args[kwName] = self.query[queryName] if typecast is None else typecast(self.query[queryName])
             except TypeError as e:
                 self.parameterError(queryName, unicode(e))
             except ValueError as e:
