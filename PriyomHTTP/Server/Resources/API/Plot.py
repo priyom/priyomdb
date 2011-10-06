@@ -49,20 +49,26 @@ class PlotAPI(API):
         
     def handle(self, trans):
         args = {}
+        query = self.query.copy()
         for tuple in self.queryArgs:
             queryName, typecast, kwName = tuple[:3]
             try:
-                if len(tuple) == 4:
-                    if not queryName in self.query:
+                if not queryName in self.query:
+                    if len(tuple) == 4:
                         args[kwName] = tuple[3]
                     else:
-                        if not queryName in self.query:
-                            self.parameterError(queryName, u"must be {0}".format(typecast))
-                        args[kwName] = self.query[queryName] if typecast is None else typecast(self.query[queryName])
+                        self.parameterError(queryName, u"must be {0}".format(typecast))
+                else:
+                    args[kwName] = query[queryName] if typecast is None else typecast(query[queryName])
+                    del query[queryName]
             except TypeError as e:
                 self.parameterError(queryName, unicode(e))
             except ValueError as e:
                 self.parameterError(queryName, unicode(e))
+        if len(query):
+            self.customParameterError(u"Unknown arguments:\n  {0}".format(
+                u"\n  ".join(query.iterkeys())
+            ))
         tmpArgs = self.plotArgs.copy()
         tmpArgs.update(args)
         lastModified = self.dataSource.getLastModified(**tmpArgs)
