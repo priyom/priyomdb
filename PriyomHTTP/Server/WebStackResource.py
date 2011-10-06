@@ -113,7 +113,15 @@ def get_site_map(priyomInterface):
                     levels=23,
                     mirrored=2,
                     allowNoId=True)
-            })
+            }),
+            "uptime": PlotAPI(model,
+                PlotDataSources.PlotDataUptime(model.store),
+                Plots.PlotStackedGraph(),
+                [],
+                u"uptime",
+                libPriyom.Station,
+                0,
+                allowNoId=True)
         })
     })
     apiMap.mapping[""] = apiMap
