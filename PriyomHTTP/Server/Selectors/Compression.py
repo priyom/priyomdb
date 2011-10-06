@@ -56,12 +56,13 @@ class CompressionSelector(object):
     
     def disableCompression(self):
         self.compressionEnabled = False
-        if isinstance(trans.content, CompressionStream):
-            trans.content = trans.content.close()
-            trans.content.seek(0)
-            trans.content.truncate(0)
+        if isinstance(self.trans.content, CompressionStream):
+            self.trans.content = self.trans.content.close()
+            self.trans.content.seek(0)
+            self.trans.content.truncate(0)
         
     def respond(self, trans):
+        self.trans = trans
         self.compressionEnabled = True
         trans.disableCompression = self.disableCompression
         accepted = [s.lstrip().rstrip() for s in (", ".join(trans.get_header_values("Accept-Encoding"))).split(",")]
