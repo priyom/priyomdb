@@ -43,6 +43,7 @@ def intOrNone(str):
         return None
     else:
         return int(str)
+    
 
 from cfg_priyomhttpd import application, response
 #from Resources.API.FindStations import FindStations
@@ -112,7 +113,7 @@ def get_site_map(priyomInterface):
                 PlotDataSources.PlotDataUptime(model.store),
                 Plots.PlotStackedGraph(),
                 [
-                    ("years", intOrNone, "years", 5)
+                    ("years", WebModel.rangeChecked(int, 1, 10), "years", 5)
                 ],
                 u"uptime",
                 years=5)
