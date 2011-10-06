@@ -35,8 +35,11 @@ def toTimestamp(datetime):
 def toDatetime(timestamp):
     return datetime.utcfromtimestamp(timestamp)
     
+def nowDate():
+    return datetime.utcnow()
+    
 def now():
-    return toTimestamp(datetime.utcnow())
+    return toTimestamp(nowDate())
     
 
 fromTimestamp = toDatetime
