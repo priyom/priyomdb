@@ -246,6 +246,7 @@ class PlotStackedGraph(PlotRenderer):
     def _plotGraph(self, dataSource, 
             fontFamily="sans", 
             fontSize=10, 
+            legendAlpha=0.75,
             **kwargs):
         global defaultColours
         fontProp = fonts.FontProperties(fontFamily, size=fontSize)
@@ -266,7 +267,8 @@ class PlotStackedGraph(PlotRenderer):
             i += 1
             if i >= len(defaultColours):
                 i = len(defaultColours)-1
-        ax.legend(stationPlots, [unicode(station) for station, stationData in data], loc='upper left', prop=fontProp)
+        legend = ax.legend(stationPlots, [unicode(station) for station, stationData in data], loc='upper left', prop=fontProp, fancybox=True)
+        legend.get_frame().set_alpha(legendAlpha)
         
         return figure
         
