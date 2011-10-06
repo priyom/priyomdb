@@ -102,6 +102,30 @@ class WebModel(object):
                 raise ValueError(u"value out of bounds ({1}..{2}): {0}".format(i, min if min is not None else u"-infinity", max if max is not None else u"infinity"))
             return i
         return range_checked
+        
+    @staticmethod
+    def validStormObject(type, store):
+        def valid_storm_object(id):
+            obj = store.get(type, id)
+            if obj is None:
+                raise ValueError(u"{0} does not identify a valid {1}".format(id, type)
+            return obj
+        return valid_storm_object
+        
+    @staticmethod
+    def validStation(store):
+        def valid_station(id):
+            obj = store.get(Station, id)
+            if obj is not None:
+                return obj
+            obj = store.find(Station, Station.EnigmaIdentifier == unicode(id))
+            if obj is not None:
+                return obj
+            obj = store.find(Station, Station.PriyomIdentifier == unicode(id))
+            if obj is None:
+                raise ValueError(u"{0} does not identify a valid {1}".format(id, Station))
+            return obj
+        return valid_station
     
     def __init__(self, priyomInterface):
         self.priyomInterface = priyomInterface
