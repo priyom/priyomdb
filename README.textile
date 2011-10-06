@@ -1,0 +1,5 @@
+h1. PriyomDB
+
+PriyomDB is a complex and sophisticated database to store, manage and analyze information about transmissions, focused on the analyzation and management of short wave radio messages.
+
+This is the python code running on our API server and is the glue between the priyom.org webservice and the mysql database. It provides access to certain well known queries via HTTP requests and returns XML.

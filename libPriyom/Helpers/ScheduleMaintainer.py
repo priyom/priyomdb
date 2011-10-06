@@ -1,3 +1,29 @@
+"""
+File name: ScheduleMaintainer.py
+This file is part of: priyomdb
+
+LICENSE
+
+The contents of this file are subject to the Mozilla Public License
+Version 1.1 (the "License"); you may not use this file except in
+compliance with the License. You may obtain a copy of the License at
+http://www.mozilla.org/MPL/
+
+Software distributed under the License is distributed on an "AS IS"
+basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+License for the specific language governing rights and limitations under
+the License.
+
+Alternatively, the contents of this file may be used under the terms of
+the GNU General Public license (the  "GPL License"), in which case  the
+provisions of GPL License are applicable instead of those above.
+
+FEEDBACK & QUESTIONS
+
+For feedback and questions about priyomdb please e-mail one of the
+authors:
+    Jonas Wielicki <j.wielicki@sotecware.net>
+"""
 from storm.locals import *
 from ..Broadcast import Broadcast, BroadcastFrequency
 from ..Schedule import Schedule, ScheduleLeaf
@@ -5,6 +31,7 @@ from ..Station import Station
 from time import mktime
 from datetime import datetime, timedelta
 from ..Limits import limits
+import TimeUtils
 
 class ScheduleMaintainerError(Exception):
     pass
@@ -41,16 +68,9 @@ class UpdateContext(object):
         self.intervalEnd = intervalEnd
 
 class ScheduleMaintainer(object):
-    def __init__(self, store):
-        self.store = store
-        
-    @staticmethod
-    def now():
-        return int(mktime(datetime.utcnow().timetuple()))
-        
-    @staticmethod
-    def toTimestamp(datetime):
-        return int(mktime(datetime.timetuple()))
+    def __init__(self, interface):
+        self.interface = interface
+        self.store = self.interface.store
         
     @staticmethod
     def incYear(dt, by):
@@ -170,7 +190,8 @@ class ScheduleMaintainer(object):
         return context.leafList.items
         
     def _rebuildStationSchedule(self, station, start, end):
-        self.store.find(Broadcast, Broadcast.StationID == station.ID, Broadcast.ScheduleLeaf != None, Broadcast.BroadcastStart > start).remove()
+        for broadcast in self.store.find(Broadcast, Broadcast.StationID == station.ID, Broadcast.ScheduleLeaf != None, Broadcast.BroadcastStart > start):
+            self.interface.deleteBroadcast(broadcast)
         leaves = self.getLeavesInIntervalFromRoot(station, start, end)
         for leaf in leaves:
             newBroadcast = Broadcast()
@@ -192,10 +213,10 @@ class ScheduleMaintainer(object):
         station.ScheduleUpToDateUntil = end
         
     def updateSchedule(self, station, until, limit = None):
-        now = ScheduleMaintainer.now()
+        now = TimeUtils.now()
         if station.Schedule is None:
             return until
-        if (until - now) > limits.schedule.maxLookahead:
+        if until is None or (until - now) > limits.schedule.maxLookahead:
             until = now + limits.schedule.maxLookahead
         if station.ScheduleUpToDateUntil is None:
             start = now
@@ -211,9 +232,7 @@ class ScheduleMaintainer(object):
     
     def updateSchedules(self, until, limit = None):
         now = ScheduleMaintainer.now()
-        if until < now:
-            return now
-        if (until - now) > limits.schedule.maxLookahead:
+        if until is None or (until - now) > limits.schedule.maxLookahead:
             until = now + limits.schedule.maxLookahead
         validUntil = until
         if limit is None:

@@ -1,6 +1,33 @@
+"""
+File name: XMLIntf.py
+This file is part of: priyomdb
+
+LICENSE
+
+The contents of this file are subject to the Mozilla Public License
+Version 1.1 (the "License"); you may not use this file except in
+compliance with the License. You may obtain a copy of the License at
+http://www.mozilla.org/MPL/
+
+Software distributed under the License is distributed on an "AS IS"
+basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+License for the specific language governing rights and limitations under
+the License.
+
+Alternatively, the contents of this file may be used under the terms of
+the GNU General Public license (the  "GPL License"), in which case  the
+provisions of GPL License are applicable instead of those above.
+
+FEEDBACK & QUESTIONS
+
+For feedback and questions about priyomdb please e-mail one of the
+authors:
+    Jonas Wielicki <j.wielicki@sotecware.net>
+"""
 import xml.dom.minidom as dom
 import datetime
 import Formatting
+from Helpers import TimeUtils
 
 namespace = "http://priyom.org/station-db"
 debugXml = False
@@ -25,7 +52,11 @@ class XMLStorm(object):
             if child.nodeType == dom.Node.ELEMENT_NODE:
                 if len(child.childNodes) == 1 and child.childNodes[0].nodeType == dom.Node.TEXT_NODE:
                     if child.tagName in self.xmlMapping:
-                        setattr(self, self.xmlMapping[child.tagName], child.childNodes[0].data)
+                        mapped = self.xmlMapping[child.tagName]
+                        if type(mapped) == tuple:
+                            setattr(self, mapped[0], mapped[1](child.childNodes[0].data))
+                        else:
+                            setattr(self, mapped, child.childNodes[0].data)
                     else:
                         self.loadProperty(child.tagName, child.childNodes[0].data, child, context)
                 elif len(child.childNodes) == 0:
@@ -77,7 +108,7 @@ def appendTextElements(parentNode, data, useNamespace = namespace, noneHandler =
         parentNode.appendChild(builder(doc, name, value))
 
 def appendDateElement(parentNode, name, value, useNamespace = namespace, doNotAppend = False):
-    date = datetime.datetime.fromtimestamp(value)
+    date = TimeUtils.fromTimestamp(value)
     node = appendTextElement(parentNode, name, date.strftime(Formatting.priyomdate), useNamespace, True)
     node.setAttribute("unix", unicode(value))
     if not doNotAppend:

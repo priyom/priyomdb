@@ -1,13 +1,40 @@
+"""
+File name: WebModel.py
+This file is part of: priyomdb
+
+LICENSE
+
+The contents of this file are subject to the Mozilla Public License
+Version 1.1 (the "License"); you may not use this file except in
+compliance with the License. You may obtain a copy of the License at
+http://www.mozilla.org/MPL/
+
+Software distributed under the License is distributed on an "AS IS"
+basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+License for the specific language governing rights and limitations under
+the License.
+
+Alternatively, the contents of this file may be used under the terms of
+the GNU General Public license (the  "GPL License"), in which case  the
+provisions of GPL License are applicable instead of those above.
+
+FEEDBACK & QUESTIONS
+
+For feedback and questions about priyomdb please e-mail one of the
+authors:
+    Jonas Wielicki <j.wielicki@sotecware.net>
+"""
 from storm.locals import AutoReload
 import xml.dom.minidom as dom
 import time
 import json
 from datetime import datetime, timedelta
-from libPriyom import Transmission, Station, Broadcast, Schedule
+from libPriyom import Transmission, Station, Broadcast, Schedule, TimeUtils
 from APIDatabase import Variable
 import re
 import cStringIO
 import io
+from cfg_priyomhttpd import application, misc
 
 weekdayname = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 monthname = [None, 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
@@ -105,12 +132,12 @@ class WebModel(object):
     def resetStore(self):
         self.store.reset()
         self.varLastUpdate = self.store.get(Variable, u"lastImport")
-        self.lastReset = self.now()
+        self.lastReset = int(TimeUtils.now())
         
     def getLastUpdate(self):
         self.getVarLastUpdate()
         if self.varLastUpdate is None:
-            return self.now()
+            return int(TimeUtils.now())
         return self.varLastUpdate.Value
         
     def domToXml(self, dom, encoding):
@@ -148,7 +175,7 @@ class WebModel(object):
         return dt.strftime("%%s, %d %%s %Y %T GMT") % (weekdayname[dt.weekday()], monthname[dt.month])
         
     def formatHTTPTimestamp(self, timestamp):
-        return self.formatHTTPDate(datetime.fromtimestamp(timestamp))
+        return self.formatHTTPDate(TimeUtils.toDatetime(timestamp))
         
     def parseHTTPDate(self, httpDate):
         global rfc1123, rfc850, asctime, monthname_to_idx
@@ -175,14 +202,11 @@ class WebModel(object):
         return datetime.strptime("%s %d %s %s" % (year, month, day, time), "%s %%m %%d %%H:%%M:%%S" % (standard["yearmode"]))
     
     def parseHTTPTimestamp(self, httpDate):
-        return self.toTimestamp(self.parseHTTPDate(httpDate))
-        
-    def now(self):
-        return self.priyomInterface.now()
+        return TimeUtils.toTimestamp(self.parseHTTPDate(httpDate))
         
     def importFromXml(self, doc, context = None, flags = None):
         context = self.priyomInterface.importTransaction(doc)
-        self.varLastUpdate.Value = unicode(self.now())
+        self.varLastUpdate.Value = unicode(int(TimeUtils.now()))
         self.store.commit()
         self.resetStore()
         return context
@@ -197,3 +221,16 @@ class WebModel(object):
     def importFromJsonStr(self, data, context = None, flags = None):
         tree = json.loads(data)
         return self.importFromJson(tree, context, flags)
+        
+    def formatHTMLTitle(self, pageTitle, appNameSuffix = u""):
+        return u"""{0}{1}{2}""".format(
+            pageTitle,
+            (misc.get("titleSeparator", u" ") + application["name"] + appNameSuffix) if "name" in application else u"",
+            (misc.get("titleSeparator", u" ") + application["host"]) if "host" in application else u""
+        )
+        
+    def rootPath(self, rootPath):
+        if len(rootPath) > 0 and rootPath[0] != u"/":
+            return application.get("urlroot", u"") + u"/" + rootPath
+        else:
+            return application.get("urlroot", u"") + rootPath

@@ -1,17 +1,44 @@
+"""
+File name: Interface.py
+This file is part of: priyomdb
+
+LICENSE
+
+The contents of this file are subject to the Mozilla Public License
+Version 1.1 (the "License"); you may not use this file except in
+compliance with the License. You may obtain a copy of the License at
+http://www.mozilla.org/MPL/
+
+Software distributed under the License is distributed on an "AS IS"
+basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+License for the specific language governing rights and limitations under
+the License.
+
+Alternatively, the contents of this file may be used under the terms of
+the GNU General Public license (the  "GPL License"), in which case  the
+provisions of GPL License are applicable instead of those above.
+
+FEEDBACK & QUESTIONS
+
+For feedback and questions about priyomdb please e-mail one of the
+authors:
+    Jonas Wielicki <j.wielicki@sotecware.net>
+"""
 from storm.locals import *
-from storm.expr import Func
+from storm.expr import *
 import Imports
 import XMLIntf
 import xml.dom.minidom as dom
 from Modulation import Modulation
 from Broadcast import BroadcastFrequency, Broadcast
-from Transmission import Transmission, TransmissionClass, TransmissionClassTable, TransmissionClassTableField
+from Transmission import Transmission, TransmissionClass, TransmissionTable, TransmissionTableField
 from Schedule import Schedule, ScheduleLeaf
 from Station import Station
 from Foreign import ForeignSupplement
 from Helpers.ScheduleMaintainer import ScheduleMaintainer
 import time
 from datetime import datetime, timedelta
+from Helpers import TimeUtils
 
 PAST = u"past"
 ONAIR = u"on-air"
@@ -34,17 +61,14 @@ class PriyomInterface:
         Station: "priyom-station-export",
         Broadcast: "priyom-broadcast-export",
         TransmissionClass: "priyom-generic-export",
-        TransmissionClassTable: "priyom-generic-export"
+        TransmissionTable: "priyom-generic-export"
     }
     
     def __init__(self, store):
         if store is None:
             raise ValueError("store must not be None.")
         self.store = store
-        self.scheduleMaintainer = ScheduleMaintainer(store)
-        
-    def now(self):
-        return int(time.mktime(datetime.utcnow().timetuple()))
+        self.scheduleMaintainer = ScheduleMaintainer(self)
         
     def createDocument(self, rootNodeName):
         return dom.getDOMImplementation().createDocument(XMLIntf.namespace, rootNodeName, None)
@@ -91,6 +115,49 @@ class PriyomInterface:
     def getImportContext(self):
         return Imports.ImportContext(self.store)
         
+    def garbageCollection(self):
+        staleBroadcasts = list((str(t[0]) for t in self.store.execute("""SELECT broadcasts.ID FROM broadcasts LEFT OUTER JOIN stations ON (broadcasts.StationID = stations.ID) WHERE stations.ID IS NULL""")))
+        if len(staleBroadcasts) > 0:
+            self.store.execute("""DELETE FROM broadcasts WHERE ID IN ({0})""".format(",".join(staleBroadcasts)))
+        
+        staleTransmissions = list((str(t[0]) for t in self.store.execute("""SELECT transmissions.ID FROM transmissions LEFT OUTER JOIN broadcasts ON (transmissions.BroadcastID = broadcasts.ID) WHERE broadcasts.ID IS NULL""")))
+        if len(staleTransmissions) > 0:
+            self.store.execute("""DELETE FROM transmissions WHERE ID IN ({0})""".format(",".join(staleTransmissions)))
+            
+        staleBroadcastFrequencies = list((str(t[0]) for t in self.store.execute("""SELECT broadcastFrequencies.ID FROM broadcastFrequencies LEFT OUTER JOIN broadcasts ON (broadcastFrequencies.BroadcastID = broadcasts.ID) WHERE broadcasts.ID IS NULL""")))
+        if len(staleBroadcastFrequencies) > 0:
+            self.store.execute("""DELETE FROM broadcastFrequencies WHERE ID IN ({0})""".format(",".join(staleBroadcastFrequencies)))
+        
+        foreignSupplementTables = {}
+        staleForeignSupplements = list()
+        for id, localID, fieldName in self.store.execute("""SELECT t.ID, t.LocalID, t.FieldName FROM foreignSupplement as t"""):
+            partitioned = fieldName.partition(".")
+            if len(partitioned[2]) == 0:
+                staleForeignSupplements.append(str(id))
+                continue
+            tableName = partitioned[0]
+            if not tableName in foreignSupplementTables:
+                foreignSupplementTables[tableName] = list()
+            foreignSupplementTables[tableName].append((localID, id))
+        if len(staleForeignSupplements) > 0:
+            self.store.execute("""DELETE FROM foreignSupplement WHERE ID IN ({0})""".format(",".join(staleForeignSupplements)))
+        
+        staleForeignSupplementCount = len(staleForeignSupplements)
+        for table, items in foreignSupplementTables.iteritems():
+            staleForeignSupplements = list((str(t[0]) for t in self.store.execute("""SELECT foreignSupplement.ID FROM foreignSupplement LEFT OUTER JOIN `{0}` ON (foreignSupplement.LocalID = `{0}`.ID) WHERE (`{0}`.ID IS NULL) AND (foreignSupplement.ID IN ({1}))""".format(table, ",".join((str(item[1]) for item in items))))))
+            if len(staleForeignSupplements) > 0:
+                self.store.execute("""DELETE FROM foreignSupplement WHERE ID IN ({0})""".format(",".join(staleForeignSupplements)))
+            staleForeignSupplementCount += len(staleForeignSupplements)
+            
+        staleTXItemCount = 0
+        for table in self.store.find(TransmissionTable):
+            staleTXItems = list((str(t[0]) for t in self.store.execute("""SELECT `{0}`.ID FROM `{0}` LEFT OUTER JOIN transmissions ON (`{0}`.TransmissionID = transmissions.ID) WHERE transmissions.ID IS NULL""".format(table.TableName))))
+            staleTXItemCount += len(staleTXItems)
+            if len(staleTXItems) > 0:
+                self.store.execute("""DELETE FROM `{0}` WHERE ID IN ({1})""".format(table.TableName, ",".join(staleTXItems)))
+        
+        return (len(staleBroadcasts), len(staleTransmissions), staleForeignSupplementCount, staleTXItemCount)
+        
     def deleteTransmissionBlock(self, obj, force = False):
         store = self.store
         obj.deleteForeignSupplements()
@@ -104,7 +171,7 @@ class PriyomInterface:
         if obj.ForeignCallsign is not None:
             Store.of(obj.ForeignCallsign.supplement).remove(obj.ForeignCallsign.supplement)
         if obj.Broadcast is not None:
-            obj.Broadcast.transmissionDeleted()
+            obj.Broadcast.transmissionRemoved()
         store.remove(obj)
         return True
         
@@ -165,8 +232,8 @@ class PriyomInterface:
             if transmissions.count() > 0:
                 return False
         store.find(BroadcastFrequency, BroadcastFrequency.BroadcastID == obj.ID).remove()
-        if self.Station is not None:
-            self.Station.broadcastDeleted()
+        if obj.Station is not None:
+            obj.Station.broadcastRemoved()
         store.remove(obj)
         return True
         
@@ -184,9 +251,6 @@ class PriyomInterface:
         
     def normalizeDate(self, dateTime):
         return datetime(year=dateTime.year, month=dateTime.month, day=dateTime.day)
-        
-    def toTimestamp(self, dateTime):
-        return time.mktime(dateTime.timetuple())
         
     def importTransaction(self, doc):
         context = self.getImportContext()
@@ -256,7 +320,7 @@ class PriyomInterface:
         wideBroadcasts = self.store.find(Broadcast, Broadcast.StationID == stationId)
         lastModified = max(
             wideBroadcasts.max(Broadcast.Modified), 
-            self.store.get(stationId).BroadcastDeleted
+            self.store.get(Station, stationId).BroadcastRemoved
         )
         if head:
             return (lastModified, None)
@@ -276,9 +340,9 @@ class PriyomInterface:
         objects = self.store.find(cls)
         lastModified = objects.max(cls.Modified)
         if cls == Transmission:
-            lastModified = max(lastModified, self.store.find(Broadcast).max(Broadcast.TransmissionDeleted))
+            lastModified = max(lastModified, self.store.find(Broadcast).max(Broadcast.TransmissionRemoved))
         elif cls == Broadcast:
-            lastModified = max(lastModified, self.store.find(Station).max(Station.BroadcastDeleted))
+            lastModified = max(lastModified, self.store.find(Station).max(Station.BroadcastRemoved))
         if head:
             return (lastModified, None)
         if notModifiedCheck is not None:
@@ -288,13 +352,17 @@ class PriyomInterface:
         return (lastModified, objects)
     
     def getTransmissionsByMonth(self, stationId, year, month, limiter = None, notModifiedCheck = None, head = False):
-        startTimestamp = datetime(year, month, 1)
-        if month != 12:
-            endTimestamp = datetime(year, month+1, 1)
+        if month is not None:
+            startTimestamp = datetime(year, month, 1)
+            if month != 12:
+                endTimestamp = datetime(year, month+1, 1)
+            else:
+                endTimestamp = datetime(year+1, 1, 1)
         else:
+            startTimestamp = datetime(year, 1, 1)
             endTimestamp = datetime(year+1, 1, 1)
-        startTimestamp = int(time.mktime(startTimestamp.timetuple()))
-        endTimestamp = int(time.mktime(endTimestamp.timetuple()))
+        startTimestamp = TimeUtils.toTimestamp(startTimestamp)
+        endTimestamp = TimeUtils.toTimestamp(endTimestamp)
         
         transmissions = self.store.find((Transmission, Broadcast), 
             Transmission.BroadcastID == Broadcast.ID,
@@ -303,13 +371,14 @@ class PriyomInterface:
                     Transmission.Timestamp < endTimestamp)))
         lastModified = max(
             transmissions.max(Transmission.Modified), 
-            self.store.find(Broadcast, Broadcast.StationID == stationId).max(Broadcast.TransmissionDeleted),
-            self.store.get(Station, stationId).BroadcastDeleted
+            self.store.find(Broadcast, Broadcast.StationID == stationId).max(Broadcast.TransmissionRemoved),
+            self.store.get(Station, stationId).BroadcastRemoved
         )
         if head:
             return (lastModified, None)
         if notModifiedCheck is not None:
             notModifiedCheck(lastModified)
+        transmissions.order_by(Asc(Transmission.Timestamp))
         if limiter is not None:
             transmissions = limiter(transmissions)
         return (lastModified, (transmission for (transmission, broadcast) in transmissions))
@@ -320,8 +389,8 @@ class PriyomInterface:
             Broadcast.StationID == stationId)
         lastModified = max(
             transmissions.max(Transmission.Modified),
-            self.store.find(Broadcast, Broadcast.StationID == stationId).max(Broadcast.TransmissionDeleted),
-            self.store.get(Station, stationId).BroadcastDeleted
+            self.store.find(Broadcast, Broadcast.StationID == stationId).max(Broadcast.TransmissionRemoved),
+            self.store.get(Station, stationId).BroadcastRemoved
         )
         if head:
             return (lastModified, None)
@@ -343,7 +412,7 @@ class PriyomInterface:
         broadcasts = self.store.find(Broadcast, where)
         lastModified = max(
             broadcasts.max(Broadcast.Modified),
-            station.BroadcastDeleted if station is not None else None,
+            station.BroadcastRemoved if station is not None else None,
             station.Schedule.Modified if (station is not None and station.Schedule is not None) else None
         )
         if head:
@@ -371,7 +440,7 @@ class PriyomInterface:
             Broadcast.StationID == station.ID)
         lastModified = max(
             broadcasts.max(Broadcast.Modified),
-            station.BroadcastDeleted
+            station.BroadcastRemoved
         )
         if station.Schedule is not None:
             scheduleLeafs = self.store.find(ScheduleLeaf,
@@ -392,3 +461,54 @@ class PriyomInterface:
             frequencies.group_by(Or(Func("ISNULL", Broadcast.BroadcastEnd), And(Broadcast.BroadcastEnd >= now, Broadcast.BroadcastStart <= now)), Broadcast.BroadcastStart > now, BroadcastFrequency.Frequency, Modulation.Name)
             
             return (lastModified, ((freq, modulation, UPCOMING if isUpcoming == 1 else (ONAIR if lastUse is None else PAST), nextUse if isUpcoming else lastUse) for (lastUse, nextUse, isUpcoming, freq, modulation) in frequencies))
+            
+    def getDuplicateTransmissions(self, txTable, mainStation, matchFields = None, includeOtherStationsWithin = 86400, notModifiedCheck = None, head = False):
+        txItem1 = ClassAlias(txTable.PythonClass, name="txItem1")
+        txItem2 = ClassAlias(txTable.PythonClass, name="txItem2")
+        
+        tx1 = ClassAlias(Transmission, name="tx1")
+        tx2 = ClassAlias(Transmission, name="tx2")
+        
+        bc1 = ClassAlias(Broadcast, name="broadcast1")
+        bc2 = ClassAlias(Broadcast, name="broadcast2")
+        
+        on = txItem1.TransmissionID > txItem2.TransmissionID
+        if matchFields is None:
+            matchFields = txTable.PythonClass.fields
+        for field in txTable.PythonClass.fields:
+            cond = getattr(txItem1, field.FieldName) == getattr(txItem2, field.FieldName)
+            on = And(on, cond)
+        
+        
+        dupes = self.store.using(
+            txItem1, 
+            LeftJoin(tx1, on=(txItem1.TransmissionID == tx1.ID)), 
+            LeftJoin(bc1, on=(tx1.BroadcastID == bc1.ID)),
+            LeftJoin(txItem2, on=on), 
+            LeftJoin(tx2, on=(txItem2.TransmissionID == tx2.ID)),
+            LeftJoin(bc2, on=(tx2.BroadcastID == bc2.ID))
+        ).find((bc1, tx1, txItem1, bc2, tx2, txItem2), 
+            And(
+                bc1.StationID == mainStation.ID,  
+                Or(
+                    bc2.StationID == mainStation.ID,
+                    Func("ABS", (tx2.Timestamp - tx1.Timestamp) <= includeOtherStationsWithin)
+                )
+            )
+        )
+        
+        lastModified = max(
+            dupes.max(tx1.Modified),
+            dupes.max(tx2.Modified),
+            dupes.max(bc1.TransmissionRemoved),
+            dupes.max(bc2.TransmissionRemoved),
+            self.store.find(Station).max(Station.BroadcastRemoved)
+        )
+        if head:
+            return (lastModified, None)
+        if notModifiedCheck is not None:
+            notModifiedCheck(lastModified)
+            
+            
+        return (lastModified, dupes.order_by(Asc(tx1.Timestamp)))
+            
