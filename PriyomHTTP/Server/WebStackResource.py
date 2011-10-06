@@ -113,6 +113,7 @@ def get_site_map(priyomInterface):
                 PlotDataSources.PlotDataUptime(model.store),
                 Plots.PlotStackedGraph(),
                 [
+                    ("station", WebModel.validStation(model.store), "station", None),
                     ("years", WebModel.rangeChecked(int, 1, 10), "years", 5)
                 ],
                 u"uptime",
