@@ -78,21 +78,21 @@ def get_site_map(priyomInterface):
                     PlotDataSources.PlotDataWeekHourPunch(model.store), 
                     Plots.PlotPunchCard(), 
                     [
-                        ("stationId", int, "stationId")
+                        ("station", WebModel.validStation(model.store), "station")
                     ],
                     u"punchcard-hw"),
                 "hourMonthPunchCard": PlotAPI(model, 
                     PlotDataSources.PlotDataMonthHourPunch(model.store), 
                     Plots.PlotPunchCard(), 
                     [
-                        ("stationId", int, "stationId")
+                        ("station", WebModel.validStation(model.store), "station")
                     ],
                     u"punchcard-mw"),
                 "hourWeekColourCard": PlotAPI(model, 
                     PlotDataSources.PlotDataWeekHourPunch(model.store), 
                     Plots.PlotColourCard(), 
                     [
-                        ("stationId", int, "stationId")
+                        ("station", WebModel.validStation(model.store), "station")
                     ],
                     u"colourcard-hw",
                     subdivision=32,
@@ -102,7 +102,7 @@ def get_site_map(priyomInterface):
                     PlotDataSources.PlotDataMonthHourPunch(model.store), 
                     Plots.PlotColourCard(), 
                     [
-                        ("stationId", int, "stationId")
+                        ("station", WebModel.validStation(model.store), "station")
                     ],
                     u"colourcard-mw",
                     subdivision=32,
