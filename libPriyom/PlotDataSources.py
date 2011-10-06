@@ -28,13 +28,15 @@ class PlotDataUptime(PlotDataSource):
         if stationId is None or stationId == 0:
             return max(
                         self.store.find(Broadcast, Broadcast.BroadcastEnd != None).max(Broadcast.Modified),
-                        self.store.find(Station).max(Station.BroadcastRemoved))
+                        self.store.find(Station).max(Station.BroadcastRemoved),
+                        self.store.find(Station).max(Station.Modified))
         else:
             return max(
                         self.store.find(Broadcast,
                             Broadcast.StationID == stationId,
                             Broadcast.BroadcastEnd != None).max(Broadcast.Modified),
-                        self.store.get(Station, stationId).BroadcastRemoved)
+                        self.store.get(Station, stationId).BroadcastRemoved,
+                        self.store.get(Station, stationId).Modified)
                         
     def getData(self, stationId = None, **kwargs):
         if stationId == 0:
