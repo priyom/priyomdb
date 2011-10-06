@@ -1,4 +1,8 @@
 #!/usr/bin/python2
+import sys
+sys.path.append('/etc/priyomdb/')
+from cfg_priyomhttpd import application
+sys.path.append(application["root"])
 from priyomdbtest import *
 from PriyomHTTP.Server.APIDatabase import APIFileResource
 import os
