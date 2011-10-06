@@ -34,6 +34,7 @@ import netaddr
 from libPriyom.Helpers import TimeUtils
 from cfg_priyomhttpd import application
 import os.path
+import binascii
 
 rnd = random.SystemRandom()
 
@@ -178,61 +179,56 @@ class APIFileResource(object):
     __storm_table__ = "api-fileResources"
     
     ID = Int(primary=True)
-    ReferenceTable = Unicode()
-    LocalID = Int()
     ResourceType = Unicode()
+    ParameterHash = RawStr()
     Timestamp = Int()
     FileName = Unicode()
     
-    def __init__(self, refTable, id, resourceType, timestamp, fileFormat):
-        self.ReferenceTable = refTable
-        self.LocalID = id
+    def __init__(self, resourceType, parameterHash, timestamp, fileFormat):
         self.ResourceType = resourceType
+        self.ParameterHash = parameterHash
         self.Timestamp = timestamp
         
-        hash = sha256(refTable)
-        hash.update(unicode(id))
-        hash.update(resourceType)
+        hash = sha256(resourceType)
+        hash.update(parameterHash)
         hash.update(unicode(timestamp))
         digest = hash.hexdigest()
         
         self.FileName = fileFormat.format(application["root"], digest)
     
     @staticmethod
-    def createOrFind(store, refTable, id, resourceType, timestamp, fileFormat, createCallback):
+    def createOrFind(store, resourceType, parameterDict, timestamp, fileFormat, createCallback):
+        parameterHash = binascii.unhexlify(sha256(unicode(parameterDict).encode("utf-8")).hexdigest())
         store.execute("LOCK TABLES `api-fileResources` READ")
         try:
             item = store.find(
                 APIFileResource,
-                APIFileResource.ReferenceTable == refTable,
-                APIFileResource.LocalID == id,
                 APIFileResource.ResourceType == resourceType,
+                APIFileResource.ParameterHash == parameterHash,
                 APIFileResource.Timestamp == timestamp
             ).any()
             if item is None:
                 store.execute("LOCK TABLES `api-fileResources` WRITE")
                 item = store.find(
                     APIFileResource,
-                    APIFileResource.ReferenceTable == refTable,
-                    APIFileResource.LocalID == id,
                     APIFileResource.ResourceType == resourceType,
+                    APIFileResource.ParameterHash == parameterHash,
                     APIFileResource.Timestamp == timestamp
                 ).any()
                 if item is None:
                     for resource in store.find(
                                         APIFileResource, 
-                                        APIFileResource.ReferenceTable == refTable,
-                                        APIFileResource.LocalID == id,
-                                        APIFileResource.ResourceType == resourceType
+                                        APIFileResource.ResourceType == resourceType,
+                                        APIFileResource.ParameterHash == parameterHash
                                     ):
                         if os.path.isfile(resource.FileName):
                             os.unlink(resource.FileName)
-                    item = APIFileResource(refTable, id, resourceType, timestamp, fileFormat)
+                    item = APIFileResource(resourceType, parameterHash, timestamp, fileFormat)
                     store.add(item)
                     store.execute("UNLOCK TABLES")
                     store.flush()
                     try:
-                        createCallback(item)
+                        createCallback(item, parameterDict)
                     except:
                         store.execute("LOCK TABLES `api-fileResources` WRITE")
                         store.remove(item)
@@ -244,7 +240,7 @@ class APIFileResource(object):
             store.execute("LOCK TABLES `api-fileResources` WRITE")
             store.remove(item)
             store.execute("UNLOCK TABLES")
-            return APIFileResource.createOrFind(store, refTable, id, resourceType, timestamp, fileFormat, createCallback)
+            return APIFileResource.createOrFind(store, resourceType, parameterDict, timestamp, fileFormat, createCallback)
         return item
     
 APIKey.Capabilities = ReferenceSet(

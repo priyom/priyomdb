@@ -24,56 +24,64 @@ For feedback and questions about priyomdb please e-mail one of the
 authors:
     Jonas Wielicki <j.wielicki@sotecware.net>
 """
-from WebStack.Generic import ContentType
+from WebStack.Generic import ContentType, EndOfResponse
 from libPriyom import *
 from API import API, CallSyntax, Argument
 from ...APIDatabase import APIFileResource
 import mmap
 from cfg_priyomhttpd import application
+from libPriyom.PlotDataSources import NoDataError, NoDataArgError
 
 class PlotAPI(API):
-    def __init__(self, model, dataSource, renderer, queryArgs, resourceType, cls, idOrKey, fileFormat=u"{0}/{{1}}.png", contentType=ContentType("image/png"), allowNoId=False, **kwargs):
+    def __init__(self, model, dataSource, renderer, queryArgs, resourceType, fileFormat=u"{0}/{{1}}.png", contentType=ContentType("image/png"), **kwargs):
         super(API, self).__init__(model)
         self.dataSource = dataSource
         self.renderer = renderer
         self.plotArgs = kwargs
         self.allowedMethods = frozenset(['GET'])
         self.queryArgs = queryArgs
-        self.idOrKey = idOrKey
-        self.cls = cls
         self.resourceType = resourceType
-        cls.Modified
-        self.allowNoId = allowNoId
         self.fileFormat = fileFormat.format(application["plots"])
         self.contentType = contentType
         
-    def plot(self, resource):
-        self.renderer.plotGraph(self.dataSource, resource.FileName, dpi=72, format="png", transparent=True, **self.tmpArgs)
+    def plot(self, resource, tmpArgs):
+        self.renderer.plotGraph(self.dataSource, resource.FileName, dpi=72, format="png", transparent=True, **tmpArgs)
         
     def handle(self, trans):
         args = {}
-        for queryName, typecast, kwName in self.queryArgs:
+        for tuple in self.queryArgs:
+            queryName, typecast, kwName = tuple[:3]
             try:
-                args[kwName] = self.query[queryName] if typecast is None else typecast(self.query[queryName])
+                if len(tuple) == 4:
+                    if not queryName in self.query:
+                        args[kwName] = tuple[3]
+                    else:
+                        if not queryName in self.query:
+                            self.parameterError(queryName, u"must be {0}".format(typecast))
+                        args[kwName] = self.query[queryName] if typecast is None else typecast(self.query[queryName])
             except TypeError as e:
                 self.parameterError(queryName, unicode(e))
             except ValueError as e:
                 self.parameterError(queryName, unicode(e))
-        if type(self.idOrKey) == int:
-            id = self.idOrKey
-        else:
-            id = int(args.get(self.idOrKey, 0))
-        if id == 0 and not self.allowNoId:
-            self.parameterError(u"", u"No id specified")
-        self.tmpArgs = self.plotArgs.copy()
-        self.tmpArgs.update(args)
-        lastModified = self.dataSource.getLastModified(**self.tmpArgs)
+        tmpArgs = self.plotArgs.copy()
+        tmpArgs.update(args)
+        lastModified = self.dataSource.getLastModified(**tmpArgs)
         
-        trans.set_content_type(self.contentType)
-        trans.set_header_value("Last-Modified", self.model.formatHTTPTimestamp(lastModified))
-        self.autoNotModified(lastModified)
+        try:
+            if lastModified is None:
+                raise NoDataArgError(tmpArgs)
+            
+            trans.set_content_type(self.contentType)
+            trans.set_header_value("Last-Modified", self.model.formatHTTPTimestamp(lastModified))
+            self.autoNotModified(lastModified)
         
-        item = APIFileResource.createOrFind(self.store, unicode(self.cls.__storm_table__), id, self.resourceType, lastModified, self.fileFormat, self.plot)
+            item = APIFileResource.createOrFind(self.store, self.resourceType, tmpArgs, lastModified, self.fileFormat, self.plot)
+        except NoDataError as e:
+            trans.set_response_code(404)
+            trans.set_content_type(ContentType("text/plain", self.encoding))
+            print >>self.out, unicode(e).encode(self.encoding)
+            raise EndOfResponse
+            
         if item is not None:
             img = open(item.FileName, "rb")
             map = mmap.mmap(img.fileno(), 0, flags=mmap.MAP_SHARED, prot=mmap.PROT_READ)
