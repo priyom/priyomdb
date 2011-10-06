@@ -50,8 +50,8 @@ class PlotDataUptime(PlotDataSource):
     yborder_bottom = 0.14
     yborder_top = 0.03
     
-    def getLastModified(self, stationId = None, **kwargs):
-        if stationId is None or stationId == 0:
+    def getLastModified(self, station = None, **kwargs):
+        if station is None:
             return max(
                         self.store.find(Broadcast, Broadcast.BroadcastEnd != None).max(Broadcast.Modified),
                         self.store.find(Station).max(Station.BroadcastRemoved),
@@ -59,10 +59,10 @@ class PlotDataUptime(PlotDataSource):
         else:
             return max(
                         self.store.find(Broadcast,
-                            Broadcast.StationID == stationId,
+                            Broadcast.StationID == station.ID,
                             Broadcast.BroadcastEnd != None).max(Broadcast.Modified),
-                        self.store.get(Station, stationId).BroadcastRemoved,
-                        self.store.get(Station, stationId).Modified)
+                        station.BroadcastRemoved,
+                        station.Modified)
             
     def _splitData(self, data):
         prevStation = None
@@ -124,14 +124,12 @@ class PlotDataUptime(PlotDataSource):
             yield item
         yield list[-1]
                         
-    def getData(self, stationId = None, 
+    def getData(self, station = None, 
             years=None,
             **kwargs):
-        if stationId == 0:
-            stationId = None
         where = Broadcast.BroadcastEnd != None
-        if stationId is not None:
-            where = And(where, Broadcast.StationID == stationId)
+        if station is not None:
+            where = And(where, Broadcast.StationID == station.ID)
         if years is not None:
             now = TimeUtils.nowDate()
             where = And(where, Broadcast.BroadcastStart >= TimeUtils.toTimestamp(datetime(year=now.year-years, month=now.month, day=1)))
@@ -148,7 +146,7 @@ class PlotDataUptime(PlotDataSource):
         
         data = list(self._splitData(data))
         if len(data) == 0:
-            raise NoDataArgError(kwargs, stationId=stationId, years=years)
+            raise NoDataArgError(kwargs, station=station, years=years)
         monthList = list(self._getMonthList(data))
         data = list(self._mapData(data, monthList))
         data.sort(key=lambda x: unicode(x[0]))
@@ -208,8 +206,8 @@ class PlotDataUptime(PlotDataSource):
         
 
 class PlotDataPunch(PlotDataSource):
-    def getLastModified(self, stationId = None, **kwargs):
-        if stationId is None or stationId == 0:
+    def getLastModified(self, station = None, **kwargs):
+        if station is None:
             return max(
                     self.store.find(Transmission).max(Transmission.Modified),
                     self.store.find(Broadcast).max(Broadcast.TransmissionRemoved),
@@ -218,9 +216,9 @@ class PlotDataPunch(PlotDataSource):
             return max(
                     self.store.find(Transmission, 
                         Transmission.BroadcastID == Broadcast.ID,
-                        Broadcast.StationID == stationId).max(Transmission.Modified),
-                    self.store.find(Broadcast, Broadcast.StationID == stationId).max(Broadcast.TransmissionRemoved),
-                    self.store.get(Station, stationId).BroadcastRemoved)
+                        Broadcast.StationID == station.ID).max(Transmission.Modified),
+                    self.store.find(Broadcast, Broadcast.StationID == station.ID).max(Broadcast.TransmissionRemoved),
+                    station.BroadcastRemoved)
     
     def select(self, **kwargs):
         return []
@@ -289,19 +287,19 @@ class PlotDataWeekHourPunch(PlotDataPunch):
     xtickLabels = ["{0:02d}z".format(i) for i in xrange(0, 24)]
     ytickLabels = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
     
-    def select(self, stationId = None, **kwargs):
+    def select(self, station = None, **kwargs):
         cols = (
             Func("DAYOFWEEK", Func("FROM_UNIXTIME", Transmission.Timestamp)),
             Func("HOUR", Func("FROM_UNIXTIME", Transmission.Timestamp))
         )
         data = None
-        if stationId is None:
+        if station is None:
             data = self.store.find(cols)
         else:
             data = self.store.find(
                 cols,
                 Transmission.BroadcastID == Broadcast.ID,
-                Broadcast.StationID == stationId
+                Broadcast.StationID == station.ID
             )
         return data
 
@@ -318,18 +316,18 @@ class PlotDataMonthHourPunch(PlotDataPunch):
     xtickLabels = PlotDataWeekHourPunch.xtickLabels
     ytickLabels = TimeUtils.monthname
     
-    def select(self, stationId = None, **kwargs):
+    def select(self, station = None, **kwargs):
         cols = (
             Func("MONTH", Func("FROM_UNIXTIME", Transmission.Timestamp)),
             Func("HOUR", Func("FROM_UNIXTIME", Transmission.Timestamp))
         )
         data = None
-        if stationId is None:
+        if station is None:
             data = self.store.find(cols)
         else:
             data = self.store.find(
                 cols,
                 Transmission.BroadcastID == Broadcast.ID,
-                Broadcast.StationID == stationId
+                Broadcast.StationID == station.ID
             )
         return data
