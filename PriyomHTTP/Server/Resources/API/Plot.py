@@ -77,6 +77,7 @@ class PlotAPI(API):
         if item is not None:
             img = open(item.FileName, "rb")
             map = mmap.mmap(img.fileno(), 0, flags=mmap.MAP_SHARED, prot=mmap.PROT_READ)
+            trans.disableCompression()
             print >>self.out, map.read(map.size())
             map.close()
             img.close()
