@@ -38,6 +38,12 @@ import libPriyom.Plots as Plots
 import libPriyom.PlotDataSources as PlotDataSources
 import os.path
 
+def intOrNone(str):
+    if str.lower() == "none":
+        return None
+    else:
+        return int(str)
+
 from cfg_priyomhttpd import application, response
 #from Resources.API.FindStations import FindStations
 #from Resources.API.FindBroadcasts import FindBroadcasts
@@ -105,7 +111,9 @@ def get_site_map(priyomInterface):
             "uptime": PlotAPI(model,
                 PlotDataSources.PlotDataUptime(model.store),
                 Plots.PlotStackedGraph(),
-                [],
+                [
+                    ("years", intOrNone, "years", 5)
+                ],
                 u"uptime",
                 years=5)
         })
