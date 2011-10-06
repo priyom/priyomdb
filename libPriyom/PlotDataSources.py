@@ -124,7 +124,6 @@ class PlotDataUptime(PlotDataSource):
         ).group_by(Station, Func("YEAR", Func("FROM_UNIXTIME", Broadcast.BroadcastStart)), Func("MONTH", Func("FROM_UNIXTIME", Broadcast.BroadcastStart)))
         
         data = list(self._splitData(data))
-        print(data)
         monthList = list(self._getMonthList(data))
         data = list(self._mapData(data, monthList))
         data.sort(key=lambda x: unicode(x[0]))
