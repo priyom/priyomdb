@@ -170,8 +170,8 @@ class PlotDataUptime(PlotDataSource):
         **kwargs):
         
         width = self.width if years is None else years*2
-        if width > self.width:
-            width = width / 2.
+        #if width > self.width:
+        #    width = width / 2.
         if width < 5:
             width = 5
         xborder_left = self.width / width * self.xborder_left
