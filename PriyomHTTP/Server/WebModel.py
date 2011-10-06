@@ -91,6 +91,18 @@ class Encoder(io.IOBase):
         self.buffer.close()
 
 class WebModel(object):
+    # some typecasts
+    @staticmethod    
+    def rangeChecked(type, min, max):
+        def range_checked(s):
+            i = type(s)
+            if i is None:
+                return None
+            if ((min is not None) and (min > i)) or ((max is not None) and (max < i)):
+                raise ValueError(u"value out of bounds ({1}..{2}): {0}".format(i, min if min is not None else u"-infinity", max if max is not None else u"infinity"))
+            return i
+        return range_checked
+    
     def __init__(self, priyomInterface):
         self.priyomInterface = priyomInterface
         self.store = self.priyomInterface.store
