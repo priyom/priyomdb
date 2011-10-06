@@ -27,6 +27,8 @@ authors:
 from datetime import datetime, timedelta
 from calendar import timegm
 
+monthname = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+
 def toTimestamp(datetime):
     return timegm(datetime.utctimetuple())
     
@@ -35,5 +37,6 @@ def toDatetime(timestamp):
     
 def now():
     return toTimestamp(datetime.utcnow())
+    
 
 fromTimestamp = toDatetime
