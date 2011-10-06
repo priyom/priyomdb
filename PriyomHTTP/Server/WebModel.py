@@ -106,7 +106,7 @@ class WebModel(object):
     @staticmethod
     def validStormObject(type, store):
         def valid_storm_object(id):
-            obj = store.get(type, id)
+            obj = store.get(type, int(id))
             if obj is None:
                 raise ValueError(u"{0} does not identify a valid {1}".format(id, type))
             return obj
@@ -115,13 +115,19 @@ class WebModel(object):
     @staticmethod
     def validStation(store):
         def valid_station(id):
-            obj = store.get(Station, id)
+            intId = None
+            try:
+                intId = int(id)
+            except ValueError:
+                pass
+            if intId is not None:
+                obj = store.get(Station, intId)
+                if obj is not None:
+                    return obj
+            obj = store.find(Station, Station.EnigmaIdentifier == unicode(id)).any()
             if obj is not None:
                 return obj
-            obj = store.find(Station, Station.EnigmaIdentifier == unicode(id))
-            if obj is not None:
-                return obj
-            obj = store.find(Station, Station.PriyomIdentifier == unicode(id))
+            obj = store.find(Station, Station.PriyomIdentifier == unicode(id)).any()
             if obj is None:
                 raise ValueError(u"{0} does not identify a valid {1}".format(id, Station))
             return obj
