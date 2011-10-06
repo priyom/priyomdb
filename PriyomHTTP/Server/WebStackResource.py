@@ -73,20 +73,14 @@ def get_site_map(priyomInterface):
                     [
                         ("stationId", int, "stationId")
                     ],
-                    u"punchcard-hw",
-                    libPriyom.Station,
-                    "stationId",
-                    allowNoId=True),
+                    u"punchcard-hw"),
                 "hourMonthPunchCard": PlotAPI(model, 
                     PlotDataSources.PlotDataMonthHourPunch(model.store), 
                     Plots.PlotPunchCard(), 
                     [
                         ("stationId", int, "stationId")
                     ],
-                    u"punchcard-mw",
-                    libPriyom.Station,
-                    "stationId",
-                    allowNoId=True),
+                    u"punchcard-mw"),
                 "hourWeekColourCard": PlotAPI(model, 
                     PlotDataSources.PlotDataWeekHourPunch(model.store), 
                     Plots.PlotColourCard(), 
@@ -94,12 +88,9 @@ def get_site_map(priyomInterface):
                         ("stationId", int, "stationId")
                     ],
                     u"colourcard-hw",
-                    libPriyom.Station,
-                    "stationId",
                     subdivision=32,
                     levels=23,
-                    mirrored=2,
-                    allowNoId=True),
+                    mirrored=2),
                 "hourMonthColourCard": PlotAPI(model, 
                     PlotDataSources.PlotDataMonthHourPunch(model.store), 
                     Plots.PlotColourCard(), 
@@ -107,22 +98,16 @@ def get_site_map(priyomInterface):
                         ("stationId", int, "stationId")
                     ],
                     u"colourcard-mw",
-                    libPriyom.Station,
-                    "stationId",
                     subdivision=32,
                     levels=23,
-                    mirrored=2,
-                    allowNoId=True)
+                    mirrored=2)
             }),
             "uptime": PlotAPI(model,
                 PlotDataSources.PlotDataUptime(model.store),
                 Plots.PlotStackedGraph(),
                 [],
                 u"uptime",
-                libPriyom.Station,
-                0,
-                years=5,
-                allowNoId=True)
+                years=5)
         })
     })
     apiMap.mapping[""] = apiMap
