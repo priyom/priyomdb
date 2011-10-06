@@ -6,7 +6,30 @@ from Station import Station
 from Helpers import TimeUtils
 import itertools
 
-__all__ = ['PlotDataSource', 'PlotDataPunch', 'PlotDataWeekHourPunch', 'PlotDataMonthHourPunch', 'PlotDataUptime']
+__all__ = ['NoDataError', 'NoDataArgError', 'PlotDataSource', 'PlotDataPunch', 'PlotDataWeekHourPunch', 'PlotDataMonthHourPunch', 'PlotDataUptime']
+
+class NoDataError(BaseException):
+    defaultMessage = u"No data available with these parameters."
+    
+    def __init__(self, message = None):
+        if message is None:
+            super(NoDataError, self).__init__(self.defaultMessage)
+        else:
+            super(NoDataError, self).__init__(message)
+            
+class NoDataArgError(NoDataError):
+    defaultDictMessage = u"No data available with these parameters: {0}."
+    
+    def __init__(self, d, **kwargs):
+        d = d.copy()
+        d.update(kwargs)
+        super(NoDataArgError, self).__init__(d)
+    
+    def __unicode__(self):
+        if type(self.message) == dict:
+            return self.defaultDictMessage.format(u"; ".join((u"{0}={1}".format(unicode(key), repr(value)) for key, value in self.message.iteritems())))
+        else:
+            return unicode(self.message)
 
 class PlotDataSource(object):
     def __init__(self, store):
@@ -124,6 +147,8 @@ class PlotDataUptime(PlotDataSource):
         ).group_by(Station, Func("YEAR", Func("FROM_UNIXTIME", Broadcast.BroadcastStart)), Func("MONTH", Func("FROM_UNIXTIME", Broadcast.BroadcastStart)))
         
         data = list(self._splitData(data))
+        if len(data) == 0:
+            raise NoDataArgError(kwargs, stationId=stationId, years=years)
         monthList = list(self._getMonthList(data))
         data = list(self._mapData(data, monthList))
         data.sort(key=lambda x: unicode(x[0]))

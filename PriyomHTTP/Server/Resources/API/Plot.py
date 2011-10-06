@@ -24,12 +24,13 @@ For feedback and questions about priyomdb please e-mail one of the
 authors:
     Jonas Wielicki <j.wielicki@sotecware.net>
 """
-from WebStack.Generic import ContentType
+from WebStack.Generic import ContentType, EndOfResponse
 from libPriyom import *
 from API import API, CallSyntax, Argument
 from ...APIDatabase import APIFileResource
 import mmap
 from cfg_priyomhttpd import application
+from libPriyom.PlotDataSources import NoDataError, NoDataArgError
 
 class PlotAPI(API):
     def __init__(self, model, dataSource, renderer, queryArgs, resourceType, fileFormat=u"{0}/{{1}}.png", contentType=ContentType("image/png"), **kwargs):
@@ -66,11 +67,21 @@ class PlotAPI(API):
         tmpArgs.update(args)
         lastModified = self.dataSource.getLastModified(**tmpArgs)
         
-        trans.set_content_type(self.contentType)
-        trans.set_header_value("Last-Modified", self.model.formatHTTPTimestamp(lastModified))
-        self.autoNotModified(lastModified)
+        try:
+            if lastModified is None:
+                raise NoDataArgError(tmpArgs)
+            
+            trans.set_content_type(self.contentType)
+            trans.set_header_value("Last-Modified", self.model.formatHTTPTimestamp(lastModified))
+            self.autoNotModified(lastModified)
         
-        item = APIFileResource.createOrFind(self.store, self.resourceType, tmpArgs, lastModified, self.fileFormat, self.plot)
+            item = APIFileResource.createOrFind(self.store, self.resourceType, tmpArgs, lastModified, self.fileFormat, self.plot)
+        except NoDataError as e:
+            trans.set_response_code(404)
+            trans.set_content_type(ContentType("text/plain", self.encoding))
+            print >>self.out, unicode(e).encode(self.encoding)
+            raise EndOfResponse
+            
         if item is not None:
             img = open(item.FileName, "rb")
             map = mmap.mmap(img.fileno(), 0, flags=mmap.MAP_SHARED, prot=mmap.PROT_READ)
