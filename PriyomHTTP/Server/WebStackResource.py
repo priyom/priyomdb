@@ -121,6 +121,7 @@ def get_site_map(priyomInterface):
                 u"uptime",
                 libPriyom.Station,
                 0,
+                years=5,
                 allowNoId=True)
         })
     })
