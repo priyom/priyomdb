@@ -122,6 +122,7 @@ class PlotDataUptime(PlotDataSource):
         data = list(self._splitData(data))
         monthList = list(self._getMonthList(data))
         data = list(self._mapData(data, monthList))
+        data.sort(key=lambda x: unicode(x[0]))
         
         dateList = [datetime(year, month+1, day=1, hour=0, minute=0) for year, month in monthList]
         xticks = list(self._filterTicksExt(dateList, monthList))
