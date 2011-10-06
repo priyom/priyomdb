@@ -45,12 +45,16 @@ class PlotDataUptime(PlotDataSource):
         prevStation = None
         l = None
         for item in data:
+            if float(item[3]) == 0:
+                continue
             if prevStation != item[0]:
                 if l is not None:
                     yield (prevStation, l)
                 l = list()
                 prevStation = item[0]
             l.append(item[1:])
+        if l is not None:
+            yield (item[0], l)
             
     def _getMonthList(self, data):
         mapping = dict()
@@ -120,6 +124,7 @@ class PlotDataUptime(PlotDataSource):
         ).group_by(Station, Func("YEAR", Func("FROM_UNIXTIME", Broadcast.BroadcastStart)), Func("MONTH", Func("FROM_UNIXTIME", Broadcast.BroadcastStart)))
         
         data = list(self._splitData(data))
+        print(data)
         monthList = list(self._getMonthList(data))
         data = list(self._mapData(data, monthList))
         data.sort(key=lambda x: unicode(x[0]))
