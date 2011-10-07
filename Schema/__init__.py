@@ -193,6 +193,25 @@ DatabaseSchema = Schema(
     PRIMARY KEY (`ID`),
     KEY `Modified` (`Modified`)
 ) ENGINE=MyISAM  DEFAULT CHARSET=utf8;""",
+
+"""CREATE TABLE `eventClass` (
+    `ID` INT NOT NULL AUTO_INCREMENT,
+    `Title` VARCHAR(255) NOT NULL COMMENT 'title of the event class',
+    PRIMARY KEY (`ID`)
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8""",
+
+"""CREATE TABLE `events` (
+    `ID` INT NOT NULL AUTO_INCREMENT,
+    `Created` BIGINT NOT NULL COMMENT 'creation date of row',
+    `Modified` BIGINT NOT NULL COMMENT 'last modification date of row',
+    `StationID` INT NOT NULL COMMENT 'station to which the ID is associated',
+    `EventClassID` INT DEFAULT NULL COMMENT 'event class, NULL for raw event',
+    `Description` TEXT NOT NULL COMMENT 'descriptive text of the event',
+    `StartTime` BIGINT NOT NULL COMMENT 'start time of the event, or time singularity of the event if EndTime is NULL',
+    `EndTime` BIGINT NOT NULL COMMENT 'end time of the event or NULL if its a singularity',
+    PRIMARY KEY (`ID`)
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8""",
+
 """CREATE TABLE `api-capabilities` (
     `ID` INT NOT NULL AUTO_INCREMENT,
     `Capability` VARCHAR(255) NOT NULL,
