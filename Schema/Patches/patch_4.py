@@ -1,5 +1,5 @@
 """
-File name: TimeUtils.py
+File name: patch_4.py
 This file is part of: priyomdb
 
 LICENSE
@@ -24,22 +24,21 @@ For feedback and questions about priyomdb please e-mail one of the
 authors:
     Jonas Wielicki <j.wielicki@sotecware.net>
 """
-from datetime import datetime, timedelta
-from calendar import timegm
 
-monthname = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+def apply(store):
+    statements = [
+"""RENAME TABLE `transmissionClassTables` TO `transmissionTables`;""",
+"""RENAME TABLE `transmissionClassTableFields` TO `transmissionTableFields`;"""
+"""CREATE TABLE `transmissionClassTables` (
+    `ClassID` INT NOT NULL,
+    `TableID` INT NOT NULL,
+    PRIMARY KEY (`ClassID`, `TableID`)
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8;""",
+"""INSERT INTO `transmissionClassTables` (`ClassID`, `TableID`) SELECT `TransmissionClassID`, `ID` FROM `transmissionTables`;""",
+"""ALTER TABLE `transmissionClassTables` DROP `TransmissionClassID`;""",
+"""ALTER TABLE `transmissionTableFields` CHANGE `TransmissionClassTableID` `TransmissionTableID` INT NOT NULL COMMENT 'references transmissionTables entry';"""
+]
+    for statement in statements:
+        store.execute(statement)
 
-def toTimestamp(datetime):
-    return timegm(datetime.utctimetuple())
-    
-def toDatetime(timestamp):
-    return datetime.utcfromtimestamp(timestamp)
-    
-def nowDate():
-    return datetime.utcnow()
-    
-def now():
-    return toTimestamp(nowDate())
-    
 
-fromTimestamp = toDatetime

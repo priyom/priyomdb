@@ -34,7 +34,16 @@ import libPriyom
 from Resources import *
 from Resources.API import *
 from Selectors import *
+import libPriyom.Plots as Plots
+import libPriyom.PlotDataSources as PlotDataSources
 import os.path
+
+def intOrNone(str):
+    if str.lower() == "none":
+        return None
+    else:
+        return int(str)
+    
 
 from cfg_priyomhttpd import application, response
 #from Resources.API.FindStations import FindStations
@@ -62,7 +71,54 @@ def get_site_map(priyomInterface):
         "getStationFrequencies": StationFrequenciesAPI(model),
         "instanciateSchedules": AuthorizationSelector(InstanciateSchedulesAPI(model), "instanciate"),
         "getTransmissionsByYear": TransmissionsByYearAPI(model),
-        "getDuplicatedTransmissionItems": DuplicatedTransmissionItemsAPI(model)
+        "getDuplicatedTransmissionItems": DuplicatedTransmissionItemsAPI(model),
+        "plot": MapSelector("plots", {
+            "station": MapSelector("station", {
+                "hourWeekPunchCard": PlotAPI(model, 
+                    PlotDataSources.PlotDataWeekHourPunch(model.store), 
+                    Plots.PlotPunchCard(), 
+                    [
+                        ("station", WebModel.validStation(model.store), "station")
+                    ],
+                    u"punchcard-hw"),
+                "hourMonthPunchCard": PlotAPI(model, 
+                    PlotDataSources.PlotDataMonthHourPunch(model.store), 
+                    Plots.PlotPunchCard(), 
+                    [
+                        ("station", WebModel.validStation(model.store), "station")
+                    ],
+                    u"punchcard-mw"),
+                "hourWeekColourCard": PlotAPI(model, 
+                    PlotDataSources.PlotDataWeekHourPunch(model.store), 
+                    Plots.PlotColourCard(), 
+                    [
+                        ("station", WebModel.validStation(model.store), "station")
+                    ],
+                    u"colourcard-hw",
+                    subdivision=32,
+                    levels=23,
+                    mirrored=2),
+                "hourMonthColourCard": PlotAPI(model, 
+                    PlotDataSources.PlotDataMonthHourPunch(model.store), 
+                    Plots.PlotColourCard(), 
+                    [
+                        ("station", WebModel.validStation(model.store), "station")
+                    ],
+                    u"colourcard-mw",
+                    subdivision=32,
+                    levels=23,
+                    mirrored=2)
+            }),
+            "uptime": PlotAPI(model,
+                PlotDataSources.PlotDataUptime(model.store),
+                Plots.PlotStackedGraph(),
+                [
+                    ("station", WebModel.validStation(model.store), "station", None),
+                    ("years", WebModel.rangeChecked(int, 1, 10), "years", 5)
+                ],
+                u"uptime",
+                years=5)
+        })
     })
     apiMap.mapping[""] = apiMap
     

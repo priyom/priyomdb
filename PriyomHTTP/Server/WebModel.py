@@ -92,6 +92,48 @@ class Encoder(io.IOBase):
         self.buffer.close()
 
 class WebModel(object):
+    # some typecasts
+    @staticmethod    
+    def rangeChecked(type, min, max):
+        def range_checked(s):
+            i = type(s)
+            if i is None:
+                return None
+            if ((min is not None) and (min > i)) or ((max is not None) and (max < i)):
+                raise ValueError(u"value out of bounds ({1}..{2}): {0}".format(i, min if min is not None else u"-infinity", max if max is not None else u"infinity"))
+            return i
+        return range_checked
+        
+    @staticmethod
+    def validStormObject(type, store):
+        def valid_storm_object(id):
+            obj = store.get(type, int(id))
+            if obj is None:
+                raise ValueError(u"{0} does not identify a valid {1}".format(id, type))
+            return obj
+        return valid_storm_object
+        
+    @staticmethod
+    def validStation(store):
+        def valid_station(id):
+            intId = None
+            try:
+                intId = int(id)
+            except ValueError:
+                pass
+            if intId is not None:
+                obj = store.get(Station, intId)
+                if obj is not None:
+                    return obj
+            obj = store.find(Station, Station.EnigmaIdentifier == unicode(id)).any()
+            if obj is not None:
+                return obj
+            obj = store.find(Station, Station.PriyomIdentifier == unicode(id)).any()
+            if obj is None:
+                raise ValueError(u"{0} does not identify a valid {1}".format(id, Station))
+            return obj
+        return valid_station
+    
     def __init__(self, priyomInterface):
         self.priyomInterface = priyomInterface
         self.store = self.priyomInterface.store
