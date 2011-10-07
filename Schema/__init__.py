@@ -208,7 +208,7 @@ DatabaseSchema = Schema(
     `EventClassID` INT DEFAULT NULL COMMENT 'event class, NULL for raw event',
     `Description` TEXT NOT NULL COMMENT 'descriptive text of the event',
     `StartTime` BIGINT NOT NULL COMMENT 'start time of the event, or time singularity of the event if EndTime is NULL',
-    `EndTime` BIGINT NOT NULL COMMENT 'end time of the event or NULL if its a singularity',
+    `EndTime` BIGINT DEFAULT NULL COMMENT 'end time of the event or NULL if its a singularity',
     PRIMARY KEY (`ID`)
 ) ENGINE=MyISAM  DEFAULT CHARSET=utf8""",
 

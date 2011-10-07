@@ -35,7 +35,7 @@ class EventClass(object):
     Title = Unicode()
     
 class Event(PriyomBase):
-    __storm_table__ = "event"
+    __storm_table__ = "events"
     
     ID = Int(primary=True)
     Created = Int()
