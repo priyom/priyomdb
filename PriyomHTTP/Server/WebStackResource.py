@@ -130,7 +130,7 @@ def get_site_map(priyomInterface):
         "schedule": IDResource(model, libPriyom.Schedule),
         "submit": AuthorizationSelector(MapSelector(u"submit", {
             "log": SubmitLogResource(model),
-            "": None
+            "event": SubmitEventResource(model)
         }), ["log", "log-moderated"]),
         "call": apiMap,
         "doc": DocumentationSelector(apiMap),
