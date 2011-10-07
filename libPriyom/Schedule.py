@@ -25,7 +25,7 @@ authors:
     Jonas Wielicki <j.wielicki@sotecware.net>
 """
 from storm.locals import *
-import xml.dom.minidom as dom
+from xml.etree.ElementTree import ElementTree
 import XMLIntf
 from Modulation import Modulation
 import datetime
@@ -38,17 +38,21 @@ class Schedule(PriyomBase, XMLIntf.XMLStorm):
     ParentID = Int()
     Name = Unicode()
     ScheduleKind = Enum(map={
-        "once": "once",
-        "year": "year",
-        "month": "month",
-        "week": "week",
-        "day": "day",
-        "hour": "hour"
+        u"once": u"once",
+        u"year": u"year",
+        u"month": u"month",
+        u"week": u"week",
+        u"day": u"day",
+        u"hour": u"hour"
     })
     Skip = Int()
     Every = Int()
     StartTimeOffset = Int()
     EndTimeOffset = Int()
+    
+    xmlMapping = {
+        u"Name": u"Name"
+    }
     
     @staticmethod
     def checkNestable(parentKind, childKind):
@@ -83,26 +87,25 @@ class Schedule(PriyomBase, XMLIntf.XMLStorm):
         return start.strftime("%H:%Mz"), end.strftime("%H:%Mz")
         
     def _formatHour(self, start, end):
-        return start.strftime("minute %M"), end.strftime("minute %M")
+        return start.strftime("%M"), end.strftime("%M")
     
     def toDom(self, parentNode, stationId = None):
-        doc = parentNode.ownerDocument
         store = Store.of(self)
-        schedule = doc.createElementNS(XMLIntf.namespace, "schedule")
+        schedule = XMLIntf.SubElement(u"schedule")
         
         XMLIntf.appendTextElements(schedule,
-            [
+            (
                 ("id", unicode(self.ID)),
                 ("name", self.Name)
-            ]
+            )
         )
-        if self.ScheduleKind == "once":
-            XMLIntf.appendTextElement(schedule, "no-repeat", "")
+        if self.ScheduleKind == u"once":
+            XMLIntf.SubElement(schedule, u"no-repeat")
         else:
-            repeat = XMLIntf.appendTextElement(schedule, "repeat", unicode(self.Every), doNotAppend = True)
-            repeat.setAttribute("step", self.ScheduleKind)
-            repeat.setAttribute("skip", unicode(self.Skip))
-            schedule.appendChild(repeat)
+            XMLIntf.appendTextElement(schedule, u"repeat", unicode(self.Every), attrib={
+                u"step": self.ScheduleKind,
+                u"skip": unicode(self.Skip)
+            })
         
         start = datetime.datetime.fromtimestamp(self.StartTimeOffset)
         start = start - datetime.timedelta(hours=1)
@@ -123,19 +126,20 @@ class Schedule(PriyomBase, XMLIntf.XMLStorm):
             "hour": self._formatHour(start, end)
         }[self.ScheduleKind]
         
-        startOffset = XMLIntf.appendTextElement(schedule, "start-offset", startStr)
-        startOffset.setAttribute("seconds", unicode(self.StartTimeOffset))
+        XMLIntf.appendTextElement(schedule, u"start-offset", startStr, attrib={
+            u"seconds": unicode(self.StartTimeOffset)
+        })
         
         if self.EndTimeOffset is not None:
-            endOffset = XMLIntf.appendTextElement(schedule, "end-offset", endStr)
-            endOffset.setAttribute("seconds", unicode(self.EndTimeOffset))
-            
-        schedules = doc.createElementNS(XMLIntf.namespace, "schedules")
+            XMLIntf.appendTextElement(schedule, u"end-offset", endStr, attrib={
+                u"seconds": unicode(self.EndTimeOffset)
+            })
+        
+        schedules = XMLIntf.SubElement(schedule, u"schedules")
         for _schedule in self.Children:
             _schedule.toDom(schedules, stationId)
-        schedule.appendChild(schedules)
         
-        leaves = doc.createElementNS(XMLIntf.namespace, "leaves")
+        leaves = XMLIntf.SubElement(schedule, u"leaves")
         if stationId is not None:
             leavesSelect = store.find(ScheduleLeaf, 
                 (ScheduleLeaf.StationID == stationId) and (ScheduleLeaf.ScheduleID == self.ID))
@@ -144,31 +148,51 @@ class Schedule(PriyomBase, XMLIntf.XMLStorm):
         else:
             for leaf in self.Leaves:
                 leaf.toDom(leaves)
-        schedule.appendChild(leaves)
-                
-        parentNode.appendChild(schedule)
-        return schedule
         
-    def _leavesFromDom(self, node, context):
-        for node in (node for node in node.childNodes if node.nodeType == dom.Node.ELEMENT_NODE):
-            if node.tagName != "leaf":
+        return schedule
+                
+    def _loadRepeat(self, element, context):
+        self.ScheduleKind = unicode(element.get(u"step"))
+        self.Skip = int(element.get(u"skip"))
+        self.Every = int(element.text)
+        
+    def _loadStartOffset(self, element, context):
+        self.StartTimeOffset = int(element.get(u"seconds"))
+        
+    def _loadEndOffset(self, element, context):
+        self.EndTimeOffset = int(element.get(u"seconds"))
+    
+    def _loadLeaves(self, element, context):
+        for leaf in list(self.Leaves):
+            leaf.delete()
+        for child in element:
+            tag = XMLIntf.checkAndStripNamespace(child, XMLIntf.importNamespace, context)
+            if tag is None:
+                continue
+            if tag != u"leaf":
                 context.log("Found invalid node in schedule.leaves. Skipping.")
                 continue
+            
             leaf = ScheduleLeaf()
             self.store.add(leaf)
             leaf.Schedule = self
-            leaf.fromDom(leaf)
-            
-    def _schedulesFromDom(self, node, context):
-        for node in (node for node in node.childNodes if node.nodeType == dom.Node.ELEMENT_NODE):
-            if node.tagName != "schedule-reference":
+            leaf.fromDom(child)
+    
+    def _loadSchedules(self, element, context):
+        for child in element:
+            tag = XMLIntf.checkAndStripNamespace(child, XMLIntf.importNamespace, context)
+            if tag is None:
+                continue
+            if tag != "schedule-reference":
                 context.log("Found invalid node in schedule.schedules. Skipping.")
                 continue
+            
             try:
-                id = int(node.getAttribute("id"))
+                id = int(child.get(u"id"))
             except:
                 context.log("Schedule references in schedule.schedules must consist only of <schedule id=\"id\" />")
                 continue
+            
             schedule = self.store.get(Schedule, id)
             if schedule is not None:
                 if schedule.Parent is not None:
@@ -178,26 +202,19 @@ class Schedule(PriyomBase, XMLIntf.XMLStorm):
                     context.log("Cannot nest a \"%s\" schedule into a \"%s\" schedule." % (self.ScheduleKind, schedule.ScheduleKind))
                     continue
                 schedule.Parent = self
+
         
-    def loadDomElement(self, node, context):
-        if node.tagName == "repeat":
-            self.ScheduleKind = node.getAttribute("step")
-            self.Skip = node.getAttribute("skip")
-            self.Every = XMLIntf.getText(node)
-        elif node.tagName == "name":
-            self.Name = XMLIntf.getText(node)
-        elif node.tagName == "start-offset":
-            self.StartTimeOffset = node.getAttribute("seconds")
-        elif node.tagName == "end-offset":
-            self.EndTimeOffset = node.getAttribute("seconds")
-        elif node.tagName == "leaves":
-            for leaf in list(self.Leaves):
-                leaf.delete()
-            self._leavesFromDom(node, context)
-        elif node.tagName == "schedules":
-            for schedule in list(self.Children):
-                schedule.Parent = None
-            self._schedulesFromDom(node, context)
+    def loadElement(self, tag, element, context):
+        try:
+            {
+                u"repeat": self._loadRepeat,
+                u"start-offset": self._loadStartOffset,
+                u"end-offset": self._loadEndOffset,
+                u"leaves": self._loadLeaves,
+                u"schedules": self._loadSchedules
+            }[tag](element, context)
+        except KeyError:
+            pass
             
     def touch(self, newModified = None):
         super(Schedule, self).touch(newModified)
@@ -223,19 +240,18 @@ class ScheduleLeafFrequency(object):
     ModulationID = Int()
     Modulation = Reference(ModulationID, Modulation.ID)
     
-    def fromDom(self, node, context):
-        self.Frequency = int(XMLIntf.getText(node))
-        self.Modulation = Store.of(self).find(Modulation, Modulation.Name == node.getAttribute("modulation")).any()
+    def fromDom(self, element, context):
+        self.Frequency = int(element.text)
+        self.Modulation = Store.of(self).find(Modulation, Modulation.Name == element.get(u"modulation")).any()
         if self.Modulation is None:
             self.Modulation = Modulation()
             Store.of(self).add(self.Modulation)
-            self.Modulation.Name = node.getAttribute("modulation")
+            self.Modulation.Name = node.get(u"modulation")
     
     def toDom(self, parentNode):
-        doc = parentNode.ownerDocument
-        frequency = XMLIntf.buildTextElementNS(doc, "frequency", unicode(self.Frequency), XMLIntf.namespace)
-        frequency.setAttribute("modulation", self.Modulation.Name)
-        parentNode.appendChild(frequency)
+        XMLIntf.appendTextElement(parentNode, u"frequency", unicode(self.Frequency), attrib={
+            u"modulation": self.Modulation.Name
+        })
 
     
 class ScheduleLeaf(object):
@@ -255,15 +271,12 @@ class ScheduleLeaf(object):
         Store.of(self).remove(self)
     
     def toDom(self, parentNode):
-        doc = parentNode.ownerDocument
-        leaf = doc.createElementNS(XMLIntf.namespace, "leaf")
+        leaf = XMLIntf.SubElement(parentNode, u"leaf")
         XMLIntf.appendTextElements(leaf, {
             "kind": self.BroadcastType,
             "station-id": self.StationID
         })
-        # self.Frequency.toDom(leaf)
         for frequency in self.Frequencies:
             frequency.toDom(leaf)
-        parentNode.appendChild(leaf)
 
 Schedule.Leaves = ReferenceSet(Schedule.ID, ScheduleLeaf.ScheduleID)

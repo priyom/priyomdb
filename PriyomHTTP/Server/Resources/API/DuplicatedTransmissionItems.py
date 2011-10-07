@@ -40,20 +40,15 @@ class DupeRecord(object):
             return
         self.items.append(transmission.ID)
         
-        node = self.doc.createElementNS(XMLIntf.namespace, "duplicate-entry")
+        node = XMLIntf.SubElement(self.node, u"duplicate-entry")
         broadcast.toDom(node)
         transmission.toDom(node)
-        contents = XMLIntf.getChild(XMLIntf.getChild(node, "transmission"), "Contents")
+        
+        
+        contents = node.find(u"{{{0}}}transmission".format(XMLIntf.namespace)).find(u"{{{0}}}Contents".format(XMLIntf.namespace))
         index = transmission.blocks.index(item)
         
-        for group in filter(lambda node: node.nodeType == dom.Node.ELEMENT_NODE and node.tagName == "group", contents.childNodes):
-            if index == 0:
-                group.setAttribute("highlighted", "true")
-                break
-            index -= 1
-        
-        self.node.appendChild(node)
-        
+        contents[index].set(u"highlighted", u"true")
 
 class DuplicatedTransmissionItemsAPI(API):
     title = u"getDuplicatedTransmissionItems"
@@ -97,7 +92,7 @@ class DuplicatedTransmissionItemsAPI(API):
             return
         
         doc = self.model.getExportDoc("duplicated-transmissions")
-        rootNode = doc.documentElement
+        rootNode = doc.getroot()
         
         dupeDict = {}
         
@@ -121,4 +116,4 @@ class DuplicatedTransmissionItemsAPI(API):
             dupeDict[key] = rec
             rootNode.appendChild(node)
         
-        print >>self.out, self.model.domToXml(doc, self.encoding)
+        self.model.etreeToFile(self.out, doc, encoding=self.encoding)
