@@ -27,7 +27,9 @@ authors:
 from storm.locals import *
 from Station import Station
 from PriyomBase import PriyomBase
+import Formatting
 import XMLIntf
+import Helpers.TimeUtils as TimeUtils
 
 class EventClass(object):
     __storm_table__ = "eventClass"
@@ -44,6 +46,9 @@ class EventClass(object):
             )
         )
         return eventClass
+        
+    def __unicode__(self):
+        return self.Title
     
 class Event(PriyomBase):
     __storm_table__ = "event"
@@ -77,3 +82,9 @@ class Event(PriyomBase):
             XMLIntf.appendDateElement(event, u"EndTime", self.EndTime)
         return event
         
+    def __unicode__(self):
+        return u"{1} event {0} at {2}".format(
+            self.Description,
+            unicode(self.EventClass) if self.EventClass is not None else u"raw",
+            TimeUtils.fromTimestamp(self.StartTime).strftime(Formatting.priyomdate)
+        )
