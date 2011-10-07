@@ -68,7 +68,10 @@ class Event(PriyomBase):
                 (u"Description", self.Description)
             )
         )
-        self.EventClass.toTree(event)
+        if self.EventClass is not None:
+            self.EventClass.toTree(event)
+        else:
+            XMLIntf.SubElement(parent, u"raw-event")
         XMLIntf.appendDateElement(event, u"StartTime", self.StartTime)
         if self.EndTime is not None:
             XMLIntf.appendDateElement(event, u"EndTime", self.EndTime)
