@@ -83,6 +83,7 @@ class SubmitEventResource(Resource):
         error = u""
         
         station = self.getQueryValue("stationId", self.model.validStormObject(Station, self.store), default=None)
+        eventClass = self.getQueryValue("eventClassId", self.model.validStormObject(EventClass, self.store), default=None)
         startTime = self.getQueryValue("startTime", self.model.PriyomTimestamp(), defaultKey=TimeUtils.nowDate(), default=None)
         endTime = self.getQueryValue("endTime", self.model.AllowBoth(self.model.PriyomTimestamp(), self.model.EmptyString()), defaultKey=u"", default=None)
         description = self.query.get("description", u"")
