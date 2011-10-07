@@ -30,6 +30,8 @@ from WebStack.Generic import ContentType, EndOfResponse
 from Resource import Resource
 from libPriyom import *
 from datetime import datetime, timedelta
+from .SubmitLog import SubmitLogResource
+from xml.sax.saxutils import escape
 
 
 class SubmitEventResource(Resource):
@@ -46,10 +48,11 @@ class SubmitEventResource(Resource):
         error = u""
         
         station = self.store.get(Station, self.getQueryValue("stationId", int, default=0))
-        startTime = self.getQueryValue("startTime", self.model.PriyomTimestamp(), default=TimeUtils.now())
+        startTime = self.getQueryValue("startTime", self.model.PriyomTimestamp(), default=TimeUtils.nowDate())
         endTime = self.getQueryValue("endTime", self.model.AllowBoth(self.model.PriyomTimestamp(allowNone=True), self.model.EmptyString()), defaultKey=u"")
         if endTime == u"":
             endTime = None
+        description = self.query.get("description", u"")
         
         print >>self.out, u"""<!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml">
@@ -93,8 +96,27 @@ class SubmitEventResource(Resource):
                 <textarea rows="5">{5}</textarea>
             </div>
             <input type="submit" name="submit" value="Submit" />
-        </form>"""
+        </form>""".format(
+            SubmitLogResource.recursiveDict(self.query),
+            u"" if len(error) == 0 else u"""<div class="error">{0}""".format(error),
+            u"\n                    ".join(
+                (u'<option value="{0}"{1}>{2}</option>'.format(tmpstation.ID, u' selected="selected"' if tmpstation is station else u'', escape(unicode(tmpstation))) for tmpstation in self.store.find(Station))
+            ),
+            startTime.strftime(Formatting.priyomdate),
+            endTime.strftime(Formatting.priyomdate) if endTime is not None else u"",
+            escape(description),
+            u"\n                    ".join(
+                (u'<option value="{0}"{1}>{2}</option>'.format(tmpEventClass.ID, u' selected="selected"' if tmpEventClass is eventClass else u'', escape(unicode(tmpEventClass))) for tmpEventClass in self.store.find(EventClass))
+            )
+        ).encode(self.encoding, 'replace')
         
         print >>self.out, u"""
+        <div class="section">
+            <div class="inner-caption">Notes</div>
+            <ol>
+                <li><p>Note that for events which indicate state changes, there is no need to create two separate events to indicate start and ending. If the event class is “state changing” (its indicated in its name if so), two separate events will automatically be generated in any event listing output. These will be prefixed with “Start of” and “End of” respectively.</p></li>
+                <li><p>A raw event is any event which does not fit in any event class. Try to keep the description structured though, in case we want to merge these events to a common event class later. Watch out for existing events having similar contents before submitting.</p></li>
+            </ol>
+        </div>
     </body>
 </html>""".encode(self.encoding, 'replace')
