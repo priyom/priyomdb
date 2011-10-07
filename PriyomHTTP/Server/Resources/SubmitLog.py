@@ -338,7 +338,7 @@ Transmission: {2}</pre>""".format(
         
         if not submitted:
             print >>self.out, u"""
-        <form name="logform" action="submit" method="POST">
+        <form name="logform" method="POST">
             <pre>{3}</pre>
             {7}
             <div class="section">
