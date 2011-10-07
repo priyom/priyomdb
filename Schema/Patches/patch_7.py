@@ -28,7 +28,7 @@ authors:
 def apply(store):
     statements = [
 """ALTER TABLE `events` ADD `StartTime` BIGINT NOT NULL COMMENT 'start time of the event, or time singularity of the event if EndTime is NULL';""",
-"""ALTER TABLE `events` ADD `EndTime` BIGINT NOT NULL COMMENT 'end time of the event or NULL if its a singularity';"""
+"""ALTER TABLE `events` ADD `EndTime` BIGINT DEFAULT NULL COMMENT 'end time of the event or NULL if its a singularity';"""
     ]
     
     for statement in statements:

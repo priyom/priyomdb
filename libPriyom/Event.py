@@ -51,7 +51,7 @@ class EventClass(object):
         return self.Title
     
 class Event(PriyomBase):
-    __storm_table__ = "event"
+    __storm_table__ = "events"
     
     ID = Int(primary=True)
     Created = Int()
