@@ -32,6 +32,8 @@ import xml.etree.ElementTree as ElementTree
 from cfg_priyomhttpd import database
 from ElementTreeHelper.Serializer import Serializer
 import sys
+from libPriyom.Plots import *
+from libPriyom.PlotDataSources import *
 
 db = create_database(database["stormURL"])
 store = Store(db)

@@ -56,7 +56,7 @@ class DuplicatedTransmissionItemsAPI(API):
     
     docArgs = [
         Argument(u"stationId", u"station id", u"select the station at which to look", metavar="stationid"),
-        Argument(u"classTableId", u"class table id", u"select the transmission class table to look at", metavar="classtableid"),
+        Argument(u"tableId", u"class table id", u"select the transmission class table to look at", metavar="classtableid"),
         Argument(u"equalFields", u"comma separated list", u"transmission item fields to look at (all if omitted)", metavar="equalfields", optional=True),
         Argument(u"includeOtherStationsWithin", u"integer seconds", u"how many seconds transmissions of other stations with same contents may be away to be selected", metavar="seconds", optional=True)
     ]
@@ -69,23 +69,23 @@ class DuplicatedTransmissionItemsAPI(API):
         if station is None:
             self.parameterError("stationId", "Station does not exist")
         
-        classTableId = self.getQueryInt("classTableId", "must be a class table id")
-        classTable = self.store.get(TransmissionClassTable, classTableId)
-        if classTable is None:
-            self.parameterError("classTableId", "Class Table does not exist")
+        tableId = self.getQueryInt("tableId", "must be a class table id")
+        table = self.store.get(TransmissionTable, tableId)
+        if table is None:
+            self.parameterError("tableId", "Table does not exist")
             
         matchFields = [s for s in (item.lstrip().rstrip() for item in self.query.get("equalFields", u"").split(u",")) if len(s) > 0]
         if len(matchFields) == 0:
             matchFields = None
         else:
             for field in matchFields:
-                if not hasattr(classTable, field):
+                if not hasattr(table, field):
                     self.parameterError("equalFields", "{0} is not a valid field for this table.".format(field))
                 
         includeOtherStationsWithin = self.getQueryIntDefault("includeOtherStationsWithin", 86400, "must be integer seconds")
         
         
-        lastModified, items = self.priyomInterface.getDuplicateTransmissions(classTable, station, matchFields, includeOtherStationsWithin, notModifiedCheck=self.autoNotModified, head=self.head)
+        lastModified, items = self.priyomInterface.getDuplicateTransmissions(table, station, matchFields, includeOtherStationsWithin, notModifiedCheck=self.autoNotModified, head=self.head)
         trans.set_content_type(ContentType("application/xml", self.encoding))
         trans.set_header_value("Last-Modified", self.model.formatHTTPTimestamp(float(lastModified)))
         if self.head:

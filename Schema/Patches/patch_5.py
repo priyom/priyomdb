@@ -1,5 +1,5 @@
 """
-File name: TimeUtils.py
+File name: patch_5.py
 This file is part of: priyomdb
 
 LICENSE
@@ -24,22 +24,21 @@ For feedback and questions about priyomdb please e-mail one of the
 authors:
     Jonas Wielicki <j.wielicki@sotecware.net>
 """
-from datetime import datetime, timedelta
-from calendar import timegm
 
-monthname = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+def apply(store):
+    statements = [
+"""CREATE TABLE IF NOT EXISTS `api-fileResources` (
+    `ID` INT NOT NULL AUTO_INCREMENT,
+    `ReferenceTable` VARCHAR(64) NOT NULL,
+    `LocalID` INT NOT NULL,
+    `ResourceType` VARCHAR(64) NOT NULL,
+    `Timestamp` BIGINT NOT NULL,
+    `FileName` VARCHAR(255) NOT NULL,
+    PRIMARY KEY (`ID`)
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8"""
+]
+    for statement in statements:
+        store.execute(statement)
 
-def toTimestamp(datetime):
-    return timegm(datetime.utctimetuple())
-    
-def toDatetime(timestamp):
-    return datetime.utcfromtimestamp(timestamp)
-    
-def nowDate():
-    return datetime.utcnow()
-    
-def now():
-    return toTimestamp(nowDate())
-    
 
-fromTimestamp = toDatetime
+
