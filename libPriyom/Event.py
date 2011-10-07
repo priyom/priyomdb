@@ -36,6 +36,7 @@ class EventClass(object):
     
     ID = Int(primary=True)
     Title = Unicode()
+    StateChanging = Bool()
     
     def toTree(self, parent):
         eventClass = XMLIntf.SubElement(parent, u"event-class")

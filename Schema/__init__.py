@@ -202,6 +202,7 @@ DatabaseSchema = Schema(
 """CREATE TABLE `eventClass` (
     `ID` INT NOT NULL AUTO_INCREMENT,
     `Title` VARCHAR(255) NOT NULL COMMENT 'title of the event class',
+    `eventClasses` ADD `StateChanging` BOOL NOT NULL COMMENT 'defines whether events in this class are so called state-changing events',
     PRIMARY KEY (`ID`)
 ) ENGINE=MyISAM  DEFAULT CHARSET=utf8""",
 
