@@ -1,3 +1,4 @@
+# encoding=utf-8
 """
 File name: Event.py
 This file is part of: priyomdb
@@ -49,7 +50,7 @@ class EventClass(object):
         return eventClass
         
     def __unicode__(self):
-        return self.Title
+        return u"{0}{1}".format(self.Title, u" (state changing)" if self.StateChanging else u"")
     
 class Event(PriyomBase):
     __storm_table__ = "events"
@@ -84,7 +85,7 @@ class Event(PriyomBase):
         return event
         
     def __unicode__(self):
-        return u"{1} event {0} at {2}".format(
+        return u"{1} event \"{0}\" at {2}".format(
             self.Description,
             unicode(self.EventClass) if self.EventClass is not None else u"raw",
             TimeUtils.fromTimestamp(self.StartTime).strftime(Formatting.priyomdate)
