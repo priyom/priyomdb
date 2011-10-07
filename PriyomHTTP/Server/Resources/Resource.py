@@ -341,23 +341,23 @@ class Resource(object):
             return typecast(self.query[name])
         except ValueError as e:
             if "defaultValue" in kwargs:
-                return typecast(kwargs["defaultValue"])
+                return kwargs["defaultValue"]
             elif "default" in kwargs:
-                return typecast(kwargs["default"])
+                return kwargs["default"]
             else:
                 self.parameterError(name, unicode(e))
         except TypeError as e:
             if "defaultType" in kwargs:
-                return typecast(kwargs["defaultType"])
+                return kwargs["defaultType"]
             elif "default" in kwargs:
-                return typecast(kwargs["default"])
+                return kwargs["default"]
             else:
                 self.parameterError(name, unicode(e))
         except KeyError as e:
             if "defaultKey" in kwargs:
-                return typecast(kwargs["defaultType"])
+                return kwargs["defaultKey"]
             elif "default" in kwargs:
-                return typecast(kwargs["default"])
+                return kwargs["default"]
             else:
                 self.parameterError(name, u"required, but not specified; must be {0}".format(unicode(typecast)))
         
