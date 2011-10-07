@@ -53,22 +53,25 @@ class CompressionSelector(object):
     def __init__(self, resource, level = 6):
         self.level = 6
         self.resource = resource
+    
+    def disableCompression(self):
+        self.compressionEnabled = False
+        if isinstance(self.trans.content, CompressionStream):
+            self.trans.content = self.trans.content.close()
+            self.trans.content.seek(0)
+            self.trans.content.truncate(0)
         
     def respond(self, trans):
+        self.trans = trans
+        self.compressionEnabled = True
+        trans.disableCompression = self.disableCompression
         accepted = [s.lstrip().rstrip() for s in (", ".join(trans.get_header_values("Accept-Encoding"))).split(",")]
-        if "deflate" in accepted:
-            trans.content = DeflateCompressionStream(trans.content)
-            trans.set_header_value("Content-Encoding", "deflate")
         exc = None
         try:
             retval = self.resource.respond(trans)
         except EndOfResponse as e:
             exc = e
-        # it is possible that a rollback has been made inbetween;
-        # our stream will get killed in that case
-        if issubclass(type(trans.content), CompressionStream):
-            trans.content = trans.content.close()
-        elif "deflate" in accepted:
+        if "deflate" in accepted and self.compressionEnabled:
             trans.set_header_value("Content-Encoding", "deflate")
             tmp = trans.content.getvalue()
             trans.content.truncate(0)

@@ -30,6 +30,8 @@ from libPriyom import *
 from libPriyom.Helpers.ScheduleMaintainer import ScheduleMaintainer
 import xml.dom.minidom as dom
 from cfg_priyomhttpd import database
+from libPriyom.Plots import *
+from libPriyom.PlotDataSources import *
 
 db = create_database(database["stormURL"])
 store = Store(db)
