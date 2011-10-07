@@ -27,12 +27,23 @@ authors:
 from storm.locals import *
 from Station import Station
 from PriyomBase import PriyomBase
+import XMLIntf
 
 class EventClass(object):
     __storm_table__ = "eventClass"
     
     ID = Int(primary=True)
     Title = Unicode()
+    
+    def toTree(self, parent):
+        eventClass = XMLIntf.SubElement(parent, u"event-class")
+        XMLIntf.appendTextElements(eventClass, 
+            (
+                (u"ID", self.ID),
+                (u"Title", self.Title)
+            )
+        )
+        return eventClass
     
 class Event(PriyomBase):
     __storm_table__ = "event"
@@ -47,3 +58,19 @@ class Event(PriyomBase):
     Description = Unicode()
     StartTime = Int()
     EndTime = Int()
+    
+    def toTree(self, parent):
+        event = XMLIntf.SubElement(parent, u"event")
+        XMLIntf.appendTextElements(event,
+            (
+                (u"ID", self.ID),
+                (u"StationID", self.StationID),
+                (u"Description", self.Description)
+            )
+        )
+        self.EventClass.toTree(event)
+        XMLIntf.appendDateElement(event, u"StartTime", self.StartTime)
+        if self.EndTime is not None:
+            XMLIntf.appendDateElement(event, u"EndTime", self.EndTime)
+        return event
+        
