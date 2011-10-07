@@ -140,7 +140,7 @@ class SubmitLogResource(Resource):
         for key, value in dictionary.iteritems():
             if type(value) == dict:
                 yield u"""{1}{0}: {2}""".format(key, indent, u"{")
-                for line in self.recursiveDictNode(value, indent + u"    "):
+                for line in SubmitLogResource.recursiveDictNode(value, indent + u"    "):
                     yield line
                 yield u"""{0}{1}""".format(indent, u"}")
             else:
@@ -148,7 +148,7 @@ class SubmitLogResource(Resource):
     
     @staticmethod
     def recursiveDict(dict):
-        return "\n".join(self.recursiveDictNode(dict))
+        return "\n".join(SubmitLogResource.recursiveDictNode(dict))
         
     def formatTransmissionEditor(self):
         yield u"""Transmission class: <select name="transmissionClass">"""
