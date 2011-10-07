@@ -1,5 +1,5 @@
 """
-File name: patch_7.py
+File name: patch_8.py
 This file is part of: priyomdb
 
 LICENSE
@@ -27,9 +27,9 @@ authors:
 
 def apply(store):
     statements = [
-"""ALTER TABLE `events` ADD `StartTime` BIGINT NOT NULL COMMENT 'start time of the event, or time singularity of the event if EndTime is NULL';""",
-"""ALTER TABLE `events` ADD `EndTime` BIGINT DEFAULT NULL COMMENT 'end time of the event or NULL if its a singularity';"""
+"""ALTER TABLE `eventClasses` ADD `StateChanging` BOOL NOT NULL DEFAULT '0' COMMENT 'defines whether events in this class are so called state-changing events';"""
     ]
     
     for statement in statements:
         store.execute(statement)
+
