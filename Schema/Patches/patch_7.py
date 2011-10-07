@@ -1,5 +1,5 @@
 """
-File name: Event.py
+File name: patch_7.py
 This file is part of: priyomdb
 
 LICENSE
@@ -24,26 +24,12 @@ For feedback and questions about priyomdb please e-mail one of the
 authors:
     Jonas Wielicki <j.wielicki@sotecware.net>
 """
-from storm.locals import *
-from Station import Station
-from PriyomBase import PriyomBase
 
-class EventClass(object):
-    __storm_table__ = "eventClass"
+def apply(store):
+    statements = [
+"""ALTER TABLE `events` ADD `StartTime` BIGINT NOT NULL COMMENT 'start time of the event, or time singularity of the event if EndTime is NULL';""",
+"""ALTER TABLE `events` ADD `EndTime` BIGINT NOT NULL COMMENT 'end time of the event or NULL if its a singularity';"""
+    ]
     
-    ID = Int(primary=True)
-    Title = Unicode()
-    
-class Event(PriyomBase):
-    __storm_table__ = "event"
-    
-    ID = Int(primary=True)
-    Created = Int()
-    Modified = Int()
-    StationID = Int()
-    Station = Reference(StationID, Station.ID)
-    EventClassID = Int()
-    EventClass = Reference(EventClassID, EventClass.ID)
-    Description = Unicode()
-    StartTime = Int()
-    EndTime = Int()
+    for statement in statements:
+        store.execute(statement)
