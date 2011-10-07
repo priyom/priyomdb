@@ -32,7 +32,7 @@ import XMLIntf
 import Helpers.TimeUtils as TimeUtils
 
 class EventClass(object):
-    __storm_table__ = "eventClass"
+    __storm_table__ = "eventClasses"
     
     ID = Int(primary=True)
     Title = Unicode()
