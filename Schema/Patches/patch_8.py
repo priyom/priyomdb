@@ -27,7 +27,7 @@ authors:
 
 def apply(store):
     statements = [
-"""ALTER TABLE `eventClasses` ADD `StateChanging` BOOL NOT NULL COMMENT 'defines whether events in this class are so called state-changing events';"""
+"""ALTER TABLE `eventClasses` ADD `StateChanging` BOOL NOT NULL DEFAULT '0' COMMENT 'defines whether events in this class are so called state-changing events';"""
     ]
     
     for statement in statements:
