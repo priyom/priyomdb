@@ -29,7 +29,7 @@ from Station import Station
 from PriyomBase import PriyomBase
 
 class EventClass(object):
-    __storm_table__ = "eventClass"
+    __storm_table__ = "eventClasses"
     
     ID = Int(primary=True)
     Title = Unicode()
