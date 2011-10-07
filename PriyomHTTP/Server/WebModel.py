@@ -76,6 +76,22 @@ asctime = {
     "time": 2,
     "yearmode": "%Y"
 }
+
+class WrapFunction(object):
+    def __init__(self, func, description):
+        self.func = func
+        self.description = description
+    
+    def __call__(self, *args, **kwargs):
+        return self.func(*args, **kwargs)
+    
+    def __str__(self):
+        return str(self.description)
+        
+    def __unicode__(self):
+        return self.description
+    
+
 class Encoder(io.IOBase):
     def __init__(self, targetEncoding):
         self.buffer = cStringIO.StringIO()
@@ -131,7 +147,7 @@ class WebModel(object):
             if obj is None:
                 raise ValueError(u"{0} does not identify a valid {1}".format(id, Station))
             return obj
-        return valid_station
+        return WrapFunction(valid_station, u"valid station identifier (a db id identifying a station, enigma identifier or priyom identifier)")
     
     def __init__(self, priyomInterface):
         self.priyomInterface = priyomInterface
