@@ -36,6 +36,21 @@ class MapSelector(object):
         self.mapping = mapping
         self.path_encoding = path_encoding or urlencoding or self.path_encoding
         
+    def __getitem__(self, key):
+        return self.mapping[key]
+        
+    def __setitem__(self, key, value):
+        self.mapping[key] = value
+        
+    def __delitem__(self, key):
+        del self.mapping[key]
+    
+    def __contains__(self, key):
+        return key in self.mapping
+        
+    def __iter__(self):
+        return iter(self.mapping)
+        
     def findResource(self, trans):
         parts = trans.get_virtual_path_info(self.path_encoding).split("/")
         

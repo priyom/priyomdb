@@ -33,6 +33,9 @@ import sys
 
 dictfield = re.compile("\[([^\]]+)\]")
 
+class Undefined:
+    pass
+
 class Argument(object):
     def __init__(self, name, type, description, metavar = None, optional = False):
         self.name = name
@@ -332,6 +335,31 @@ class Resource(object):
         if self.ifModifiedSinceUnix is not None and long(lastModified) == long(self.ifModifiedSinceUnix):
             self.trans.set_response_code(304)
             raise EndOfResponse
+            
+    def getQueryValue(self, name, typecast, **kwargs):
+        try: 
+            return typecast(self.query[name])
+        except ValueError as e:
+            if "defaultValue" in kwargs:
+                return typecast(kwargs["defaultValue"])
+            elif "default" in kwargs:
+                return typecast(kwargs["default"])
+            else:
+                self.parameterError(name, unicode(e))
+        except TypeError as e:
+            if "defaultType" in kwargs:
+                return typecast(kwargs["defaultType"])
+            elif "default" in kwargs:
+                return typecast(kwargs["default"])
+            else:
+                self.parameterError(name, unicode(e))
+        except KeyError as e:
+            if "defaultKey" in kwargs:
+                return typecast(kwargs["defaultType"])
+            elif "default" in kwargs:
+                return typecast(kwargs["default"])
+            else:
+                self.parameterError(name, u"required, but not specified; must be {0}".format(unicode(typecast)))
         
     def getQueryInt(self, name, message = None):
         try:
