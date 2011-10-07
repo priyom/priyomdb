@@ -135,7 +135,8 @@ class SubmitLogResource(Resource):
             
         yield u"""</div></div>"""
         
-    def recursiveDictNode(self, dictionary, indent = u""):
+    @staticmethod
+    def recursiveDictNode(dictionary, indent = u""):
         for key, value in dictionary.iteritems():
             if type(value) == dict:
                 yield u"""{1}{0}: {2}""".format(key, indent, u"{")
@@ -144,8 +145,9 @@ class SubmitLogResource(Resource):
                 yield u"""{0}{1}""".format(indent, u"}")
             else:
                 yield u"""{2}{0}: {1}""".format(key, repr(value), indent)
-        
-    def recursiveDict(self, dict):
+    
+    @staticmethod
+    def recursiveDict(dict):
         return "\n".join(self.recursiveDictNode(dict))
         
     def formatTransmissionEditor(self):
