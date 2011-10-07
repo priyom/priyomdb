@@ -1,5 +1,5 @@
 """
-File name: TimeUtils.py
+File name: patch_6.py
 This file is part of: priyomdb
 
 LICENSE
@@ -24,22 +24,25 @@ For feedback and questions about priyomdb please e-mail one of the
 authors:
     Jonas Wielicki <j.wielicki@sotecware.net>
 """
-from datetime import datetime, timedelta
-from calendar import timegm
 
-monthname = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+import os
+import os.path
 
-def toTimestamp(datetime):
-    return timegm(datetime.utctimetuple())
-    
-def toDatetime(timestamp):
-    return datetime.utcfromtimestamp(timestamp)
-    
-def nowDate():
-    return datetime.utcnow()
-    
-def now():
-    return toTimestamp(nowDate())
-    
+def apply(store):
+    # first, drop all existing files
+    fileNames = store.execute("SELECT `FileName` FROM `api-fileResources`")
+    for fileName in fileNames:
+        path = fileName[0]
+        if os.path.isfile(path):
+            os.unlink(path)
+    statements = [
+"""TRUNCATE `api-fileResources`;""",
+"""ALTER TABLE `api-fileResources` DROP `ReferenceTable`, DROP `LocalID`;""",
+"""ALTER TABLE `api-fileResources` ADD `ParameterHash` BINARY(32) NOT NULL AFTER `ResourceType`;""",
+"""ALTER TABLE `api-fileResources` ADD UNIQUE (`ResourceType`, `ParameterHash`, `Timestamp`);"""
+]
+    for statement in statements:
+        store.execute(statement)
 
-fromTimestamp = toDatetime
+
+

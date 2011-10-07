@@ -314,10 +314,16 @@ class Resource(object):
             return None
         return result
         
-    def parameterError(self, parameterName, message = None):
+    def customParameterError(self, message):
         self.trans.set_response_code(400)
-        print >>self.out, "Call error: Parameter error: %s%s" % (parameterName, " ("+message+")" if message is not None else "")
+        self.trans.set_content_type(ContentType("text/plain", self.encoding))
+        print >>self.out, u"Call error: Parameter error: {0}".format(message).encode(self.encoding)
         raise EndOfResponse
+        
+    def parameterError(self, parameterName, message = None):
+        self.customParameterError(u"{0}{1}".format(
+            parameterName, 
+            u" ("+message+u")" if message is not None else u""))
         
     def autoNotModified(self, lastModified):
         if lastModified is None:
