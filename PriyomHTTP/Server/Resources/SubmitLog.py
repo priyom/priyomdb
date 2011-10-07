@@ -26,6 +26,7 @@ authors:
     Jonas Wielicki <j.wielicki@sotecware.net>
 """
 from storm.locals import *
+from storm.expr import *
 from WebStack.Generic import ContentType, EndOfResponse
 from Resource import Resource
 from libPriyom import *
@@ -37,15 +38,16 @@ class SubmitLogResource(Resource):
         super(SubmitLogResource, self).__init__(model)
         self.allowedMethods = frozenset(["GET", "POST"])
         
-    def formatFrequencies(self):
+    def formatFrequencies(self, station):
         i = -1
         items = [(key, value) for key, value in self.queryEx.get("frequencies", {}).iteritems() if (key != "new" or "submit" in value) and (not "delete" in value)]
         items.sort(lambda x,y: cmp(x[0], y[0]))
         for key, item in items:
             i += 1
             if "submit" in item:
-                item["frequency"] = "0 Hz"
-                item["modulation"] = "USB"
+                part = item["frequency+modulation"].partition(u" ")
+                item["frequency"] = part[0]+u" Hz"
+                item["modulation"] = part[1]
             freq = BroadcastFrequency.parseFrequency(item["frequency"])
             if freq is None:
                 freq = "0 Hz"
@@ -60,12 +62,22 @@ class SubmitLogResource(Resource):
                 freq,
                 u"\n".join((u"""<option value="{0}"{1}>{0}</option>""".format(modulation.Name, u' selected="selected"' if modulation.Name == item["modulation"] else u"") for modulation in self.store.find(Modulation).order_by(Asc(Modulation.Name))))
             )
-        item = self.queryEx.get("frequencies", {}).get("new", {"frequency": "10 MHz", "modulation": "USB"})
+        
+        knownFrequencies = self.store.using(
+                BroadcastFrequency, 
+                LeftJoin(Modulation, Modulation.ID == BroadcastFrequency.ModulationID), 
+                LeftJoin(Broadcast, BroadcastFrequency.BroadcastID == Broadcast.ID)
+            ).find(
+                (BroadcastFrequency.Frequency, Modulation.Name), 
+                Broadcast.StationID == station.ID
+            ).config(distinct=True) if station is not None else None
         yield u"""<tr>
-    <td class="buttons" colspan="3"><input type="submit" name="frequencies[new][submit]" value="+" /></td>
+    <td class="buttons" colspan="3"><input type="submit" name="frequencies[new][submit]" value="+" /><select name="frequencies[new][frequency+modulation]"><option value="0 USB">0 Hz (USB)</option>{0}</select></td>
 </tr>""".format(
-            item["frequency"],
-            u"\n".join((u"""<option value="{0}"{1}>{0}</option>""".format(modulation.Name, u' selected="selected"' if modulation.Name == item["modulation"] else u"") for modulation in self.store.find(Modulation).order_by(Asc(Modulation.Name))))
+            u"\n".join((u"""<option value="{0} {1}">{2}</option>""".format(
+                freq,
+                modulation,
+                u"{0} ({1})".format(BroadcastFrequency.formatFrequency(freq), modulation)) for freq, modulation in knownFrequencies)) if station is not None else u""
         )
         
     def formatBroadcastSelector(self, station, timestamp):
@@ -105,7 +117,7 @@ class SubmitLogResource(Resource):
                 </thead>
                 <tbody>"""
             
-        for line in self.formatFrequencies():
+        for line in self.formatFrequencies(station):
             yield line
             
         yield u"""
