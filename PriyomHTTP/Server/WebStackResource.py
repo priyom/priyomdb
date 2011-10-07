@@ -120,33 +120,38 @@ def get_site_map(priyomInterface):
                 years=5)
         })
     })
-    apiMap.mapping[""] = apiMap
+    apiMap[""] = apiMap
+    
+    apiRoot = MapSelector("API root", {
+        "station": StationResource(model),
+        "broadcast": IDResource(model, libPriyom.Broadcast),
+        "transmission": IDResource(model, libPriyom.Transmission),
+        "transmissionClass": IDResource(model, libPriyom.TransmissionClass),
+        "schedule": IDResource(model, libPriyom.Schedule),
+        "submit": AuthorizationSelector(MapSelector(u"submit", {
+            "log": SubmitLogResource(model),
+            "": None
+        }), ["log", "log-moderated"]),
+        "call": apiMap,
+        "doc": DocumentationSelector(apiMap),
+        "": HomeResource(model),
+        "css": MapResource({
+            "home.css": FileResource(os.path.join(rootPath, "www-files/css/home.css"), ContentType("text/css", "utf-8")),
+            "error.css": FileResource(os.path.join(rootPath, "www-files/css/error.css"), ContentType("text/css", "utf-8")),
+            "submit.css": FileResource(os.path.join(rootPath, "www-files/css/submit.css"), ContentType("text/css", "utf-8"))
+        }),
+        "js": MapResource({
+            "jquery.js": FileResource(os.path.join(rootPath, "www-files/js/jquery.js"), ContentType("text/javascript", "utf-8"))
+        })
+    })
+    apiRoot["submit"].resource[""] = apiRoot["submit"].resource
     
     return ContinueSelector(
         CompressionSelector(
             ExceptionSelector(
-                ResetSelector(model, AuthenticationSelector(model.store, MapSelector("API root", {
-                    "station": StationResource(model),
-                    "broadcast": IDResource(model, libPriyom.Broadcast),
-                    "transmission": IDResource(model, libPriyom.Transmission),
-                    "transmissionClass": IDResource(model, libPriyom.TransmissionClass),
-                    "schedule": IDResource(model, libPriyom.Schedule),
-                    "submit": AuthorizationSelector(MapSelector(u"submit", {
-                        "log": SubmitLogResource(model),
-                        "": None
-                    }), ["log", "log-moderated"]),
-                    "call": apiMap,
-                    "doc": DocumentationSelector(apiMap),
-                    "": HomeResource(model),
-                    "css": MapResource({
-                        "home.css": FileResource(os.path.join(rootPath, "www-files/css/home.css"), ContentType("text/css", "utf-8")),
-                        "error.css": FileResource(os.path.join(rootPath, "www-files/css/error.css"), ContentType("text/css", "utf-8")),
-                        "submit.css": FileResource(os.path.join(rootPath, "www-files/css/submit.css"), ContentType("text/css", "utf-8"))
-                    }),
-                    "js": MapResource({
-                        "jquery.js": FileResource(os.path.join(rootPath, "www-files/js/jquery.js"), ContentType("text/javascript", "utf-8"))
-                    })
-                }))),
+                ResetSelector(model, 
+                    AuthenticationSelector(model.store, apiRoot)
+                ),
                 show = response["showExceptions"]
             )
         )
