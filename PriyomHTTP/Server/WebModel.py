@@ -164,8 +164,11 @@ class WebModel(object):
         def redefine_both_callable(s):
             try:
                 return type1(s)
-            except:
-                return type2(s)
+            except Exception as e1:
+                try:
+                    return type2(s)
+                except Exception as e2:
+                    raise ValueError(u"{1} and {2}".format(repr(s), e1, e2))
         return WrapFunction(redefine_both_callable, u"{0} or {1}".format(unicode(type1), unicode(type2)))
         
     @staticmethod
