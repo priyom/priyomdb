@@ -28,7 +28,7 @@ authors:
 from storm.locals import *
 from storm.expr import *
 from WebStack.Generic import ContentType, EndOfResponse
-from HTMLResource import HTMLResource
+from SubmitResource import SubmitResource, SubmitParameterError
 from libPriyom import *
 from datetime import datetime, timedelta
 from time import mktime, time
@@ -36,9 +36,7 @@ import itertools
 import xml.etree.ElementTree as ElementTree
 import math
 
-SubmitParameterError = BaseException()
-
-class SubmitLogResource(HTMLResource):
+class SubmitLogResource(SubmitResource):
     def __init__(self, model):
         super(SubmitLogResource, self).__init__(model)
         self.allowedMethods = frozenset(["GET", "POST"])
@@ -52,39 +50,11 @@ class SubmitLogResource(HTMLResource):
         self.broadcastValidator = self.model.AllowBoth(self.model.validStormObject(Broadcast, self.store), self.model.EmptyString())
         
         self.transmissionClassValidator = self.model.validStormObject(TransmissionClass, self.store)
-        
-    def section(self, parent, title):
-        sec = self.SubElement(parent, u"div", attrib={
-            u"class": u"section"
-        })
-        self.SubElement(sec, u"div", attrib={
-            u"class": u"inner-caption"
-        }).text = title
-        return sec
 
-    @staticmethod
-    def recursiveDictNode(dictionary, indent = u""):
-        for key, value in dictionary.iteritems():
-            if type(value) == dict:
-                yield u"""{1}{0}: {2}""".format(key, indent, u"{")
-                for line in SubmitLogResource.recursiveDictNode(value, indent + u"    "):
-                    yield line
-                yield u"""{0}{1}""".format(indent, u"}")
-            else:
-                yield u"""{2}{0}: {1}""".format(key, repr(value), indent)
-    
-    @staticmethod
-    def recursiveDict(dict):
-        return "\n".join(SubmitLogResource.recursiveDictNode(dict))
 
     def _basicInformationTree(self, parent):
         parent[0].tail = u"Station: "
-        stationSelect = self.SubElement(parent, u"select", name=u"station")
-        for station in self.store.find(Station).order_by(Asc(Station.EnigmaIdentifier), Asc(Station.PriyomIdentifier), Asc(Station.Nickname)):
-            stationOption = self.SubElement(stationSelect, u"option", value=unicode(station.ID))
-            if station == self.station:
-                stationOption.set(u"selected", u"selected")
-            stationOption.text = unicode(station)
+        stationSelect = self._stationSelect(parent, name=u"station", value=self.station)
         
         self.br(parent, u"Timestamp: ")
         self.input(parent, name=u"timestamp", value=unicode(self.timestamp.strftime(Formatting.priyomdate)))
@@ -104,21 +74,6 @@ class SubmitLogResource(HTMLResource):
         
         self.br(parent, u"Recording URL: ")
         self.input(parent, name=u"recording", value=self.recordingURL)
-        
-    def _modulationSelector(self, name=u"modulation", value=u""):
-        if self.modulationSelector is None:
-            self.modulationSelector = ElementTree.Element(u"{{{0}}}select".format(XMLIntf.xhtmlNamespace))
-            for modulation in self.store.find(Modulation).order_by(Asc(Modulation.Name)):
-                option = self.SubElement(self.modulationSelector, u"option", value=modulation.Name)
-                option.text = modulation.Name
-        
-        select = self.modulationSelector.copy()
-        for option in select:
-            if option.text == value:
-                option.set(u"selected", u"selected")
-                break
-        select.set(u"name", name)
-        return select
         
     def _frequencyTable(self, parent):
         table = self.SubElement(parent, u"table", attrib={
@@ -254,15 +209,6 @@ class SubmitLogResource(HTMLResource):
         else:
             parseTx.tail = u"Select a transmission class and hit Check transmission to validate your input before submitting!"
         
-    def setError(self, message):
-        if self.error is not None:
-            raise SubmitParameterError
-        self.error = message
-        raise SubmitParameterError
-        
-    def parameterError(self, parameterName, message=None):
-        self.setError(u"{0} is wrong: {1}".format(parameterName, message))
-        
     def insert(self):
         # most of the prework has been done already, only need to take some minor validations
         # lets go strict:
@@ -270,6 +216,9 @@ class SubmitLogResource(HTMLResource):
         self.txClass = self.getQueryValue("transmissionClass", self.transmissionClassValidator)
         
         frequencies = [(BroadcastFrequency.parseFrequency(item["frequency"]), item["modulation"]) for key, item in self.queryEx["frequencies"].iteritems() if key != "new"]
+        
+        if self.error is not None:
+            self.setError(self.error)
         
         timestamp = TimeUtils.toTimestamp(self.timestamp)
         if self.broadcast is not None:
@@ -355,26 +304,29 @@ Transmission (#{4}): {3}""".format(
     def buildDoc(self, trans, elements):
         self.modulationSelector = None # make sure its regenerated each request
         
-        self.station = self.getQueryValue("station", self.stationValidator, defaultKey=None)
-        #self.broadcast = 
-        self.timestamp = self.getQueryValue("timestamp", self.timestampValidator, defaultKey=TimeUtils.nowDate(), default=None)
-        self.duration = self.getQueryValue("duration", self.durationValidator, defaultKey=0.)
-        self.callsign = self.getQueryValue("callsign", self.unicodeValidator, defaultKey=u"")
-        self.foreignCallsignLang = self.getQueryValue("foreignCallsign[lang]", self.unicodeValidator, defaultKey=u"")
-        self.foreignCallsign = self.getQueryValue("foreignCallsign[value]", self.unicodeValidator, defaultKey=u"")
-        self.remarks = self.getQueryValue("remarks", self.unicodeValidator, defaultKey=u"")
-        self.recordingURL = self.getQueryValue("recording", self.unicodeValidator, defaultKey=u"")
-        
-        self.broadcast = self.getQueryValue("broadcast", self.broadcastValidator, defaultKey=None)
-        if self.broadcast == u"":
-            self.broadcast = None
-        self.broadcastBefore = self.getQueryValue("broadcastBefore", self.durationValidator, defaultKey=0.)
-        self.broadcastAfter = self.getQueryValue("broadcastAfter", self.durationValidator, defaultKey=0.)
-        self.broadcastConfirmed = self.getQueryValue("broadcastConfirmed", unicode, default=None) is not None
-        self.broadcastComment = self.getQueryValue("broadcastComment", self.unicodeValidator, defaultKey=u"")
-        
-        self.txClass = self.getQueryValue("transmissionClass", self.transmissionClassValidator, defaultKey=None)
-        self.transmissionRaw = self.getQueryValue("transmissionRaw", self.unicodeValidator, defaultKey=u"")
+        try:
+            self.station = self.getQueryValue("station", self.stationValidator, defaultKey=None)
+            #self.broadcast = 
+            self.timestamp = self.getQueryValue("timestamp", self.timestampValidator, defaultKey=TimeUtils.nowDate(), default=None)
+            self.duration = self.getQueryValue("duration", self.durationValidator, defaultKey=0.)
+            self.callsign = self.getQueryValue("callsign", self.unicodeValidator, defaultKey=u"")
+            self.foreignCallsignLang = self.getQueryValue("foreignCallsign[lang]", self.unicodeValidator, defaultKey=u"")
+            self.foreignCallsign = self.getQueryValue("foreignCallsign[value]", self.unicodeValidator, defaultKey=u"")
+            self.remarks = self.getQueryValue("remarks", self.unicodeValidator, defaultKey=u"")
+            self.recordingURL = self.getQueryValue("recording", self.unicodeValidator, defaultKey=u"")
+            
+            self.broadcast = self.getQueryValue("broadcast", self.broadcastValidator, defaultKey=None)
+            if self.broadcast == u"":
+                self.broadcast = None
+            self.broadcastBefore = self.getQueryValue("broadcastBefore", self.durationValidator, defaultKey=0.)
+            self.broadcastAfter = self.getQueryValue("broadcastAfter", self.durationValidator, defaultKey=0.)
+            self.broadcastConfirmed = self.getQueryValue("broadcastConfirmed", unicode, default=None) is not None
+            self.broadcastComment = self.getQueryValue("broadcastComment", self.unicodeValidator, defaultKey=u"")
+            
+            self.txClass = self.getQueryValue("transmissionClass", self.transmissionClassValidator, defaultKey=None)
+            self.transmissionRaw = self.getQueryValue("transmissionRaw", self.unicodeValidator, defaultKey=u"")
+        except SubmitParameterError:
+            pass
         
         self.queryEx = self.parseQueryDict()
         
@@ -384,7 +336,7 @@ Transmission (#{4}): {3}""".format(
         self.link(u"/css/submit.css")
         
         submitted = False
-        if "submit" in self.queryEx:
+        if "submit" in self.queryEx and self.error is None:
             try:
                 self.insert()
                 submitted = True
