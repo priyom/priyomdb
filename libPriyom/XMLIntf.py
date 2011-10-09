@@ -41,17 +41,20 @@ __all__ = [
     'NoneHandlers', 
     'namespace', 
     'importNamespace', 
-    'debugXml'
+    'debugXml',
+    'applyNamespace',
+    'xhtmlNamespace'
 ]
 
 namespace = u"http://api.priyom.org/priyomdb"
 importNamespace = u"http://api.priyom.org/priyomdb/import"
+xhtmlNamespace = u"http://www.w3.org/1999/xhtml"
 debugXml = False
 
 _serializer = ElementTreeHelper.Serializer.Serializer()
 _serializer.registerNamespacePrefix(u"priyom", namespace)
 _serializer.registerNamespacePrefix(u"priyom-import", importNamespace)
-_serializer.registerNamespacePrefix(u"xhtml", u"http://www.w3.org/1999/xhtml")
+_serializer.registerNamespacePrefix(u"xhtml", xhtmlNamespace)
 
 def Serializer():
     global _serializer
@@ -136,3 +139,9 @@ def appendDateElement(parentNode, name, value, useNamespace = namespace):
     node = appendTextElement(parentNode, name, date.strftime(Formatting.priyomdate), useNamespace = useNamespace)
     node.set(u"unix", unicode(value))
     return node
+
+def applyNamespace(subtree, namespace):
+    for element in subtree.iter():
+        tag = element.tag.partition(u"}")
+        if len(tag[1]) == 0:
+            element.tag = u"{{{0}}}{1}".format(namespace, tag[0])

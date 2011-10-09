@@ -59,11 +59,19 @@ class Station(PriyomBase, XMLIntf.XMLStorm):
     
     def _metadataToDom(self, parentNode):
         XMLIntf.appendTextElements(parentNode,
-            [
+            (
                 (u"EnigmaIdentifier", self.EnigmaIdentifier),
                 (u"PriyomIdentifier", self.PriyomIdentifier),
-                (u"Nickname", self.Nickname),
-                (u"Description", self.Description),
+                (u"Nickname", self.Nickname)
+            )
+        )
+        subtree = ElementTree.XML(u"<Description>"+self.Description+u"</Description>")
+        XMLIntf.applyNamespace(subtree, XMLIntf.xhtmlNamespace)
+        subtree.tag = u"{{{0}}}Description".format(XMLIntf.namespace)
+        parentNode.append(subtree)
+        
+        XMLIntf.appendTextElements(parentNode,
+            [
                 (u"Status", self.Status)
             ],
             noneHandler = lambda name: u""
