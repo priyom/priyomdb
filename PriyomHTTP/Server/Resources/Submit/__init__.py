@@ -1,0 +1,2 @@
+from SubmitLog import SubmitLogResource
+from SubmitEvent import SubmitEventResource

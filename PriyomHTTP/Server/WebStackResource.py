@@ -33,6 +33,7 @@ from WebModel import WebModel
 import libPriyom
 from Resources import *
 from Resources.API import *
+from Resources.Submit import *
 from Selectors import *
 import libPriyom.Plots as Plots
 import libPriyom.PlotDataSources as PlotDataSources
