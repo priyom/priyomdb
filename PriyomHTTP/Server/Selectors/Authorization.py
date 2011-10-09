@@ -36,6 +36,15 @@ class AuthorizationSelector(object):
         self.title = self.resource.title
         if hasattr(self.resource, "shortDescription"):
             self.shortDescription = self.resource.shortDescription
+            
+    def __getitem__(self, key):
+        return self.resource[key]
+    
+    def __setitem__(self, key, value):
+        self.resource[key] = value
+        
+    def __delitem__(self, key):
+        del self.resource[key]
         
     def respond(self, trans):
         for cap in self.requiredCap:
