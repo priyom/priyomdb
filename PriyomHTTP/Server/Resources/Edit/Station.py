@@ -1,5 +1,5 @@
 """
-File name: __init__.py
+File name: Edit.py
 This file is part of: priyomdb
 
 LICENSE
@@ -24,5 +24,7 @@ For feedback and questions about priyomdb please e-mail one of the
 authors:
     Jonas Wielicki <j.wielicki@sotecware.net>
 """
-from SubmitLog import SubmitLogResource
-from SubmitEvent import SubmitEventResource
+from EditResource import EditResource
+
+class EditStation(EditResource):
+    pass

@@ -24,5 +24,4 @@ For feedback and questions about priyomdb please e-mail one of the
 authors:
     Jonas Wielicki <j.wielicki@sotecware.net>
 """
-from SubmitLog import SubmitLogResource
-from SubmitEvent import SubmitEventResource
+from Station import EditStation

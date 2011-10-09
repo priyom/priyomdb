@@ -34,6 +34,7 @@ import libPriyom
 from Resources import *
 from Resources.API import *
 from Resources.Submit import *
+from Resources.Edit import *
 from Selectors import *
 import libPriyom.Plots as Plots
 import libPriyom.PlotDataSources as PlotDataSources
@@ -133,6 +134,9 @@ def get_site_map(priyomInterface):
             "log": SubmitLogResource(model),
             "event": SubmitEventResource(model)
         }), ["log", "log-moderated"]),
+        "edit": MapSelector(u"edit", {
+            "station": AuthorizationSelector(EditStation(model), ["admin", "station"])
+        }),
         "call": apiMap,
         "doc": DocumentationSelector(apiMap),
         "": HomeResource(model),
@@ -145,7 +149,8 @@ def get_site_map(priyomInterface):
             "jquery.js": FileResource(os.path.join(rootPath, "www-files/js/jquery.js"), ContentType("text/javascript", "utf-8"))
         })
     })
-    apiRoot["submit"].resource[""] = apiRoot["submit"].resource
+    apiRoot["submit"][""] = apiRoot["submit"]
+    apiRoot["edit"][""] = apiRoot["edit"]
     
     return ContinueSelector(
         CompressionSelector(
