@@ -28,113 +28,40 @@ authors:
 from storm.locals import *
 from storm.expr import *
 from WebStack.Generic import ContentType, EndOfResponse
-from Resource import Resource
+from HTMLResource import HTMLResource
 from libPriyom import *
 from datetime import datetime, timedelta
 from time import mktime, time
+import itertools
+import xml.etree.ElementTree as ElementTree
+import math
 
-class SubmitLogResource(Resource):
+SubmitParameterError = BaseException()
+
+class SubmitLogResource(HTMLResource):
     def __init__(self, model):
         super(SubmitLogResource, self).__init__(model)
         self.allowedMethods = frozenset(["GET", "POST"])
         
-    def formatFrequencies(self, station):
-        i = -1
-        items = [(key, value) for key, value in self.queryEx.get("frequencies", {}).iteritems() if (key != "new" or "submit" in value) and (not "delete" in value)]
-        items.sort(lambda x,y: cmp(x[0], y[0]))
-        for key, item in items:
-            i += 1
-            if "submit" in item:
-                part = item["frequency+modulation"].partition(u" ")
-                item["frequency"] = part[0]+u" Hz"
-                item["modulation"] = part[1]
-            freq = BroadcastFrequency.parseFrequency(item["frequency"])
-            if freq is None:
-                freq = "0 Hz"
-            else:
-                freq = BroadcastFrequency.formatFrequency(freq)
-            yield u"""<tr>
-    <td><input type="text" name="frequencies[{0}][frequency]" value="{1}" /></td>
-    <td><select name="frequencies[{0}][modulation]">{2}</select></td>
-    <td class="buttons"><input type="submit" name="frequencies[{0}][update]" value="Save" /><input type="submit" name="frequencies[{0}][delete]" value="✗" /></td>
-</tr>""".format(
-                unicode(i),
-                freq,
-                u"\n".join((u"""<option value="{0}"{1}>{0}</option>""".format(modulation.Name, u' selected="selected"' if modulation.Name == item["modulation"] else u"") for modulation in self.store.find(Modulation).order_by(Asc(Modulation.Name))))
-            )
         
-        knownFrequencies = self.store.using(
-                BroadcastFrequency, 
-                LeftJoin(Modulation, Modulation.ID == BroadcastFrequency.ModulationID), 
-                LeftJoin(Broadcast, BroadcastFrequency.BroadcastID == Broadcast.ID)
-            ).find(
-                (BroadcastFrequency.Frequency, Modulation.Name), 
-                Broadcast.StationID == station.ID
-            ).config(distinct=True) if station is not None else None
-        yield u"""<tr>
-    <td class="buttons" colspan="3"><input type="submit" name="frequencies[new][submit]" value="+" /><select name="frequencies[new][frequency+modulation]"><option value="0 USB">0 Hz (USB)</option>{0}</select></td>
-</tr>""".format(
-            u"\n".join((u"""<option value="{0} {1}">{2}</option>""".format(
-                freq,
-                modulation,
-                u"{0} ({1})".format(BroadcastFrequency.formatFrequency(freq), modulation)) for freq, modulation in knownFrequencies)) if station is not None else u""
-        )
+        self.stationValidator = self.model.validStormObject(Station, self.store)
+        self.timestampValidator = self.model.PriyomTimestamp()
+        self.durationValidator = float
+        self.unicodeValidator = unicode
         
-    def formatBroadcastSelector(self, station, timestamp):
-        yield u"""<div class="section">"""
-        yield u"""<div class="inner-caption">Broadcast: </div>"""
-        yield u"""<select name="broadcast">"""
-        yield u"""<option value="0">New broadcast</option>"""
-        found = False
-        ids = list()
-        if station is not None:
-            for broadcast in (self.model.priyomInterface.getCloseBroadcasts(station.ID, timestamp, 600)[1]):
-                if broadcast.Type == u"continous":
-                    continue
-                ids.append(broadcast.ID)
-                yield u"""<option value="{0}"{2}>{1}</option>""".format(
-                    broadcast.ID,
-                    unicode(broadcast),
-                    u' selected="selected"' if broadcast.ID == int(self.queryEx.get("broadcast", 0)) else u""
-                )
-                found = True
-        yield u"""</select><input type="submit" name="updateBroadcast" value="Ok" />"""
+        self.broadcastValidator = self.model.AllowBoth(self.model.validStormObject(Broadcast, self.store), self.model.EmptyString())
         
-        if not found:
-            yield u""" (no suitable broadcasts found at the given timestamp)"""
+        self.transmissionClassValidator = self.model.validStormObject(TransmissionClass, self.store)
         
-        if not found or not "broadcast" in self.queryEx or self.queryEx["broadcast"] == "0":
-            yield u"""<div>"""
-        else:
-            yield u"""<div class="hidden">"""
+    def section(self, parent, title):
+        sec = self.SubElement(parent, u"div", attrib={
+            u"class": u"section"
+        })
+        self.SubElement(sec, u"div", attrib={
+            u"class": u"inner-caption"
+        }).text = title
+        return sec
 
-        yield u"""Frequencies:
-            <table class="frequency-table">
-                <thead>
-                    <th>Frequency</th>
-                    <th>Modulation/Mode</th>
-                    <th class="buttons"></th>
-                </thead>
-                <tbody>"""
-            
-        for line in self.formatFrequencies(station):
-            yield line
-            
-        yield u"""
-                </tbody>
-            </table>
-            Silence before TX: <input type="text" name="broadcastBefore" value="{0}" /> seconds<br />
-            Silence after TX: <input type="text" name="broadcastAfter" value="{1}" /> seconds<br />
-            <input type="checkbox" name="broadcastConfirmed"{3} id="broadcastConfirmed" /><label for="broadcastConfirmed"> confirmed</label><br />
-            Comment: <input type="text" name="broadcastComment" value="{2}" style="width: 100%;" /><br />""".format(
-            self.queryEx.get("broadcastBefore", 0),
-            self.queryEx.get("broadcastAfter", 0),
-            self.queryEx.get("broadcastComment", u""),
-            u' checked="checked"' if "broadcastConfirmed" in self.queryEx else u""
-        )
-            
-        yield u"""</div></div>"""
-        
     def recursiveDictNode(self, dictionary, indent = u""):
         for key, value in dictionary.iteritems():
             if type(value) == dict:
@@ -148,115 +75,253 @@ class SubmitLogResource(Resource):
     def recursiveDict(self, dict):
         return "\n".join(self.recursiveDictNode(dict))
         
-    def formatTransmissionEditor(self):
-        yield u"""Transmission class: <select name="transmissionClass">"""
-        txClassId = int(self.queryEx.get("transmissionClass", 0))
-        for txClass in self.store.find(TransmissionClass).order_by(Asc(TransmissionClass.DisplayName)):
-            yield u"""<option value="{0}"{2}>{1}</option>""".format(
-                txClass.ID,
-                txClass.DisplayName,
-                u' selected="selected"' if txClass.ID == txClassId else u""
-            )
-        yield u"""</select>"""
-        yield u"""<textarea name="transmission" rows="5" style="width: 100%">{0}</textarea>""".format(self.queryEx.get("transmission", u""))
-        yield u"""<input type="submit" name="parseTx" value="Check transmission" />"""
+    def _basicInformationTree(self, parent):
+        parent[0].tail = u"Station: "
+        stationSelect = self.SubElement(parent, u"select", name=u"station")
+        for station in self.store.find(Station).order_by(Asc(Station.EnigmaIdentifier), Asc(Station.PriyomIdentifier), Asc(Station.Nickname)):
+            stationOption = self.SubElement(stationSelect, u"option", value=unicode(station.ID))
+            if station == self.station:
+                stationOption.set(u"selected", u"selected")
+            stationOption.text = unicode(station)
         
-        txClass = self.store.get(TransmissionClass, txClassId)
-        if txClass is not None:
+        self.br(parent, u"Timestamp: ")
+        self.input(parent, name=u"timestamp", value=unicode(self.timestamp.strftime(Formatting.priyomdate)))
+        
+        self.br(parent, u"Duration: ")
+        self.input(parent, name=u"duration", value=unicode(self.duration)).tail = u" s"
+        
+        self.br(parent, u"Callsign: ")
+        self.input(parent, name=u"callsign", value=self.callsign)
+        
+        self.br(parent, u"Foreign callsign (langCode / contents): ")
+        self.input(parent, name=u"foreignCallsign[lang]", value=self.foreignCallsignLang).tail = u" / "
+        self.input(parent, name=u"foreignCallsign[value]", value=self.foreignCallsign)
+        
+        self.br(parent, u"Remarks: ")
+        self.input(parent, name=u"remarks", value=self.remarks)
+        
+        self.br(parent, u"Recording URL: ")
+        self.input(parent, name=u"recording", value=self.recordingURL)
+        
+    def _modulationSelector(self, name=u"modulation", value=u""):
+        if self.modulationSelector is None:
+            self.modulationSelector = ElementTree.Element(u"{{{0}}}select".format(XMLIntf.xhtmlNamespace))
+            for modulation in self.store.find(Modulation).order_by(Asc(Modulation.Name)):
+                option = self.SubElement(self.modulationSelector, u"option", value=modulation.Name)
+                option.text = modulation.Name
+        
+        select = self.modulationSelector.copy()
+        for option in select:
+            if option.text == value:
+                option.set(u"selected", u"selected")
+                break
+        select.set(u"name", name)
+        return select
+        
+    def _frequencyTable(self, parent):
+        table = self.SubElement(parent, u"table", attrib={
+            u"class": u"frequency-table"
+        })
+        head = self.SubElement(table, u"thead")
+        self.SubElement(head, u"th").text = u"Frequency"
+        self.SubElement(head, u"th").text = u"Modulation/Mode"
+        self.SubElement(head, u"th").set(u"class", u"buttons")
+        
+        body = self.SubElement(table, u"tbody")
+        
+        freqs = list(itertools.ifilter((lambda kv: (kv[0] != "new" or "submit" in kv[1]) and (not "delete" in kv[1])), self.queryEx.get("frequencies", {}).iteritems()))
+        freqs.sort(key=lambda x: x[0])
+        for i, (key, item) in itertools.izip(xrange(len(freqs)), freqs):
+            if "submit" in item:
+                part = item["frequency+modulation"].partition(u" ")
+                item["frequency"] = part[0]+u" Hz"
+                item["modulation"] = part[2]
+            freq = BroadcastFrequency.parseFrequency(item["frequency"])
+            if freq is None:
+                freq = "0 Hz"
+            else:
+                freq = BroadcastFrequency.formatFrequency(freq)
+            
+            tr = self.SubElement(body, u"tr")
+            self.input(self.SubElement(tr, u"td"), name=u"frequencies[{0}][frequency]".format(i), value=freq)
+            self.SubElement(tr, u"td").append(self._modulationSelector(name=u"frequencies[{0}][modulation]".format(i), value=item["modulation"]))
+            buttons = self.SubElement(tr, u"td", attrib={
+                u"class": u"buttons"
+            })
+            self.input(buttons, type=u"submit", name=u"frequencies[{0}][update]".format(i), value=u"Save")
+            self.input(buttons, type=u"submit", name=u"frequencies[{0}][delete]".format(i), value=u"✗")
+        
+        knownFrequencies = self.store.using(
+            BroadcastFrequency, 
+            LeftJoin(Modulation, Modulation.ID == BroadcastFrequency.ModulationID), 
+            LeftJoin(Broadcast, BroadcastFrequency.BroadcastID == Broadcast.ID)
+        ).find(
+            (BroadcastFrequency.Frequency, Modulation.Name), 
+            Broadcast.StationID == self.station.ID
+        ).config(distinct=True) if self.station is not None else None
+        
+        tr = self.SubElement(body, u"tr")
+        td = self.SubElement(body, u"td", attrib={
+            u"class": u"buttons",
+            u"colspan": u"3"
+        })
+        self.input(td, type=u"submit", name=u"frequencies[new][submit]", value=u"+")
+        select = self.SubElement(td, u"select", name=u"frequencies[new][frequency+modulation]")
+        option = self.SubElement(select, u"option", value=u"0 USB").text=u"0 Hz (USB)"
+        if knownFrequencies is not None:
+            for frequency, modulation in knownFrequencies:
+                self.SubElement(select, u"option", value=u"{0} {1}".format(frequency, modulation)).text = u"{0} ({1})".format(BroadcastFrequency.formatFrequency(frequency), modulation)
+        
+        return table
+        
+        
+    def _broadcastTree(self, parent):
+        broadcastSelect = self.SubElement(parent, u"select", name=u"broadcast")
+        self.SubElement(broadcastSelect, u"option", value=u"").text = u"New broadcast"
+        found = False
+        if self.station is not None and self.timestamp is not None:
+            for broadcast in self.priyomInterface.getCloseBroadcasts(self.station.ID, TimeUtils.toTimestamp(self.timestamp), 600)[1]:
+                if broadcast.type == u"continous":
+                    continue
+                broadcastOption = self.SubElement(broadcastSelect, u"option", value=unicode(broadcast.ID))
+                broadcastOption.text = unicode(broadcast)
+                if broadcast is self.broadcast:
+                    broadcastOption.set(u"selected", u"selected")
+                
+                found = True
+        ok = self.input(parent, type=u"submit", name=u"updateBroadcast", value=u"Apply")
+        if found is None:
+            ok.tail = u" (no suitable broadcasts found at the given timestamp)"
+        
+        newBroadcast = self.SubElement(parent, u"div")
+        if self.broadcast is not None:
+            newBroadcast.set(u"class", u"hidden")
+            newBroadcast.tail = u"Reusing the frequencies assigned to the selected broadcast. If you want different frequencies, you must create a new broadcast."
+        newBroadcast.text = u"Frequencies: "
+        
+        freqTable = self._frequencyTable(newBroadcast)
+        
+        self.br(newBroadcast)
+        self.input(newBroadcast, type=u"checkbox", name=u"broadcastConfirmed", id=u"broadcastConfirmed", attrib={
+            u"checked": u"checked"
+        } if self.broadcastConfirmed else {})
+        self.SubElement(newBroadcast, u"label", attrib={
+            u"for": u"broadcastConfirmed"
+        }).text = u" confirmed"
+        
+        self.br(newBroadcast, u"Comment: ")
+        self.input(newBroadcast, name=u"broadcastComment", value=self.broadcastComment, style=u"width: 100%;")
+        
+        self.br(parent, u"Silence before TX (only for channelmarker-stations): ")
+        self.input(parent, name=u"broadcastBefore", value=unicode(self.broadcastBefore)).tail = u" s"
+        
+        self.br(parent, u"Silence after TX (only for channelmarker-stations): ")
+        self.input(parent, name=u"broadcastAfter", value=unicode(self.broadcastAfter)).tail = u" s"
+        
+    def _contentsTree(self, parent):
+        parent[0].tail = u"Transmission class: "
+        classSelect = self.SubElement(parent, u"select", name=u"transmissionClass")
+        for txClass in self.store.find(TransmissionClass).order_by(Asc(TransmissionClass.DisplayName)):
+            option = self.SubElement(classSelect, u"option", value=unicode(txClass.ID))
+            option.text = txClass.DisplayName
+            if txClass is self.txClass:
+                option.set(u"selected", u"selected")
+        
+        text = self.SubElement(parent, u"textarea", rows=u"5", style=u"width: 100%", name=u"transmissionRaw")
+        text.text = self.transmissionRaw
+        
+        parseTx = self.input(parent, type=u"submit", name=u"parseTx", value=u"Check transmission")
+        
+        if self.txClass is not None:
             items = None
+            status = u""
             try:
-                items = txClass.parsePlainText(self.queryEx.get("transmission", u""))
+                items = txClass.parsePlainText(self.transmissionRaw)
             except ValueError as e:
-                yield u""" Parsing failed: {0:s}<br />""".format(e)
+                status = u"Parsing failed: {0:s}".format(e)
             except NodeError as e:
-                yield u""" Parsing failed: {0:s}<br />""".format(e)
+                status = u"Parsing failed: {0:s}".format(e)
             if items is not None:
                 if len(items) > 0:
-                    yield u""" Parsing ok, creates {0:d} items.<br />""".format(len(items))
+                    status = u"Parsing ok, creates {0:d} items.".format(len(items))
                 else:
-                    yield u""" Parsing failed, no items<br />"""
-    def insert(self):
-        try:
-            station = self.store.get(Station, int(self.queryEx["stationId"]))
-            if station is None:
-                raise KeyError("No station with id #{0}".format(self.queryEx["stationId"]))
-            timestamp = self.queryEx["timestamp"]
-            duration = int(self.queryEx["duration"])
-            remarks = self.queryEx["remarks"]
-            callsign = self.queryEx["callsign"]
-            foreignCallsignLang = self.queryEx["foreignCallsign"]["lang"]
-            foreignCallsign = self.queryEx["foreignCallsign"]["value"]
-            if len(foreignCallsign) != 0 and len(foreignCallsignLang) == 0:
-                raise KeyError("Foreign callsign given but no language code set.")
-            recordingURL = self.queryEx["recording"]
-            
-            broadcast = self.store.get(Broadcast, int(self.queryEx["broadcast"]))
-            if broadcast is None and int(self.queryEx["broadcast"]) != 0:
-                raise KeyError("No broadcast with id #{0}".format(self.queryEx["broadcast"]))
-            broadcastAfter = int(self.queryEx["broadcastAfter"])
-            broadcastBefore = int(self.queryEx["broadcastBefore"])
-            broadcastFrequencies = [(BroadcastFrequency.parseFrequency(item["frequency"]), item["modulation"]) for key, item in self.queryEx["frequencies"].iteritems() if key != "new"]
-            broadcastConfirmed = "broadcastConfirmed" in self.queryEx
-            broadcastComment = self.queryEx["broadcastComment"]
-            
-            transmissionClass = self.store.get(TransmissionClass, int(self.queryEx["transmissionClass"]))
-            if transmissionClass is None:
-                raise KeyError("No transmission class with id #{0}".format(self.queryEx["transmissionClass"]))
-            transmissionContents = self.queryEx["transmission"]
-            
-            timestamp = TimeUtils.toTimestamp(datetime.strptime(timestamp, Formatting.priyomdate))
-        except KeyError as e:
-            return u"Missing submit data: {0}".format(unicode(e))
-        except ValueError as e:
-            return unicode(e)
-        try:
-            contents = transmissionClass.parsePlainText(transmissionContents)
-        except ValueError as e:
-            return unicode(e)
-        except NodeError as e:
-            return unicode(e)
-            
-        if broadcast is None:
-            broadcast = Broadcast()
-            self.store.add(broadcast)
-            broadcast.BroadcastStart = timestamp - broadcastBefore
-            broadcast.BroadcastEnd = timestamp + duration + broadcastAfter
-            broadcast.Comment = broadcastComment
-            broadcast.Type = u"data"
-            broadcast.Confirmed = broadcastConfirmed
-            broadcast.Station = station
-            
-            for freqItem in broadcastFrequencies:
-                freq = BroadcastFrequency()
-                self.store.add(freq)
-                freq.Frequency = freqItem[0]
-                modulation = self.store.find(Modulation, Modulation.Name == freqItem[1]).any()
-                if modulation is None:
-                    modulation = Modulation()
-                    modulation.Name = freqItem[1]
-                    self.store.add(modulation)
-                freq.Modulation = modulation
-                freq.Broadcast = broadcast
-        else:
-            if broadcast.BroadcastStart > timestamp:
-                broadcast.BroadcastStart = timestamp
+                    status = u"Parsing failed, no items"
             else:
-                broadcast.BroadcastEnd = timestamp + duration
-                
-        transmission = Transmission()
-        self.store.add(transmission)
-        transmission.Broadcast = broadcast
-        transmission.Class = transmissionClass
-        transmission.__storm_loaded__()
-        transmission.Callsign = callsign
-        transmission.ForeignCallsign.supplement.LangCode = foreignCallsignLang
-        transmission.ForeignCallsign.supplement.ForeignText = foreignCallsign
-        transmission.Remarks = remarks
-        transmission.Timestamp = timestamp
-        transmission.RecordingURL = recordingURL
+                status = u"Parsing failed, parser returned None."
+            parseTx.tail = status
+        else:
+            parseTx.tail = u"Select a transmission class and hit Check transmission to validate your input before submitting!"
         
-        order = 0
-        for rowData in contents:
+    def setError(self, message):
+        if self.error is not None:
+            raise SubmitParameterError
+        self.error = message
+        raise SubmitParameterError
+        
+    def parameterError(self, parameterName, message=None):
+        self.setError(u"{0} is wrong: {1}".format(parameterName, message))
+        
+    def insert(self):
+        # most of the prework has been done already, only need to take some minor validations
+        # lets go strict:
+        self.station = self.getQueryValue("station", self.stationValidator)
+        self.txClass = self.getQueryValue("transmissionClass", self.transmissionClassValidator)
+        
+        frequencies = [(BroadcastFrequency.parseFrequency(item["frequency"]), item["modulation"]) for key, item in self.queryEx["frequencies"].iteritems() if key != "new"]
+        
+        timestamp = TimeUtils.toTimestamp(self.timestamp)
+        if self.broadcast is not None:
+            if abs(timestamp - broadcast.BroadcastStart) > 600:
+                self.setError(u"Cannot use this broadcast: It is more than one minute away from transmission time.")
+        
+        try:
+            contents = self.txClass.parsePlainText(self.transmissionRaw)
+        except ValueError as e:
+            self.setError(unicode(e))
+        except NodeError as e:
+            self.setError(unicode(e))
+        
+        if self.broadcast is None:
+            self.broadcast = Broadcast()
+            self.broadcast.BroadcastStart = timestamp - self.broadcastBefore
+            self.broadcast.BroadcastEnd = timestamp + self.duration + self.broadcastAfter
+            self.broadcast.Comment = self.broadcastComment
+            self.broadcast.Type = u"data"
+            self.broadcast.Confirmed = self.broadcastConfirmed
+            self.broadcast.Station = self.station
+            
+            for frequency, modulation in frequencies:
+                freq = BroadcastFrequency()
+                freq.Frequency = frequency
+                mod = self.store.find(Modulation, Modulation.Name == modulation).any()
+                if mod is None:
+                    mod = Modulation()
+                    mod.Name = modulation
+                    self.store.add(mod)
+                freq.Modulation = mod
+                freq.Broadcast = self.broadcast
+                self.store.add(freq)
+            
+            self.store.add(self.broadcast)
+        else:
+            if self.broadcast.BroadcastStart > timestamp:
+                self.broadcast.BroadcastStart = timestamp - self.broadcastBefore
+            else:
+                self.broadcast.BroadcastEnd = timestamp + duration + self.broadcastAfter
+        
+        transmission = Transmission()
+        transmission.Broadcast = self.broadcast
+        transmission.Class = self.txClass
+        self.store.add(transmission)
+        transmission.__storm_loaded__()
+        transmission.Callsign = self.callsign
+        transmission.ForeignCallsign.supplement.LangCode = self.foreignCallsignLang
+        transmission.ForeignCallsign.supplement.ForeignText = self.foreignCallsign
+        transmission.Remarks = self.remarks
+        transmission.Timestamp = timestamp
+        transmission.RecordingURL = self.recordingURL
+        
+        for order, rowData in itertools.izip(xrange(len(contents)), contents):
             tableClass = rowData[0].PythonClass
             contentDict = rowData[1]
             
@@ -264,121 +329,75 @@ class SubmitLogResource(Resource):
             row.Transmission = transmission
             row.Order = order
             
-            for key, value in contentDict.iteritems():
-                foreign = value[1]
-                value = value[0]
+            for key, (value, foreign) in contentDict.iteritems():
                 setattr(row, key, value)
                 if foreign is not None:
-                    row.supplements[key].supplement.LangCode = foreign[0]
-                    row.supplements[key].supplement.ForeignText = foreign[1]
-            
-            order += 1
-            
-        transmission.updateBlocks()
-        self.store.flush()
+                    supplement = row.supplements[key].supplement
+                    supplement.LangCode = foreign[0]
+                    supplement.ForeignText = foreign[1]
         
-        print >>self.out, u"""<pre>Added transmission
+        transmission.updateBlocks()
+        self.store.commit()
+        
+        self.SubElement(self.body, u"pre").text = u"""Added transmission
 Station: {0}
-Broadcast: {1}
-Transmission: {2}</pre>""".format(
+Broadcast (#{2}): {1}
+Transmission (#{4}): {3}""".format(
             unicode(transmission.Broadcast.Station),
             unicode(transmission.Broadcast),
-            unicode(transmission)
+            unicode(transmission.Broadcast.ID),
+            unicode(transmission),
+            unicode(transmission.ID)
         )
         
-    
-    def handle(self, trans):
-        trans.set_content_type(ContentType(self.xhtmlContentType, self.encoding))
+    def buildDoc(self, trans, elements):
+        self.modulationSelector = None # make sure its regenerated each request
         
-        stations = self.store.find(Station).order_by(Asc(Station.EnigmaIdentifier), Asc(Station.PriyomIdentifier), Asc(Station.Nickname))
-        station = self.store.get(Station, self.getQueryIntDefault("stationId", 0))
-        if station is not None:
-            stationId = station.ID
-        else:
-            stationId = None
+        self.station = self.getQueryValue("station", self.stationValidator, defaultKey=None)
+        #self.broadcast = 
+        self.timestamp = self.getQueryValue("timestamp", self.timestampValidator, defaultKey=TimeUtils.nowDate(), default=None)
+        self.duration = self.getQueryValue("duration", self.durationValidator, defaultKey=0.)
+        self.callsign = self.getQueryValue("callsign", self.unicodeValidator, defaultKey=u"")
+        self.foreignCallsignLang = self.getQueryValue("foreignCallsign[lang]", self.unicodeValidator, defaultKey=u"")
+        self.foreignCallsign = self.getQueryValue("foreignCallsign[value]", self.unicodeValidator, defaultKey=u"")
+        self.remarks = self.getQueryValue("remarks", self.unicodeValidator, defaultKey=u"")
+        self.recordingURL = self.getQueryValue("recording", self.unicodeValidator, defaultKey=u"")
         
-        broadcast = self.store.get(Broadcast, self.getQueryIntDefault("broadcastId", 0))
-        broadcastSet = broadcast is not None
+        self.broadcast = self.getQueryValue("broadcast", self.broadcastValidator, defaultKey=None)
+        if self.broadcast == u"":
+            self.broadcast = None
+        self.broadcastBefore = self.getQueryValue("broadcastBefore", self.durationValidator, defaultKey=0.)
+        self.broadcastAfter = self.getQueryValue("broadcastAfter", self.durationValidator, defaultKey=0.)
+        self.broadcastConfirmed = self.getQueryValue("broadcastConfirmed", unicode, default=None) is not None
+        self.broadcastComment = self.getQueryValue("broadcastComment", self.unicodeValidator, defaultKey=u"")
+        
+        self.txClass = self.getQueryValue("transmissionClass", self.transmissionClassValidator, defaultKey=None)
+        self.transmissionRaw = self.getQueryValue("transmissionRaw", self.unicodeValidator, defaultKey=u"")
         
         self.queryEx = self.parseQueryDict()
         
-        error = u""
+        self.error = u""
         
-        timestamp = self.queryEx.get("timestamp", None)
-        if timestamp is None:
-            timestamp = int(TimeUtils.now())
-        else:
-            try:
-                timestamp = TimeUtils.toTimestamp(datetime.strptime(timestamp, Formatting.priyomdate))
-            except ValueError:
-                timestamp = int(TimeUtils.now())
-                error = u"Timestamp parsing failed. Please re-enter the timestamp!"
-        
-        print >>self.out, u"""<!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml">
-    <head>
-        <title>{1}</title>
-        <link rel="stylesheet" type="text/css" href="{0}{2}" />
-        <script src="{0}{3}" type="text/javascript" />
-    </head>
-    <body>""".format(            
-            self.model.rootPath(u""),
-            self.model.formatHTMLTitle(u"Submit logs"),
-            u"/css/submit.css",
-            u"/js/jquery.js"
-        ).encode(self.encoding, 'replace')
+        self.setTitle(u"Submit logs")
+        self.link(u"/css/submit.css")
         
         submitted = False
         if "submit" in self.queryEx:
-            insertResult = self.insert()
-            if insertResult is not None:
-                error = insertResult
-            else:
+            try:
+                self.insert()
                 submitted = True
+            except SubmitParameterError:
+                submitted = False
         
         if not submitted:
-            print >>self.out, u"""
-        <form name="logform" action="submit" method="POST">
-            <pre>{3}</pre>
-            {7}
-            <div class="section">
-                <div class="inner-caption">Basic information</div>
-                Station: <select name="stationId">
-                    {0}
-                </select><br />
-                Timestamp: <input type="text" name="timestamp" value="{1}" /><br />
-                Duration: <input type="text" name="duration" value="{4}" /> seconds<br />
-                Callsign: <input type="text" name="callsign" value="{8}" /> <br />
-                Foreign callsign language code: <input type="text" name="foreignCallsign[lang]" value="{9}" /><br />
-                Foreign callsign: <input type="text" name="foreignCallsign[value]" value="{10}" /><br />
-                Remarks: <input type="text" name="remarks" value="{6}" style="width: 100%" /><br />
-                Recording URL: <input type="text" name="recording" value="{11}" style="width: 100%" />
-            </div>
-            {2}
-            <div class="section">
-                <div class="inner-caption">Transmission contents:</div>
-                {5}
-            </div>
-            <input type="submit" name="submit" value="Submit" />
-        </form>""".format(
-                u"\n                ".join((u"""<option value="{0}"{1}>{2}</option>""".format(
-                                                station.ID,
-                                                u' selected="selected"' if station.ID == stationId else u"",
-                                                unicode(station)
-                                            ) for station in stations)),
-                TimeUtils.fromTimestamp(timestamp).strftime(Formatting.priyomdate),
-                u"\n            ".join(self.formatBroadcastSelector(station, timestamp)),
-                self.recursiveDict(self.queryEx),
-                self.queryEx.get("duration", 0),
-                u"\n            ".join(self.formatTransmissionEditor()),
-                self.queryEx.get("remarks", u""),
-                u'<div class="error">{0}</div>'.format(error) if len(error) > 0 else u"",
-                self.queryEx.get("callsign", u""),
-                self.queryEx.get("foreignCallsign", {}).get("lang", u""),
-                self.queryEx.get("foreignCallsign", {}).get("value", u""),
-                self.queryEx.get("recording", u"")
-            ).encode(self.encoding, 'replace')
+            self.SubElement(self.body, u"pre").text = self.recursiveDict(self.queryEx)
+            if len(self.error) > 0:
+                self.SubElement(error, u"div").text = self.error
+                
+            form = self.SubElement(self.body, u"form", name=u"logform", method=u"POST")
             
-        print >>self.out, u"""
-    </body>
-</html>""".encode(self.encoding, 'replace')
+            self._basicInformationTree(self.section(form, u"Basic information"))
+            self._broadcastTree(self.section(form, u"Broadcast"))
+            self._contentsTree(self.section(form, u"Transmission contents"))
+            
+            self.SubElement(form, u"input", type=u"submit", name=u"submit", value=u"Submit")
