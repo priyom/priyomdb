@@ -17,6 +17,17 @@ class HTMLResource(Resource):
     def script(self, href, type="text/javascript"):
         return self.SubElement(self.head, u"script", type=type, src=self.model.rootPath(href))
         
+    def br(self, parent, tail=u""):
+        br = self.SubElement(parent, u"br")
+        br.tail = tail
+        return br
+    
+    def input(self, parent, name=u"", type=u"text", value=u"", attrib=None, **extra):
+        if attrib is None:
+            attrib = {}
+        attrib.update(extra)
+        return self.SubElement(parent, u"input", name=name, type=type, value=value, attrib=attrib)
+        
     def setTitle(self, title):
         self.title.text = u"{0}{1}{2}".format(
             title,
@@ -37,7 +48,7 @@ class HTMLResource(Resource):
         
         self.buildDoc(trans, (self.html, self.head, self.body))
         
-        self.etreeToFile(self.out, doc, self.encoding, XMLIntf.xhtmlNamespace)
+        self.model.etreeToFile(self.out, doc, self.encoding, XMLIntf.xhtmlNamespace)
         
     def buildDoc(trans, elements):
         pass
