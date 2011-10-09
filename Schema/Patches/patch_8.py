@@ -1,5 +1,5 @@
 """
-File name: Event.py
+File name: patch_8.py
 This file is part of: priyomdb
 
 LICENSE
@@ -24,27 +24,12 @@ For feedback and questions about priyomdb please e-mail one of the
 authors:
     Jonas Wielicki <j.wielicki@sotecware.net>
 """
-from storm.locals import *
-from Station import Station
-from PriyomBase import PriyomBase
 
-class EventClass(object):
-    __storm_table__ = "eventClasses"
+def apply(store):
+    statements = [
+"""ALTER TABLE `eventClasses` ADD `StateChanging` BOOL NOT NULL DEFAULT '0' COMMENT 'defines whether events in this class are so called state-changing events';"""
+    ]
     
-    ID = Int(primary=True)
-    Title = Unicode()
-    StateChanging = Bool()
-    
-class Event(PriyomBase):
-    __storm_table__ = "events"
-    
-    ID = Int(primary=True)
-    Created = Int()
-    Modified = Int()
-    StationID = Int()
-    Station = Reference(StationID, Station.ID)
-    EventClassID = Int()
-    EventClass = Reference(EventClassID, EventClass.ID)
-    Description = Unicode()
-    StartTime = Int()
-    EndTime = Int()
+    for statement in statements:
+        store.execute(statement)
+
