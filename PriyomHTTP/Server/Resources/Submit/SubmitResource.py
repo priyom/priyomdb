@@ -26,7 +26,7 @@ authors:
     Jonas Wielicki <j.wielicki@sotecware.net>
 """
 from storm.locals import *
-from HTMLResource import HTMLResource
+from ..HTMLResource import HTMLResource
 from libPriyom import *
 from datetime import datetime, timedelta
 from time import mktime, time
