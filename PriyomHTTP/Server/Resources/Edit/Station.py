@@ -27,4 +27,5 @@ authors:
 from EditResource import EditResource
 
 class EditStation(EditResource):
-    pass
+    def buildDoc(self, trans, elements):
+        super(EditStation, self).buildDoc(trans, elements)
