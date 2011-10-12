@@ -151,12 +151,15 @@ class WebModel(object):
         return WrapFunction(valid_station, u"valid station identifier (a db id identifying a station, enigma identifier or priyom identifier)")
         
     @staticmethod
-    def PriyomTimestamp(allowNone=False):
+    def PriyomTimestamp(allowNone=False, asDate=True):
         def priyom_timestamp(s):
             if allowNone and (type(s) == str or type(s) == unicode):
                 if s.lower() == "none":
                     return None
-            return datetime.strptime(s, Formatting.priyomdate)
+            if asDate:
+                return datetime.strptime(s, Formatting.priyomdate)
+            else:
+                return TimeUtils.toTimestamp(datetime.strptime(s, Formatting.priyomdate))
         return WrapFunction(priyom_timestamp, u"datetime according to the standard priyom date format (YYYY-MM-DDTHH:MM:SS)")
     
     @staticmethod

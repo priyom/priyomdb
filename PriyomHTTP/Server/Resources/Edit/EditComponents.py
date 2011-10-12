@@ -1,13 +1,13 @@
-import HTMLIntf
+from .. import HTMLIntf
+from ...WebModel import WebModel
 import xml.etree.ElementTree as ElementTree
 import itertools
 
 class Component(object):
-    def __init__(self, model):
+    def __init__(self, model=None, **kwargs):
+        #super(Component, self).__init__(**kwargs)
         self.reset()
-        self.model = model
-        self.store = model.store
-        self.priyomInterface = model.priyomInterface
+        self.Model = model
         
     def reset(self):
         self._error = None
@@ -15,6 +15,17 @@ class Component(object):
     
     def _instanceChanged(self, newInstance):
         pass
+        
+    @property
+    def Model(self):
+        return self.model
+    
+    @Model.setter
+    def Model(self, model):
+        self.model = model
+        if model is not None:
+            self.store = model.store
+            self.priyomInterface = model.priyomInterface
     
     @property
     def Instance(self):
@@ -43,24 +54,9 @@ class Component(object):
     def toTree(self, parent):
         pass
 
-class VirtualTable(Component):
-    def __init__(self, model, name=u"", description=u"", cls=None, where=None, **kwargs):
-        if cls is None:
-            raise ValueError(u"VirtualTable must have a class assigned")
-        super(VirtualTable, self).__init__(model, **kwargs)
-        self.name = name
-        self.description = description
-        self.cls = cls
-        self.where = where
-    
-    def toTree(self, parent):
-        li = HTMLIntf.SubElement(parent, u"li")
-        HTMLIntf.SubElement(li, u"a", href=u"../tables/{0}".format(self.name), title=self.description).text = self.name
-        
-
 class EditorComponent(Component):
-    def __init__(self, model, name=None, caption=None, description=u"", attributeName=None, disabled=False, typecast=unicode, **kwargs):
-        super(EditorComponent, self).__init__(model, **kwargs)
+    def __init__(self, name=None, caption=None, description=u"", attributeName=None, disabled=False, typecast=unicode, **kwargs):
+        super(EditorComponent, self).__init__(**kwargs)
         if name is None:
             raise ValueError(u"EditorComponent name must not be None")
         if not callable(typecast):
@@ -82,7 +78,7 @@ class EditorComponent(Component):
             raise ValueError(u"Cannot get value without an instance assigned.")
         return self._value
         
-    @Value.setter:
+    @Value.setter
     def Value(self, value):
         self._value = self.typecast(value)
         self._rawValue = value
@@ -115,12 +111,13 @@ class EditorComponent(Component):
                 div.text = unicode(self.Error)
                 
     def validate(self, query):
+        self.Value = getattr(self._instance, self.attributeName)
         if self.Disabled:
             return True
         if not self.name in query:
             return True # this is actually okay
         try:
-            self._value = self.typecast(query[self.name])
+            self.Value = query[self.name]
         except (ValueError, TypeError) as e:
             self.Error = unicode(e)
             return False
@@ -147,12 +144,11 @@ class Input(EditorComponent):
     
     validTypes = [TEXT, PASSWORD, CHECKBOX]
     
-    def __init__(self, model, type=InputEditor.TEXT, **kwargs):
+    def __init__(self, type=TEXT, **kwargs):
         if not type in self.validTypes:
             raise ValueError(u"This is not a valid type for an input editor: {0!r}".format(type))
         
-        super(Input, self).__init__(model, **kwargs)
-        self.disabled = disabled
+        super(Input, self).__init__(**kwargs)
         self.type = type
     
     def editorToTree(self, parent):
@@ -166,8 +162,8 @@ class Input(EditorComponent):
         super(Input, self).__init__(parent)
         
 class CheckBox(Input):
-    def __init__(self, model, label=None, **kwargs):
-        super(CheckBox, self).__init__(self, model, type=InputEditor.CHECKBOX, **kwargs)
+    def __init__(self, label=None, **kwargs):
+        super(CheckBox, self).__init__(type=Input.CHECKBOX, **kwargs)
         self.label = label
     
     def editorToTree(self, parent):
@@ -179,12 +175,53 @@ class CheckBox(Input):
             HTMLIntf.SubElement(parent, u"label", attrib={
                 u"for": id
             }).text = self.label
-            
+
+class Timestamp(Input):
+    def __init__(self, allowNone=False, **kwargs):
+        super(Timestamp, self).__init__(type=Input.TEXT, typecast=WebModel.PriyomTimestamp(allowNone=allowNone, asDate=False), **kwargs)
+    
+    def editorToTree(self, parent):
+        super(Timestamp, self).editorToTree(parent)
+        self.input.set(u"value", TimeUtils.toDatetime(self.Value).strftime(Formatting.priyomdate))
+        
+class ForeignInput(Input):
+    def __init__(self, foreignName=None, foreignLangName=None, foreignAttribute=None, **kwargs):
+        if not foreignName:
+            raise ValueError(u"Need a proper foreign name at least. Got: {0}".format(foreignName)
+        super(ForeignInput, self).__init__(type=Input.TEXT, **kwargs)
+        self.foreignName = foreignName
+        self.foreignLangName = foreignLangName or foreignName + u"Lang"
+        self.foreignAttribute = foreignAttribute or foreignName
+        
+    def validate(self, query):
+        self._value = getattr(self._instance, self.attributeName)
+        helper = getattr(self._instance, self.foreignAttribute)
+        self._foreignValue = helper.Value
+        self._foreignLang = helper.LangCode
+        if self.Disabled:
+            return True
+        if not self.name in query or not self.foreignName in query or not self.foreignLangName:
+            return True
+        self._value = query[self.name]
+        self._foreignValue = query[self.foreignName]
+        self._foreignLang = query[self.foreignLangName]
+        
+    def apply(self, query):
+        
+    def editorToTree(self, parent):
+        super(ForeignInput, self).editorToTree(parent)
+        HTMLIntf.SubElement(parent, u"br").tail = u"Foreign data (langcode / contents): "
+        HTMLIntf.SubElement(parent, u"input", attrib={
+            u"name": self.foreignName,
+            u"type": u"text",
+            u"value": 
+        })
+
 class Select(EditorComponent):
-    def __init__(self, model, items=[], **kwargs):
+    def __init__(self, items=[], **kwargs):
         if len(items) == 0:
             raise ValueError(u"Must have more than zero items for a Select.")
-        super(Select, self).__init__(model, **kwargs)
+        super(Select, self).__init__(**kwargs)
         self.items = items
         self.hasDynamicItems = False
         self.reference = HTMLIntf.Element(u"select", name=self.name)
@@ -210,21 +247,21 @@ class Select(EditorComponent):
                 option.set(u"selected", u"selected")
 
 class SelectStormObject(EditorComponent):
-    def __init__(self, model, virtualTable=None, stormClass=None, where=None, withMakeSingleUser=False, withEdit=False, withNone=False, **kwargs):
-        if (virtualTable is None) == (stormClass is None):
-            raise ValueError(u"Exactly one of (virtualTable, stormClass) must not be None. Got: ({0}, {1}).".format(virtualTable, stormClass))
-        super(SelectStormObject, self).__init__(model, typecast=self.validObject, **kwargs)
-        if virtualTable is not None:
-            self.stormClass = virtualTable.cls
-            if where is not None and virtualTable.where is not None:
-                self.where = And(where, virtualTable.where)
-            elif where is not None:
-                self.where = where
-            else:
-                self.where = virtualTable.where
-        else:
-            self.stormClass = stormClass
-            self.where = where
+    def __init__(self, stormClass=None, where=None, withMakeSingleUser=False, withEdit=False, withNone=False, **kwargs):
+        #if (virtualTable is None) == (stormClass is None):
+        #    raise ValueError(u"Exactly one of (virtualTable, stormClass) must not be None. Got: ({0}, {1}).".format(virtualTable, stormClass))
+        super(SelectStormObject, self).__init__(typecast=self.validObject, **kwargs)
+        #if virtualTable is not None:
+        #    self.stormClass = virtualTable.cls
+        #    if where is not None and virtualTable.where is not None:
+        #        self.where = And(where, virtualTable.where)
+        #    elif where is not None:
+        #        self.where = where
+        #    else:
+        #        self.where = virtualTable.where
+        #else:
+        self.stormClass = stormClass
+        self.where = where
         self.withMakeSingleUser = withMakeSingleUser
         self.withEdit = withEdit
         self.withNone = withNone
@@ -250,12 +287,12 @@ class SelectStormObject(EditorComponent):
                 option.set(u"selected", u"selected")
                 
 class TextArea(EditorComponent):
-    def __init__(self, model, rows=None, cols=None, fullWidth=False, **kwargs):
+    def __init__(self, rows=None, cols=None, fullWidth=False, **kwargs):
         if cols is not None and fullWidth:
             raise ValueError(u"Cannot specify both cols= and fullWidth=True for a TextArea")
-        super(TextArea, self).__init__(model, **kwargs)
-        self.rows = int(rows)
-        self.cols = int(cols)
+        super(TextArea, self).__init__(**kwargs)
+        self.rows = int(rows) if rows is not None else None
+        self.cols = int(cols) if cols is not None else None
         self.fullWidth = bool(fullWidth)
     
     def editorToTree(self, parent):
@@ -272,17 +309,17 @@ class TextArea(EditorComponent):
         area.text = self.Value
 
 class ParentComponent(Component):
-    def _transfer(self, src, attribs):
-        for attrib in attribs:
-            setattr(self, attrib, getattr(src, attrib))
+    #def _transfer(self, src, attribs):
+    #    for attrib in attribs:
+    #        setattr(self, attrib, getattr(src, attrib))
     
-    def __init__(self, model, *args, typeCheck=None):
-        super(ParentComponent, self).__init__(model)
-        self._children = list(args)
+    def __init__(self, typeCheck=None, *args, **kwargs):
         self.typeCheck = typeCheck
-        if self.typeCheck is not None
-        
-        self._transfer(self._children, (
+        if self.typeCheck is not None:
+            for item in args:
+                self.typeCheck(item)
+        self._children = list(args)
+        """self._transfer(self._children, (
             "__getitem__",
             "__getslice__",
             "__len__",
@@ -298,31 +335,71 @@ class ParentComponent(Component):
             "reverse",
             "sort"
         ))
+        print(dir(self))
+        print(self.__iter__)"""
+        super(ParentComponent, self).__init__(**kwargs)
+    
+    def __iter__(self):
+        return iter(self._children)
     
     def __setitem__(self, key, value):
         if self.typeCheck is not None:
             self.typeCheck(value)
+        value.Model = self.Model
         self._children[key] = value
+        
+    @property
+    def Model(self):
+        return self.model
+        
+    @Model.setter
+    def Model(self, model):
+        self.model = model
+        if model is not None:
+            self.store = model.store
+            self.priyomInterface = model.priyomInterface
+        for child in self:
+            child.Model = model
     
     def append(self, item):
         if self.typeCheck is not None:
             self.typeCheck(value)
+        item.Model = self.Model
         self._children.append(item)
     
     def extend(self, items):
+        try:
+            len(items)
+        except TypeError:
+            items = list(items)
         if self.typeCheck:
-            try:
-                len(items)
-            except TypeError:
-                items = list(items)
             for item in items:
                 self.typeCheck(items)
+                item.Model = self.Model
+        else:
+            for item in items:
+                item.Model = self.Model
         self._children.extend(items)
     
     def insert(self, index, object):
         if self.typeCheck:
             self.typeCheck(object)
+        object.Model = self.Model
         self._children.insert(index, object)
+
+class VirtualTable(ParentComponent):
+    def __init__(self, name, cls, *args, **kwargs):
+        if cls is None:
+            raise ValueError(u"VirtualTable must have a class assigned")
+        self.description = kwargs.get(u"description", u"")
+        self.where = kwargs.get(u"where", None)
+        super(VirtualTable, self).__init__(*args, **kwargs)
+        self.name = name
+        self.cls = cls
+    
+    def toTree(self, parent):
+        li = HTMLIntf.SubElement(parent, u"li")
+        HTMLIntf.SubElement(li, u"a", href=u"../tables/{0}".format(self.name), title=self.description).text = self.name
         
 class TableComponent(Component):
     def toTableRow(self, tr):
@@ -333,6 +410,7 @@ class TableComponent(Component):
     
 class TableComponentWrapper(TableComponent):
     def __init__(self, component):
+        print(type(component))
         if not isinstance(component, Component):
             raise ValueError(u"Cannot wrap anything but a component subclass.")
         super(TableComponentWrapper, self).__init__(component.model)
@@ -343,8 +421,12 @@ class TableComponentWrapper(TableComponent):
         self.editorToTree(HTMLIntf.SubElement(tr, u"td"))
     
 class Table(ParentComponent):
-    def __init__(self, model, *args, **kwargs):
-        super(Table, self).__init__(self, model, *args, typeCheck=lambda x: x if isinstance(x, TableComponent) else TableComponentWrapper(x), **kwargs)
+    def __init__(self, *args, **kwargs):
+        super(Table, self).__init__(
+            *itertools.chain(
+                ((lambda x: x if isinstance(x, TableComponent) else TableComponentWrapper(x)),),
+                args
+            ), **kwargs)
         
     def toTree(self, parent):
         table = HTMLIntf.SubElement(parent, u"table", attrib={
@@ -355,29 +437,37 @@ class Table(ParentComponent):
             child.toTable(tbody)
         
 class TableGroup(ParentComponent, TableComponent):
-    def __init__(self, model, *args, **kwargs):
-        super(TableGroup, self).__init__(self, model, *args, typeCheck=lambda x: x if isinstance(x, TableComponent) else TableComponentWrapper(x), **kwargs)
+    def __init__(self, title, *args, **kwargs):
+        self.title = title
+        super(TableGroup, self).__init__(
+            *itertools.chain(
+                ((lambda x: x if isinstance(x, TableComponent) else TableComponentWrapper(x)),),
+                args
+            ), **kwargs)
     
     def toTable(self, tbody):
+        tr = HTMLIntf.SubElement(tbody, u"tr")
+        th = HTMLIntf.SubElement(tr, u"th", colspan=2)
+        th.text = self.title
         for child in self:
             child.toTable(tbody)
 
 class IDTableGroup(TableGroup):
-    def __init__(self, model, *args, **kwargs):
-        super(IDTableGroup, self).__init__(self, model, *itertools.chain((
+    def __init__(self, title, *args, **kwargs):
+        super(IDTableGroup, self).__init__(title, *itertools.chain((
             Input(
                 name=u"ID",
                 caption=u"Database ID",
                 description=u"Internal database id number",
                 disabled=True
             ),
-            TimestampInput(
+            Timestamp(
                 name=u"Created",
                 caption=u"Created at",
                 description=u"Creation date of the database row",
                 disabled=True
             ),
-            TimestampInput(
+            Timestamp(
                 name=u"Modified",
                 caption=u"Last modified",
                 description=u"Date of the last modification of the database row",

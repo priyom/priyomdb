@@ -48,6 +48,7 @@ def intOrNone(str):
     
 
 from cfg_priyomhttpd import application, response
+from Resources.Edit.EditRegistry import virtualTables
 #from Resources.API.FindStations import FindStations
 #from Resources.API.FindBroadcasts import FindBroadcasts
 #from Resources.API.FindTransmissions import FindTransmissions
@@ -57,6 +58,9 @@ def get_site_map(priyomInterface):
     rootPath = application["root"]
     
     model = WebModel(priyomInterface)
+    
+    for table in virtualTables.itervalues():
+        table.Model = model
     
     apiMap = MapSelector("calls", {
         "getUpcomingBroadcasts": UpcomingBroadcastsAPI(model),
