@@ -283,9 +283,9 @@ class SubmitLogResource(SubmitResource):
             for key, (value, foreign) in contentDict.iteritems():
                 setattr(row, key, value)
                 if foreign is not None:
-                    supplement = row.supplements[key].supplement
+                    supplement = row.supplements[key]
                     supplement.LangCode = foreign[0]
-                    supplement.ForeignText = foreign[1]
+                    supplement.Value = foreign[1]
         
         transmission.updateBlocks()
         self.store.commit()

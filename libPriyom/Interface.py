@@ -162,7 +162,7 @@ class PriyomInterface:
         for block in blocks:
             self.deleteTransmissionBlock(block, True)
         if obj.ForeignCallsign is not None:
-            Store.of(obj.ForeignCallsign.supplement).remove(obj.ForeignCallsign.supplement)
+            del obj.ForeignCallsign.Value
         if obj.Broadcast is not None:
             obj.Broadcast.transmissionRemoved()
         store.remove(obj)

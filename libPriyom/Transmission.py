@@ -80,8 +80,8 @@ class Transmission(PriyomBase, XMLIntf.XMLStorm):
         
         lang = element.get(u"lang")
         if lang is not None:
-            self.ForeignCallsign.supplement.ForeignText = unicode(element.text)
-            self.ForeignCallsign.supplement.LangCode = unicode(lang)
+            self.ForeignCallsign.Value = unicode(element.text)
+            self.ForeignCallsign.LangCode = unicode(lang)
         else:
             self.Callsign = unicode(element.text)
             
@@ -197,21 +197,22 @@ class TransmissionClassBase(object):
     def fromDom(self, element, context):
         fields = iter((field for field in self.fields))
         field = None
+        prevHadLangCode = False
         for item in element.iterfind(u"{{{0}}}item".format(XMLIntf.importNamespace)):
             langCode = item.get(u"lang")
             if langCode is None or len(langCode) == 0:
+                if not prevHadLangCode and field is not None:
+                    del self.supplements[field.FieldName].Value
                 field = next(fields)
                 setattr(self, field.FieldName, unicode(item.text))
             else:
                 supplement = self.supplements[field.FieldName]
-                supplement.ForeignText = unicode(item.text)
+                supplement.Value = unicode(item.text)
                 supplement.LangCode = unicode(langCode)
     
     def deleteForeignSupplements(self):
         for supplement in self.supplements.itervalues():
-            store = Store.of(supplement.supplement)
-            if store is not None:
-                store.remove(supplement.supplement)
+            del supplement.Value
     
     def __unicode__(self):
         return u" ".join((getattr(self, field.FieldName) for field in self.fields))
