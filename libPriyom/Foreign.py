@@ -46,14 +46,51 @@ class ForeignHelper:
         self.supplement = self.store.find(ForeignSupplement, 
             And((ForeignSupplement.LocalID == self.instance.ID),
             (ForeignSupplement.FieldName == self.fieldName))).any()
+            
+    def generateSupplement(self):
+        self.supplement = ForeignSupplement()
+        self.supplement.FieldName = self.fieldName
+        self.supplement.LocalID = self.instance.ID
+        self.store.add(self.supplement)
+    
+    @property
+    def Value(self):
         if self.supplement is None:
-            self.supplement = ForeignSupplement()
-            self.supplement.LocalID = self.instance.ID
-            self.supplement.FieldName = self.fieldName
-            self.store.add(self.supplement)
+            return None
+        else:
+            return self.supplement.ForeignText
+            
+    @Value.setter
+    def Value(self, value):
+        if self.supplement is None:
+            self.generateSupplement()
+        self.supplement.ForeignText = value
+        
+    @Value.deleter
+    def Value(self):
+        self.store.remove(self.supplement)
+        self.supplement = None
+        
+    @property
+    def LangCode(self):
+        if self.supplement is None:
+            return None
+        else:
+            return self.supplement.LangCode
+            
+    @LangCode.setter
+    def LangCode(self, value):
+        if self.supplement is None:
+            self.generateSupplement()
+        self.supplement.LangCode = value
+    
+    @LangCode.deleter
+    def LangCode(self):
+        self.store.remove(self.supplement)
+        self.supplement = None
         
     def hasForeign(self):
-        return (self.supplement.ForeignText is not None) and (self.supplement.ForeignText != "")
+        return self.supplement is not None and bool(self.supplement)
         
     def toDom(self, parentNode, name, attrib={}):
         if self.hasForeign():
