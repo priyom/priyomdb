@@ -1,8 +1,68 @@
+"""
+File name: EditRegistry.py
+This file is part of: priyomdb
+
+LICENSE
+
+The contents of this file are subject to the Mozilla Public License
+Version 1.1 (the "License"); you may not use this file except in
+compliance with the License. You may obtain a copy of the License at
+http://www.mozilla.org/MPL/
+
+Software distributed under the License is distributed on an "AS IS"
+basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+License for the specific language governing rights and limitations under
+the License.
+
+Alternatively, the contents of this file may be used under the terms of
+the GNU General Public license (the  "GPL License"), in which case  the
+provisions of GPL License are applicable instead of those above.
+
+FEEDBACK & QUESTIONS
+
+For feedback and questions about priyomdb please e-mail one of the
+authors:
+    Jonas Wielicki <j.wielicki@sotecware.net>
+"""
 from libPriyom import *
-from EditComponents import Input, TextArea, Select, SelectStormObject, VirtualTable, Table, TableGroup, IDTableGroup, Timestamp, CheckBox
+from EditComponents import Input, TextArea, Select, SelectStormObject, VirtualTable, Table, TableGroup, IDTableGroup, Timestamp, CheckBox, ForeignInput
+
+
+"""u"schedules": VirtualTable(u"Schedule database", Schedule, 
+    EditorTable(
+        IDEditorGroup(u"Basic information",
+            Input(
+                name=u"Name",
+                caption=u"Display name"
+                description=u"Name shown in tables etc. and on the page"
+            ),
+            Timestamp(
+                name=u"StartTimeOffset",
+                caption=u"Valid from",
+                description=u"Date after which the schedule should be in effect"
+            ),
+            Timestamp(
+                name=u"EndTimeOffset",
+                caption=u"Valid until",
+                description=u"Date until which the schedule should be in effect"
+            )
+        )
+    ),
+    EditorSplitPanel(
+        ScheduleTreeView(u"Schedule tree"),
+        ScheduleChildEditor(
+            
+        )
+    ),
+    where=(Schedule.Parent == None),
+    relatedTables=(
+        ReferencingVirtualTable(u"station", match=Station.Schedule)
+    ),
+    multiEdit=False
+),"""
 
 virtualTables = {
-    u"stations": VirtualTable(u"Shortwave station registry", Station, 
+    u"stations": VirtualTable(u"stations", Station, 
         Table(
             IDTableGroup(u"Identification",
                 Input(
@@ -52,44 +112,14 @@ virtualTables = {
                 )
             )
         ),
+        description=u"Shortwave station registry",
+        columns=(Station.ID, Station.Created, Station.Modified, Station.EnigmaIdentifier, Station.PriyomIdentifier, Station.Nickname)
         #relatedTables=(
         #    ReferencingVirtualTable(u"broadcasts", match=Broadcast.Station),
         #    ReferencedVirtualTable(u"schedules", match=Station.Schedule)
         #)
     ),
-    """u"schedules": VirtualTable(u"Schedule database", Schedule, 
-        EditorTable(
-            IDEditorGroup(u"Basic information",
-                Input(
-                    name=u"Name",
-                    caption=u"Display name"
-                    description=u"Name shown in tables etc. and on the page"
-                ),
-                Timestamp(
-                    name=u"StartTimeOffset",
-                    caption=u"Valid from",
-                    description=u"Date after which the schedule should be in effect"
-                ),
-                Timestamp(
-                    name=u"EndTimeOffset",
-                    caption=u"Valid until",
-                    description=u"Date until which the schedule should be in effect"
-                )
-            )
-        ),
-        EditorSplitPanel(
-            ScheduleTreeView(u"Schedule tree"),
-            ScheduleChildEditor(
-                
-            )
-        ),
-        where=(Schedule.Parent == None),
-        relatedTables=(
-            ReferencingVirtualTable(u"station", match=Station.Schedule)
-        ),
-        multiEdit=False
-    ),"""
-    u"broadcasts": VirtualTable(u"Broadcast database", Broadcast, 
+    u"broadcasts": VirtualTable(u"broadcasts", Broadcast, 
         Table(
             IDTableGroup(u"Basic information",
                 Select(
@@ -130,12 +160,14 @@ virtualTables = {
                 )
             )
         ),
+        description=u"Broadcast database",
+        columns=(Broadcast.ID, Broadcast.Created, Broadcast.Modified, Broadcast.Type, Broadcast.BroadcastStart, Broadcast.BroadcastEnd)
         #relatedTables=(
         #    ReferenedVirtualTable(u"stations", match=Broadcast.Station),
         #    ReferencingVirtualTable(u"transmission", match=Transmission.Broadcast)
         #)
     ),
-    u"transmissions": VirtualTable(u"Transmission database", Transmission,
+    u"transmissions": VirtualTable(u"transmissions", Transmission,
         Table(
             IDTableGroup(u"Basic information",
                 Timestamp(
@@ -144,7 +176,7 @@ virtualTables = {
                 ),
                 ForeignInput(
                     name=u"Callsign",
-                    foreignAttribute=u"ForeignCallsign",
+                    foreignName=u"ForeignCallsign",
                     description=u"The callsign used in the transmission (see priyom.org callsign policies for a reference)"
                 ),
                 SelectStormObject(
@@ -163,6 +195,8 @@ virtualTables = {
                     description=u"Any remarks about the transmission (like voice sex etc.)"
                 )
             )
-        )
+        ),
+        description=u"Transmission database",
+        columns=(Transmission.ID, Transmission.Created, Transmission.Modified, Transmission.Timestamp, Transmission.Callsign)
     )
 }

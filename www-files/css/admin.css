@@ -1,0 +1,98 @@
+html {
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    margin: 0;
+    margin-left: 12.5em;
+    padding: 0;
+    padding-left: 0.5em;
+    padding-right: 0.5em;
+}
+
+navbar {
+    display: block;
+    position: fixed;
+    left: 0px;
+    top: 0px;
+    width: 12.5em;
+    height: 100%;
+    background-color: hsl(120, 25%, 75%);
+    box-shadow: 1px 0px 1px rgba(68,68,68,0.6);
+}
+
+navbar section {
+    padding: 0.5em;
+}
+
+navbar h2 {
+    font-size: 110%;
+    font-weight: bold;
+    margin: 0;
+    margin-bottom: 0.5em;
+    text-shadow: rgba(255, 255, 255, 0.5) 1px 1px 1px;
+}
+
+navbar ul {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+}
+
+section.editor {
+    display: block;
+    padding: 0;
+    margin: 0;
+}
+
+section.editor header {
+    display: block;
+    margin-left: -1em;
+    margin-right: -0.5em;
+    margin-bottom: 0.5em;
+    padding: 0.25em;
+    padding-left: 1em;
+    background-color: hsl(240, 25%, 75%);
+    box-shadow: 0px 1px 1px rgba(68, 68, 68, 0.6); 
+}
+
+section.editor header h1 {
+    margin: 0;
+    padding: 0;
+}
+
+ul.pagination {
+    display: block;
+    margin: 0;
+    padding: 0;
+    list-style-type: none;
+}
+
+ul.pagination li {
+    display: inline;
+    margin-left: 0.2em;
+    margin-right: 0.2em;
+}
+
+ul.pagination li a.current {
+    text-decoration: none;
+    color: inherit;
+    font-weight: bold;
+}
+
+table.view {
+    width: 100%;
+}
+
+table.view thead th, table.view tbody td {
+    border: 1px solid hsla(0, 50%, 75%, 0.6);
+}
+
+table.view thead th {
+    background-color: hsl(0, 50%, 75%);
+}
+
+table.view tbody tr:hover td {
+    background-color: hsl(0, 25%, 80%);
+}

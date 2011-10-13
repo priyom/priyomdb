@@ -1,3 +1,30 @@
+# encoding=utf-8
+"""
+File name: EditComponents.py
+This file is part of: priyomdb
+
+LICENSE
+
+The contents of this file are subject to the Mozilla Public License
+Version 1.1 (the "License"); you may not use this file except in
+compliance with the License. You may obtain a copy of the License at
+http://www.mozilla.org/MPL/
+
+Software distributed under the License is distributed on an "AS IS"
+basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+License for the specific language governing rights and limitations under
+the License.
+
+Alternatively, the contents of this file may be used under the terms of
+the GNU General Public license (the  "GPL License"), in which case  the
+provisions of GPL License are applicable instead of those above.
+
+FEEDBACK & QUESTIONS
+
+For feedback and questions about priyomdb please e-mail one of the
+authors:
+    Jonas Wielicki <j.wielicki@sotecware.net>
+"""
 from .. import HTMLIntf
 from ...WebModel import WebModel
 import xml.etree.ElementTree as ElementTree
@@ -187,7 +214,7 @@ class Timestamp(Input):
 class ForeignInput(Input):
     def __init__(self, foreignName=None, foreignLangName=None, foreignAttribute=None, **kwargs):
         if not foreignName:
-            raise ValueError(u"Need a proper foreign name at least. Got: {0}".format(foreignName)
+            raise ValueError(u"Need a proper foreign name at least. Got: {0}".format(foreignName))
         super(ForeignInput, self).__init__(type=Input.TEXT, **kwargs)
         self.foreignName = foreignName
         self.foreignLangName = foreignLangName or foreignName + u"Lang"
@@ -207,14 +234,28 @@ class ForeignInput(Input):
         self._foreignLang = query[self.foreignLangName]
         
     def apply(self, query):
+        if self.Disabled:
+            return
+        if not self.name in query or not self.foreignName in query or not self.foreignLangName:
+            return
+        setattr(self._instance, self.attributeName, self._value)
+        if self._foreignValue and self._foreignLang:
+            helper = getattr(self._instance, self.foreignAttribute)
+            helper.Value = self._foreignValue
+            helper.LangCode = self._foreignLang
         
     def editorToTree(self, parent):
         super(ForeignInput, self).editorToTree(parent)
         HTMLIntf.SubElement(parent, u"br").tail = u"Foreign data (langcode / contents): "
         HTMLIntf.SubElement(parent, u"input", attrib={
+            u"name": self.foreignLangName,
+            u"type": u"text",
+            u"value": self._foreignLang
+        }).tail = u" / "
+        HTMLIntf.SubElement(parent, u"input", attrib={
             u"name": self.foreignName,
             u"type": u"text",
-            u"value": 
+            u"value": self._foreignValue
         })
 
 class Select(EditorComponent):
@@ -393,13 +434,31 @@ class VirtualTable(ParentComponent):
             raise ValueError(u"VirtualTable must have a class assigned")
         self.description = kwargs.get(u"description", u"")
         self.where = kwargs.get(u"where", None)
-        super(VirtualTable, self).__init__(*args, **kwargs)
+        self.columns = kwargs.get(u"columns", [])
         self.name = name
         self.cls = cls
+        if len(self.columns) == 0:
+            raise ValueError(u"Must have a list of columns")
+        
+        if type(self.columns[0]) == unicode or type(self.columns[0]) == str:
+            self.columns = tuple((getattr(self.cls, column) for column in self.columns))
+        else:
+            self.columns = tuple(self.columns)
+        
+        super(VirtualTable, self).__init__(*args, **kwargs)
     
     def toTree(self, parent):
         li = HTMLIntf.SubElement(parent, u"li")
         HTMLIntf.SubElement(li, u"a", href=u"../tables/{0}".format(self.name), title=self.description).text = self.name
+        
+    def select(self):
+        store = self.store
+        where = self.where
+        if where is not None:
+            resultSet = store.find(self.cls, where)
+        else:
+            resultSet = store.find(self.cls)
+        return resultSet
         
 class TableComponent(Component):
     def toTableRow(self, tr):

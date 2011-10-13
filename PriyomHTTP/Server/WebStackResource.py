@@ -138,23 +138,24 @@ def get_site_map(priyomInterface):
             "log": SubmitLogResource(model),
             "event": SubmitEventResource(model)
         }), ["log", "log-moderated"]),
-        "edit": MapSelector(u"edit", {
-            "station": AuthorizationSelector(EditStation(model), ["admin", "station"])
-        }),
+        "admin": AuthorizationSelector(MapSelector(u"admin", {
+            "": AdminResource(model),
+            "tables": AuthorizationSelector(AdminTablesResource(model), ["admin"]),
+        }), ["moderate", "admin"]),
         "call": apiMap,
         "doc": DocumentationSelector(apiMap),
         "": HomeResource(model),
         "css": MapResource({
             "home.css": FileResource(os.path.join(rootPath, "www-files/css/home.css"), ContentType("text/css", "utf-8")),
             "error.css": FileResource(os.path.join(rootPath, "www-files/css/error.css"), ContentType("text/css", "utf-8")),
-            "submit.css": FileResource(os.path.join(rootPath, "www-files/css/submit.css"), ContentType("text/css", "utf-8"))
+            "submit.css": FileResource(os.path.join(rootPath, "www-files/css/submit.css"), ContentType("text/css", "utf-8")),
+            "admin.css": FileResource(os.path.join(rootPath, "www-files/css/admin.css"), ContentType("text/css", "utf-8"))
         }),
         "js": MapResource({
             "jquery.js": FileResource(os.path.join(rootPath, "www-files/js/jquery.js"), ContentType("text/javascript", "utf-8"))
         })
     })
     apiRoot["submit"][""] = apiRoot["submit"]
-    apiRoot["edit"][""] = apiRoot["edit"]
     
     return ContinueSelector(
         CompressionSelector(
