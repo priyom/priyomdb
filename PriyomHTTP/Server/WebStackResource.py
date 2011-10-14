@@ -39,14 +39,6 @@ from Selectors import *
 import libPriyom.Plots as Plots
 import libPriyom.PlotDataSources as PlotDataSources
 import os.path
-
-def intOrNone(str):
-    if str.lower() == "none":
-        return None
-    else:
-        return int(str)
-    
-
 from cfg_priyomhttpd import application, response
 from Resources.Edit.EditRegistry import virtualTables
 #from Resources.API.FindStations import FindStations
