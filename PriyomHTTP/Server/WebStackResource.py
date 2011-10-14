@@ -40,7 +40,7 @@ import libPriyom.Plots as Plots
 import libPriyom.PlotDataSources as PlotDataSources
 import os.path
 from cfg_priyomhttpd import application, response
-from Resources.Edit.EditRegistry import virtualTables
+from Resources.Admin.UITree import virtualTables
 #from Resources.API.FindStations import FindStations
 #from Resources.API.FindBroadcasts import FindBroadcasts
 #from Resources.API.FindTransmissions import FindTransmissions
