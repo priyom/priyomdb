@@ -1,5 +1,5 @@
 """
-File name: EditRegistry.py
+File name: UITree.py
 This file is part of: priyomdb
 
 LICENSE

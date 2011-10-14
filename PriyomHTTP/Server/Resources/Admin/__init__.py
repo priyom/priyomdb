@@ -24,5 +24,5 @@ For feedback and questions about priyomdb please e-mail one of the
 authors:
     Jonas Wielicki <j.wielicki@sotecware.net>
 """
-from Admin import AdminResource
+from Home import AdminHomeResource
 from Tables import AdminTablesResource

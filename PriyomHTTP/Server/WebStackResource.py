@@ -34,7 +34,7 @@ import libPriyom
 from Resources import *
 from Resources.API import *
 from Resources.Submit import *
-from Resources.Edit import *
+from Resources.Admin import *
 from Selectors import *
 import libPriyom.Plots as Plots
 import libPriyom.PlotDataSources as PlotDataSources
@@ -139,8 +139,8 @@ def get_site_map(priyomInterface):
             "event": SubmitEventResource(model)
         }), ["log", "log-moderated"]),
         "admin": AuthorizationSelector(MapSelector(u"admin", {
-            "": AdminResource(model),
-            "tables": AuthorizationSelector(AdminTablesResource(model), ["admin"]),
+            "": AdminHomeResource(model),
+            "tables":  AuthorizationSelector(AdminTablesResource(model), ["admin"]),
         }), ["moderate", "admin"]),
         "call": apiMap,
         "doc": DocumentationSelector(apiMap),

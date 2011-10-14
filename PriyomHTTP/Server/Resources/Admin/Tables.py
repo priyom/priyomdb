@@ -1,6 +1,6 @@
 # encoding=utf-8
 """
-File name: Editor.py
+File name: Tables.py
 This file is part of: priyomdb
 
 LICENSE

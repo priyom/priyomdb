@@ -1,6 +1,6 @@
 # encoding=utf-8
 """
-File name: Admin.py
+File name: Home.py
 This file is part of: priyomdb
 
 LICENSE
@@ -30,9 +30,9 @@ from WebStack.Generic import ContentType, EndOfResponse
 from ..HTMLResource import HTMLResource
 from .. import HTMLIntf
 
-class AdminResource(HTMLResource):
+class AdminHomeResource(HTMLResource):
     def __init__(self, model):
-        super(AdminResource, self).__init__(model)
+        super(AdminHomeResource, self).__init__(model)
     
     def buildDoc(self, trans, elements):
         sec = HTMLIntf.SubElement(self.body, u"section")

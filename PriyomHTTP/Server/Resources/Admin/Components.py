@@ -1,6 +1,6 @@
 # encoding=utf-8
 """
-File name: EditComponents.py
+File name: Components.py
 This file is part of: priyomdb
 
 LICENSE
