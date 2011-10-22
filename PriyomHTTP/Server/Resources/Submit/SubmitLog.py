@@ -35,6 +35,7 @@ from time import mktime, time
 import itertools
 import xml.etree.ElementTree as ElementTree
 import math
+from Types import Typecasts
 
 class SubmitLogResource(SubmitResource):
     def __init__(self, model):
@@ -42,14 +43,14 @@ class SubmitLogResource(SubmitResource):
         self.allowedMethods = frozenset(["GET", "POST"])
         
         
-        self.stationValidator = self.model.validStormObject(Station, self.store)
-        self.timestampValidator = self.model.PriyomTimestamp()
+        self.stationValidator = Typecasts.ValidStormObject(Station, self.store)
+        self.timestampValidator = Typecasts.PriyomTimestamp()
         self.durationValidator = float
         self.unicodeValidator = unicode
         
-        self.broadcastValidator = self.model.AllowBoth(self.model.validStormObject(Broadcast, self.store), self.model.EmptyString())
+        self.broadcastValidator = Typecasts.AllowBoth(Typecasts.ValidStormObject(Broadcast, self.store), Typecasts.EmptyString())
         
-        self.transmissionClassValidator = self.model.validStormObject(TransmissionClass, self.store)
+        self.transmissionClassValidator = Typecasts.ValidStormObject(TransmissionClass, self.store)
 
 
     def _basicInformationTree(self, parent):
