@@ -31,17 +31,17 @@ from libPriyom import *
 from datetime import datetime, timedelta
 from SubmitResource import SubmitResource, SubmitParameterError
 from xml.sax.saxutils import escape
-
+from Types import Typecasts
 
 class SubmitEventResource(SubmitResource):
     def __init__(self, model):
         super(SubmitEventResource, self).__init__(model)
         self.allowedMethods = frozenset(("GET", "POST"))
         
-        self.startTimeTypecast = self.model.PriyomTimestamp()
-        self.endTimeTypecast = self.model.AllowBoth(
-            self.model.PriyomTimestamp(),
-            self.model.EmptyString()
+        self.startTimeTypecast = Typecasts.PriyomTimestamp()
+        self.endTimeTypecast = Typecasts.AllowBoth(
+            Typecasts.PriyomTimestamp(),
+            Typecasts.EmptyString()
         )
         
     def _eventInformationTree(self, parent):
@@ -77,7 +77,7 @@ class SubmitEventResource(SubmitResource):
         self.SubElement(li, u"p").text = u"A raw event is any event which does not fit in any event class. Try to keep the description structured though, in case we want to merge these events to a common event class later. Watch out for existing events having similar contents before submitting."
         
     def insert(self):
-        self.station = self.getQueryValue("station", self.model.validStormObject(Station, self.store))
+        self.station = self.getQueryValue("station", Typecasts.validStormObject(Station, self.store))
         
         if self.error is not None:
             self.setError(self.error)
@@ -106,12 +106,12 @@ Event (#{2}): {1}""".format(
     def buildDoc(self, trans, elements):
         super(SubmitEventResource, self).buildDoc(trans, elements)
         
-        self.station = self.getQueryValue("station", self.model.validStormObject(Station, self.store), defaultKey=None)
-        self.eventClass = self.getQueryValue("eventClass", self.model.AllowBoth(self.model.validStormObject(EventClass, self.store), self.model.EmptyString()), defaultKey=None)
+        self.station = self.getQueryValue("station", Typecasts.ValidStormObject(Station, self.store), defaultKey=None)
+        self.eventClass = self.getQueryValue("eventClass", Typecasts.AllowBoth(Typecasts.ValidStormObject(EventClass, self.store), Typecasts.EmptyString()), defaultKey=None)
         if self.eventClass == u"":
             self.eventClass = None
-        self.startTime = self.getQueryValue("startTime", self.model.PriyomTimestamp(), defaultKey=TimeUtils.nowDate())
-        self.endTime = self.getQueryValue("endTime", self.model.AllowBoth(self.model.PriyomTimestamp(), self.model.EmptyString()), defaultKey=None)
+        self.startTime = self.getQueryValue("startTime", Typecasts.PriyomTimestamp(), defaultKey=TimeUtils.nowDate())
+        self.endTime = self.getQueryValue("endTime", Typecasts.AllowBoth(Typecasts.PriyomTimestamp(), Typecasts.EmptyString()), defaultKey=None)
         if self.endTime == u"":
             self.endTime = None
         self.description = self.query.get("description", u"")
