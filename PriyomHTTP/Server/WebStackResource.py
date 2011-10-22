@@ -41,6 +41,7 @@ import libPriyom.PlotDataSources as PlotDataSources
 import os.path
 from cfg_priyomhttpd import application, response
 from Resources.Admin.UITree import virtualTables
+from Types import Typecasts
 #from Resources.API.FindStations import FindStations
 #from Resources.API.FindBroadcasts import FindBroadcasts
 #from Resources.API.FindTransmissions import FindTransmissions
@@ -76,21 +77,21 @@ def get_site_map(priyomInterface):
                     PlotDataSources.PlotDataWeekHourPunch(model.store), 
                     Plots.PlotPunchCard(), 
                     [
-                        ("station", WebModel.validStation(model.store), "station")
+                        ("station", Typecasts.ValidStation(model.store), "station")
                     ],
                     u"punchcard-hw"),
                 "hourMonthPunchCard": PlotAPI(model, 
                     PlotDataSources.PlotDataMonthHourPunch(model.store), 
                     Plots.PlotPunchCard(), 
                     [
-                        ("station", WebModel.validStation(model.store), "station")
+                        ("station", Typecasts.ValidStation(model.store), "station")
                     ],
                     u"punchcard-mw"),
                 "hourWeekColourCard": PlotAPI(model, 
                     PlotDataSources.PlotDataWeekHourPunch(model.store), 
                     Plots.PlotColourCard(), 
                     [
-                        ("station", WebModel.validStation(model.store), "station")
+                        ("station", Typecasts.ValidStation(model.store), "station")
                     ],
                     u"colourcard-hw",
                     subdivision=32,
@@ -100,7 +101,7 @@ def get_site_map(priyomInterface):
                     PlotDataSources.PlotDataMonthHourPunch(model.store), 
                     Plots.PlotColourCard(), 
                     [
-                        ("station", WebModel.validStation(model.store), "station")
+                        ("station", Typecasts.ValidStation(model.store), "station")
                     ],
                     u"colourcard-mw",
                     subdivision=32,
@@ -111,8 +112,8 @@ def get_site_map(priyomInterface):
                 PlotDataSources.PlotDataUptime(model.store),
                 Plots.PlotStackedGraph(),
                 [
-                    ("station", WebModel.validStation(model.store), "station", None),
-                    ("years", WebModel.rangeChecked(int, 1, 10), "years", 5)
+                    ("station", Typecasts.ValidStation(model.store), "station", None),
+                    ("years", Typecasts.RangeCheck(int, 1, 10), "years", 5)
                 ],
                 u"uptime",
                 years=5)
