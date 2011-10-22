@@ -77,7 +77,7 @@ class SubmitEventResource(SubmitResource):
         self.SubElement(li, u"p").text = u"A raw event is any event which does not fit in any event class. Try to keep the description structured though, in case we want to merge these events to a common event class later. Watch out for existing events having similar contents before submitting."
         
     def insert(self):
-        self.station = self.getQueryValue("station", Typecasts.validStormObject(Station, self.store))
+        self.station = self.getQueryValue("station", Typecasts.ValidStormObject(Station, self.store))
         
         if self.error is not None:
             self.setError(self.error)
