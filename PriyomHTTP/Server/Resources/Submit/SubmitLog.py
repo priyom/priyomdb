@@ -138,7 +138,7 @@ class SubmitLogResource(SubmitResource):
         found = False
         if self.station is not None and self.timestamp is not None:
             for broadcast in self.priyomInterface.getCloseBroadcasts(self.station.ID, TimeUtils.toTimestamp(self.timestamp), 600)[1]:
-                if broadcast.type == u"continous":
+                if broadcast.Type == u"continous":
                     continue
                 broadcastOption = self.SubElement(broadcastSelect, u"option", value=unicode(broadcast.ID))
                 broadcastOption.text = unicode(broadcast)
@@ -212,18 +212,24 @@ class SubmitLogResource(SubmitResource):
     def insert(self):
         # most of the prework has been done already, only need to take some minor validations
         # lets go strict:
+        print("a")
         self.station = self.getQueryValue("station", self.stationValidator)
+        print("b")
         self.txClass = self.getQueryValue("transmissionClass", self.transmissionClassValidator)
+        print("c")
         
         frequencies = [(BroadcastFrequency.parseFrequency(item["frequency"]), item["modulation"]) for key, item in self.queryEx["frequencies"].iteritems() if key != "new"]
+        print("d")
         
         if self.error is not None:
             self.setError(self.error)
+        print("e")
         
         timestamp = TimeUtils.toTimestamp(self.timestamp)
         if self.broadcast is not None:
             if abs(timestamp - broadcast.BroadcastStart) > 600:
                 self.setError(u"Cannot use this broadcast: It is more than one minute away from transmission time.")
+        print("f")
         
         try:
             contents = self.txClass.parsePlainText(self.transmissionRaw)
@@ -231,6 +237,7 @@ class SubmitLogResource(SubmitResource):
             self.setError(unicode(e))
         except NodeError as e:
             self.setError(unicode(e))
+        print("g")
         
         if self.broadcast is None:
             self.broadcast = Broadcast()
@@ -304,6 +311,8 @@ Transmission (#{4}): {3}""".format(
     def buildDoc(self, trans, elements):
         self.modulationSelector = None # make sure its regenerated each request
         
+        
+        self.error = None
         try:
             self.station = self.getQueryValue("station", self.stationValidator, defaultKey=None)
             #self.broadcast = 
@@ -330,23 +339,28 @@ Transmission (#{4}): {3}""".format(
         
         self.queryEx = self.parseQueryDict()
         
-        self.error = u""
-        
         self.setTitle(u"Submit logs")
         self.link(u"/css/submit.css")
         
         submitted = False
         if "submit" in self.queryEx and self.error is None:
             try:
+                print("attempting insert")
                 self.insert()
                 submitted = True
-            except SubmitParameterError:
+                print("ok!")
+            except SubmitParameterError as e:
+                print("parameter error")
+                print(self.error)
                 submitted = False
+        else:
+            print("no submit")
         
         if not submitted:
             self.SubElement(self.body, u"pre").text = self.recursiveDict(self.queryEx)
-            if len(self.error) > 0:
-                self.SubElement(error, u"div").text = self.error
+            if self.error is not None:
+                print("error, displaying")
+                self.SubElement(self.body, u"div").text = self.error
                 
             form = self.SubElement(self.body, u"form", name=u"logform", method=u"POST")
             
