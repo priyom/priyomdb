@@ -29,6 +29,7 @@ from .. import HTMLIntf
 from ...WebModel import WebModel
 import xml.etree.ElementTree as ElementTree
 import itertools
+from Types import Typecasts
 
 class Component(object):
     def __init__(self, model=None, **kwargs):
@@ -205,7 +206,7 @@ class CheckBox(Input):
 
 class Timestamp(Input):
     def __init__(self, allowNone=False, **kwargs):
-        super(Timestamp, self).__init__(type=Input.TEXT, typecast=WebModel.PriyomTimestamp(allowNone=allowNone, asDate=False), **kwargs)
+        super(Timestamp, self).__init__(type=Input.TEXT, typecast=Typecasts.PriyomTimestamp(allowNone=allowNone, asDate=False), **kwargs)
     
     def editorToTree(self, parent):
         super(Timestamp, self).editorToTree(parent)
