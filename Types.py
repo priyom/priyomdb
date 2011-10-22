@@ -43,16 +43,16 @@ class Typecasts(object):
         return WrapFunction(tchelper, u"{0} within a range of ({1}..{2})".format(unicode(typecast), min, max))
     
     @staticmethod
-    def validStormObject(type, store):
+    def ValidStormObject(type, store):
         def valid_storm_object(id):
             obj = store.get(type, int(id))
             if obj is None:
                 raise ValueError(u"{0} does not identify a valid {1}".format(id, type))
             return obj
-        return valid_storm_object
+        return WrapFunction(valid_storm_object, u"valid id of a {0!s}".format(type))
         
     @staticmethod
-    def validStation(store):
+    def ValidStation(store):
         def valid_station(id):
             intId = None
             try:
