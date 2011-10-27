@@ -27,6 +27,7 @@ authors:
 """
 from WebStack.Generic import EndOfResponse, ContentType
 from storm.exceptions import DisconnectionError
+from _mysql_exceptions import ProgrammingError
 
 class CatchDisconnectSelector(object):
     maxNesting = 10
@@ -36,24 +37,36 @@ class CatchDisconnectSelector(object):
         self.store = store
         self.nesting = 0
         
+    def catch(self, trans, error):
+        self.store.rollback()
+        trans.rollback()
+        self.nesting += 1
+        if self.nesting >= CatchDisconnectSelector.maxNesting:
+            trans.rollback()
+            trans.set_response_code(503)
+            trans.set_content_type(ContentType("text/plain", "utf-8"))
+            print >>trans.get_response_stream(), error.encode("utf-8")
+        else:
+            self.handle(trans)
+        
     def respond(self, trans):
         self.nesting = 0
         return self.handle(trans)
         
     def handle(self, trans):
         try:
-            return resource.respond(trans)
+            return self.resource.respond(trans)
         except DisconnectionError:
             # In that case, we perform a reconnect, flush the cache,
             # write a message into the errorlog and try to re-execute the
             # resource.
-            self.store.rollback()
-            trans.rollback()
-            self.nesting += 1
-            if self.nesting >= CatchDisconnectSelector.maxNesting:
-                trans.rollback()
-                trans.set_response_code(503)
-                trans.set_content_type(ContentType("text/plain", "utf-8"))
-                print >>trans.get_response_stream(), u"Every attempt to get a database connection working failed".encode("utf-8")
+            print("[{0}]: Attempting to reconnect after receiving a DisconnectionError".format(type(self).__name__))
+            self.catch(trans, u"Every attempt to get a database connection working failed")
+        except ProgrammingError as e:
+            # This may be a commands out of sync. Lets check for that, 
+            # otherwise we just pass this on
+            if "commands out of sync" in str(e).lower():
+                print("[{0}]: Caught a {1}".format(type(self).__name__, str(e)))
+                self.catch(trans, u"Keeping to receive a commands out of sync from mysql.")
             else:
-                self.handle(trans)
+                raise

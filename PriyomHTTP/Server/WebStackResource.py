@@ -154,7 +154,7 @@ def get_site_map(priyomInterface):
                         AuthenticationSelector(model.store, apiRoot)
                     ),
                     model.store
-                )
+                ),
                 show = response["showExceptions"]
             )
         )
