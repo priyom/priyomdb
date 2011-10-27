@@ -24,6 +24,9 @@ For feedback and questions about priyomdb please e-mail one of the
 authors:
     Jonas Wielicki <j.wielicki@sotecware.net>
 """
+
+__version__ = '0.8.1'
+
 from storm.locals import *
 from Modulation import Modulation
 from Broadcast import BroadcastFrequency, Broadcast

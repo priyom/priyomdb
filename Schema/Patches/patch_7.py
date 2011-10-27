@@ -1,5 +1,5 @@
 """
-File name: __init__.py
+File name: patch_7.py
 This file is part of: priyomdb
 
 LICENSE
@@ -24,4 +24,12 @@ For feedback and questions about priyomdb please e-mail one of the
 authors:
     Jonas Wielicki <j.wielicki@sotecware.net>
 """
-__version__ = '1.1.0'
+
+def apply(store):
+    statements = [
+"""ALTER TABLE `events` ADD `StartTime` BIGINT NOT NULL COMMENT 'start time of the event, or time singularity of the event if EndTime is NULL';""",
+"""ALTER TABLE `events` ADD `EndTime` BIGINT DEFAULT NULL COMMENT 'end time of the event or NULL if its a singularity';"""
+    ]
+    
+    for statement in statements:
+        store.execute(statement)

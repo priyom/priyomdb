@@ -32,3 +32,4 @@ from Documentation import DocumentationSelector
 from Exceptions import ExceptionSelector
 from Continue import ContinueSelector
 from Map import MapSelector
+from CatchDisconnect import CatchDisconnectSelector

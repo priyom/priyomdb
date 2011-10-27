@@ -49,6 +49,10 @@ class ExceptionSelector(object):
             
             eType, e, tb = sys.exc_info()
             
+            # first make a print to stdout, this will give us a log in 
+            # the apache:
+            traceback.print_exception(eType, e, tb)
+            
             s = u"""
 <html>
     <head>

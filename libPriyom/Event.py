@@ -29,13 +29,14 @@ from Station import Station
 from PriyomBase import PriyomBase
 
 class EventClass(object):
-    __storm_table__ = "eventClass"
+    __storm_table__ = "eventClasses"
     
     ID = Int(primary=True)
     Title = Unicode()
+    StateChanging = Bool()
     
 class Event(PriyomBase):
-    __storm_table__ = "event"
+    __storm_table__ = "events"
     
     ID = Int(primary=True)
     Created = Int()
@@ -45,3 +46,5 @@ class Event(PriyomBase):
     EventClassID = Int()
     EventClass = Reference(EventClassID, EventClass.ID)
     Description = Unicode()
+    StartTime = Int()
+    EndTime = Int()

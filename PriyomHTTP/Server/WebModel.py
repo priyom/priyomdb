@@ -29,7 +29,7 @@ import xml.dom.minidom as dom
 import time
 import json
 from datetime import datetime, timedelta
-from libPriyom import Transmission, Station, Broadcast, Schedule, TimeUtils
+from libPriyom import Transmission, Station, Broadcast, Schedule, TimeUtils, Formatting
 from APIDatabase import Variable
 import re
 import cStringIO
@@ -76,6 +76,22 @@ asctime = {
     "time": 2,
     "yearmode": "%Y"
 }
+
+class WrapFunction(object):
+    def __init__(self, func, description):
+        self.func = func
+        self.description = description
+    
+    def __call__(self, *args, **kwargs):
+        return self.func(*args, **kwargs)
+    
+    def __str__(self):
+        return str(self.description)
+        
+    def __unicode__(self):
+        return self.description
+    
+
 class Encoder(io.IOBase):
     def __init__(self, targetEncoding):
         self.buffer = cStringIO.StringIO()
@@ -131,7 +147,36 @@ class WebModel(object):
             if obj is None:
                 raise ValueError(u"{0} does not identify a valid {1}".format(id, Station))
             return obj
-        return valid_station
+        return WrapFunction(valid_station, u"valid station identifier (a db id identifying a station, enigma identifier or priyom identifier)")
+        
+    @staticmethod
+    def PriyomTimestamp(allowNone=False):
+        def priyom_timestamp(s):
+            if allowNone and (type(s) == str or type(s) == unicode):
+                if s.lower() == "none":
+                    return None
+            return datetime.strptime(s, Formatting.priyomdate)
+        return WrapFunction(priyom_timestamp, u"datetime according to the standard priyom date format (YYYY-MM-DDTHH:MM:SS)")
+    
+    @staticmethod
+    def AllowBoth(type1, type2):
+        def redefine_both_callable(s):
+            try:
+                return type1(s)
+            except:
+                return type2(s)
+        return WrapFunction(redefine_both_callable, u"{0} or {1}".format(unicode(type1), unicode(type2)))
+        
+    @staticmethod
+    def EmptyString():
+        def empty(s):
+            origs = s
+            if type(s) != str and type(s) != unicode:
+                s = unicode(s)
+            if len(s.lstrip().rstrip()) > 0:
+                raise ValueError(u"{0} is not empty".format(repr(origs)))
+            return u""
+        return WrapFunction(empty, u"empty")
     
     def __init__(self, priyomInterface):
         self.priyomInterface = priyomInterface

@@ -1,5 +1,5 @@
 """
-File name: __init__.py
+File name: patch_8.py
 This file is part of: priyomdb
 
 LICENSE
@@ -24,4 +24,12 @@ For feedback and questions about priyomdb please e-mail one of the
 authors:
     Jonas Wielicki <j.wielicki@sotecware.net>
 """
-__version__ = '1.1.0'
+
+def apply(store):
+    statements = [
+"""ALTER TABLE `eventClasses` ADD `StateChanging` BOOL NOT NULL DEFAULT '0' COMMENT 'defines whether events in this class are so called state-changing events';"""
+    ]
+    
+    for statement in statements:
+        store.execute(statement)
+
