@@ -27,10 +27,11 @@ authors:
 """
 from storm.locals import *
 from WebStack.Generic import ContentType, EndOfResponse
-import EditRegistry
+import UITree
 from ..HTMLResource import HTMLResource
 from .. import HTMLIntf
 import urllib
+from Types import Typecasts
 
 class AdminTablesResource(HTMLResource):
     def __init__(self, model):
@@ -60,9 +61,85 @@ class AdminTablesResource(HTMLResource):
         sec = HTMLIntf.SubElement(parent, u"section")
         HTMLIntf.SubElement(sec, u"h2").text = u"Available tables"
         ul = HTMLIntf.SubElement(sec, u"ul")
-        for tableName, table in EditRegistry.virtualTables.iteritems():
+        for tableName, table in UITree.virtualTables.iteritems():
             a = HTMLIntf.SubElement(HTMLIntf.SubElement(ul, u"li"), u"a", href=tableName, title=table.description)
             a.text = tableName
+            
+    def renderTable(self, parent, virtualTable, h1):
+        # just show the table
+        columnNames = [column.name for column in virtualTable.columns]
+        h1.text = virtualTable.description
+        
+        orderColumn = self.getQueryValue(u"orderColumn", unicode, default=columnNames[0])
+        if not orderColumn in columnNames:
+            orderColumn = columnNames[0]                
+        orderDirection = self.getQueryValue(u"orderDirection", unicode, default=u"ASC")
+        if not orderDirection in (u"ASC", u"DESC"):
+            orderDirection = u"ASC"
+        offset = self.getQueryValue(u"offset", int, default=0)
+        limit = 30
+        
+        pagesUl = HTMLIntf.SubElement(parent, u"ul", attrib={
+            u"class": u"pagination"
+        })
+        
+        table = HTMLIntf.SubElement(parent, u"table", attrib={
+            u"class": u"view"
+        })
+        thead = HTMLIntf.SubElement(table, u"thead")
+        
+        HTMLIntf.SubElement(thead, u"th", attrib={
+            u"class": u"buttons"
+        }).text = u"Act."
+        
+        for column in columnNames:
+            a = HTMLIntf.SubElement(HTMLIntf.SubElement(thead, u"th"), u"a")
+            a.text = column
+            if orderColumn != column:
+                a.set(u"href", self.buildQueryOnSameTable(orderColumn=column, orderDirection=u"ASC"))
+            else:
+                if orderDirection == u"ASC":
+                    a.set(u"href", self.buildQueryOnSameTable(orderColumn=column, orderDirection=u"DESC"))
+                else:
+                    a.set(u"href", self.buildQueryOnSameTable(orderColumn=column, orderDirection=u"ASC"))
+                    
+        tbody = HTMLIntf.SubElement(table, u"tbody")
+        
+        resultSet = virtualTable.select()
+        amount = resultSet.count()
+        resultSet.order_by({
+            u"ASC": Asc,
+            u"DESC": Desc
+        }[orderDirection](getattr(virtualTable.cls, orderColumn)))
+        resultSet.config(offset=offset, limit=limit)
+        # TODO: ordering
+        # TODO: proper limiting!
+        
+        for obj in resultSet:
+            tr = HTMLIntf.SubElement(tbody, u"tr")
+            HTMLIntf.SubElement(HTMLIntf.SubElement(tr, u"td"), u"a", href=self.editItemHref(obj.ID), title=u"Edit / View this row in detail").text = u"[E]"
+            for column in columnNames:
+                HTMLIntf.SubElement(tr, u"td").text = getattr(obj, column)
+        
+        #amount, = list(self.store.execute("SELECT SQL_FOUND_ROWS()"))[0]
+        pages = int(amount/limit)
+        if pages*limit < amount:
+            pages += 1
+        
+        for pageNumber in xrange(1,pages+1):
+            a = HTMLIntf.SubElement(HTMLIntf.SubElement(pagesUl, u"li"), u"a", href=self.buildQueryOnSameTable(orderColumn=orderColumn, orderDirection=orderDirection, offset=(pageNumber-1)*limit))
+            a.text = unicode(pageNumber)
+            if pageNumber == (offset/limit)+1:
+                a.set(u"class", u"current")
+        
+        parent.append(pagesUl.copy())
+    
+    def renderObjectEditor(self, parent, virtualTable, obj, h1):
+        virtualTable.Model = self.model
+        virtualTable.Instance = obj
+        virtualTable.validate({})
+        print("rendering to tree")
+        virtualTable.toTree(parent)
         
     def renderEditor(self, parent, path):
         h1 = HTMLIntf.SubElement(HTMLIntf.SubElement(parent, u"header"), u"h1")
@@ -72,80 +149,21 @@ class AdminTablesResource(HTMLResource):
             HTMLIntf.SubElement(parent, u"p").text = u"Please select a table from the left to start editing contents."
             return
         
-        if not self.table in EditRegistry.virtualTables:
+        if not self.table in UITree.virtualTables:
             h1.text = u"""Table "{0}" not found!""".format(self.table)
             HTMLIntf.SubElement(parent, u"p").text = u"The table you are trying to access does not exist!"
             return
         
+        virtualTable = UITree.virtualTables[self.table]
         if len(path) == 0:
-            # just show the table
-            virtualTable = EditRegistry.virtualTables[self.table]
-            columnNames = [column.name for column in virtualTable.columns]
-            h1.text = virtualTable.description
-            
-            orderColumn = self.getQueryValue(u"orderColumn", unicode, default=columnNames[0])
-            if not orderColumn in columnNames:
-                orderColumn = columnNames[0]                
-            orderDirection = self.getQueryValue(u"orderDirection", unicode, default=u"ASC")
-            if not orderDirection in (u"ASC", u"DESC"):
-                orderDirection = u"ASC"
-            offset = self.getQueryValue(u"offset", int, default=0)
-            limit = 30
-            
-            pagesUl = HTMLIntf.SubElement(parent, u"ul", attrib={
-                u"class": u"pagination"
-            })
-            
-            table = HTMLIntf.SubElement(parent, u"table", attrib={
-                u"class": u"view"
-            })
-            thead = HTMLIntf.SubElement(table, u"thead")
-            
-            HTMLIntf.SubElement(thead, u"th", attrib={
-                u"class": u"buttons"
-            }).text = u"Act."
-            
-            for column in columnNames:
-                a = HTMLIntf.SubElement(HTMLIntf.SubElement(thead, u"th"), u"a")
-                a.text = column
-                if orderColumn != column:
-                    a.set(u"href", self.buildQueryOnSameTable(orderColumn=column, orderDirection=u"ASC"))
-                else:
-                    if orderDirection == u"ASC":
-                        a.set(u"href", self.buildQueryOnSameTable(orderColumn=column, orderDirection=u"DESC"))
-                    else:
-                        a.set(u"href", self.buildQueryOnSameTable(orderColumn=column, orderDirection=u"ASC"))
-                        
-            tbody = HTMLIntf.SubElement(table, u"tbody")
-            
-            resultSet = virtualTable.select()
-            amount = resultSet.count()
-            resultSet.order_by({
-                u"ASC": Asc,
-                u"DESC": Desc
-            }[orderDirection](getattr(virtualTable.cls, orderColumn)))
-            resultSet.config(offset=offset, limit=limit)
-            # TODO: ordering
-            # TODO: proper limiting!
-            
-            for obj in resultSet:
-                tr = HTMLIntf.SubElement(tbody, u"tr")
-                HTMLIntf.SubElement(HTMLIntf.SubElement(tr, u"td"), u"a", href=self.editItemHref(obj.ID), title=u"Edit / View this row in detail").text = u"[E]"
-                for column in columnNames:
-                    HTMLIntf.SubElement(tr, u"td").text = getattr(obj, column)
-            
-            #amount, = list(self.store.execute("SELECT SQL_FOUND_ROWS()"))[0]
-            pages = int(amount/limit)
-            if pages*limit < amount:
-                pages += 1
-            
-            for pageNumber in xrange(1,pages+1):
-                a = HTMLIntf.SubElement(HTMLIntf.SubElement(pagesUl, u"li"), u"a", href=self.buildQueryOnSameTable(orderColumn=orderColumn, orderDirection=orderDirection, offset=(pageNumber-1)*limit))
-                a.text = unicode(pageNumber)
-                if pageNumber == (offset/limit)+1:
-                    a.set(u"class", u"current")
-            
-            parent.append(pagesUl.copy())
+            self.renderTable(parent, virtualTable, h1)
+        elif len(path) == 1:
+            try:
+                obj = Typecasts.ValidStormObject(virtualTable.cls, self.store)(path[0])
+            except:
+                self.redirectUpwards()
+            else:
+                self.renderObjectEditor(parent, virtualTable, obj, h1)
     
     def redirect(self):
         self.trans.rollback()
@@ -154,6 +172,21 @@ class AdminTablesResource(HTMLResource):
         if query_string:
             query_string = "?" + query_string
         self.trans.redirect(self.trans.encode_path(path_without_query, "utf-8") + "/" + query_string)
+        raise EndOfResponse
+    
+    def redirectUpwards(self):
+        self.trans.rollback()
+        path_without_query = self.trans.get_path_without_query("utf-8")
+        query_string = self.trans.get_query_string()
+        pathSegments = path_without_query.split('/')
+        if pathSegments[-1] == "":
+            pathSegments = pathSegments[:-2]
+        else:
+            pathSegments = pathSegments[:-1]
+        newPath = "/".join(pathSegments)
+        if query_string:
+            query_string = "?" + query_string
+        self.trans.redirect(self.trans.encode_path(newPath, "utf-8") + query_string)
         raise EndOfResponse
         
     def buildDoc(self, trans, elements):
@@ -164,7 +197,7 @@ class AdminTablesResource(HTMLResource):
         self.table = path[0]
         if not self.table:
             self.table = None
-        #if self.table and not self.table in EditRegistry.virtualTables:
+        #if self.table and not self.table in UITree.virtualTables:
         #    self.notFound()
         
         self.link(u"/css/admin.css")

@@ -30,6 +30,9 @@ from ...WebModel import WebModel
 import xml.etree.ElementTree as ElementTree
 import itertools
 from Types import Typecasts
+from libPriyom.Helpers import TimeUtils
+from libPriyom import Formatting
+from datetime import datetime, timedelta
 
 class Component(object):
     def __init__(self, model=None, **kwargs):
@@ -43,6 +46,9 @@ class Component(object):
     
     def _instanceChanged(self, newInstance):
         pass
+    
+    def _modelChanged(self, newModel):
+        pass
         
     @property
     def Model(self):
@@ -54,6 +60,7 @@ class Component(object):
         if model is not None:
             self.store = model.store
             self.priyomInterface = model.priyomInterface
+        self._modelChanged(model)
     
     @property
     def Instance(self):
@@ -128,7 +135,7 @@ class EditorComponent(Component):
             }).text = self.description
     
     def editorToTree(self, parent):
-        super(EditorComponent, self).__init__(parent)
+        # super(EditorComponent, self).editorToTree(parent)
         if self.Error is not None:
             div = HTMLIntf.SubElement(parent, u"div", attrib={
                 u"class": u"error"
@@ -187,7 +194,7 @@ class Input(EditorComponent):
         })
         if self.Disabled:
             self.input.set(u"disabled", u"disabled")
-        super(Input, self).__init__(parent)
+        super(Input, self).editorToTree(parent)
         
 class CheckBox(Input):
     def __init__(self, label=None, **kwargs):
@@ -283,7 +290,7 @@ class Select(EditorComponent):
         parent.append(select)
         selectOptions = list(select) if self.hasDynamicItems else select
         for option in list(select):
-            if option.enabled is not None and not option.enabled(self.Instane):
+            if option.enabled is not None and not option.enabled(self.Instance):
                 select.remove(option)
             if option.get(u"value") == unicode(self._rawValue):
                 option.set(u"selected", u"selected")
@@ -332,7 +339,7 @@ class TextArea(EditorComponent):
     def __init__(self, rows=None, cols=None, fullWidth=False, **kwargs):
         if cols is not None and fullWidth:
             raise ValueError(u"Cannot specify both cols= and fullWidth=True for a TextArea")
-        super(TextArea, self).__init__(**kwargs)
+        super(TextArea, self).__init__(typecast=Typecasts.NoneAsEmpty(), **kwargs)
         self.rows = int(rows) if rows is not None else None
         self.cols = int(cols) if cols is not None else None
         self.fullWidth = bool(fullWidth)
@@ -358,9 +365,10 @@ class ParentComponent(Component):
     def __init__(self, typeCheck=None, *args, **kwargs):
         self.typeCheck = typeCheck
         if self.typeCheck is not None:
-            for item in args:
-                self.typeCheck(item)
-        self._children = list(args)
+            args = [self.typeCheck(arg) for arg in args]
+        else:
+            args = list(args)
+        self._children = args
         """self._transfer(self._children, (
             "__getitem__",
             "__getslice__",
@@ -384,9 +392,12 @@ class ParentComponent(Component):
     def __iter__(self):
         return iter(self._children)
     
+    def __len__(self):
+        return len(self._children)
+    
     def __setitem__(self, key, value):
         if self.typeCheck is not None:
-            self.typeCheck(value)
+            value = self.typeCheck(value)
         value.Model = self.Model
         self._children[key] = value
         
@@ -402,32 +413,44 @@ class ParentComponent(Component):
             self.priyomInterface = model.priyomInterface
         for child in self:
             child.Model = model
+            
+    def _instanceChanged(self, newInstance):
+        super(ParentComponent, self)._instanceChanged(newInstance)
+        for child in self:
+            child.Instance = newInstance
     
     def append(self, item):
         if self.typeCheck is not None:
-            self.typeCheck(value)
+            value = self.typeCheck(value)
         item.Model = self.Model
         self._children.append(item)
     
     def extend(self, items):
-        try:
-            len(items)
-        except TypeError:
-            items = list(items)
         if self.typeCheck:
-            for item in items:
-                self.typeCheck(items)
-                item.Model = self.Model
-        else:
-            for item in items:
-                item.Model = self.Model
+            items = [self.typeCheck(item) for item in items]
+        for item in items:
+            item.Model = self.Model
         self._children.extend(items)
     
     def insert(self, index, object):
         if self.typeCheck:
-            self.typeCheck(object)
+            object = self.typeCheck(object)
         object.Model = self.Model
         self._children.insert(index, object)
+    
+    def toTree(self, parent):
+        for item in self:
+            item.toTree(parent)
+    
+    def validate(self, query):
+        valid = True
+        for item in self:
+            valid = item.validate(query) and valid
+        return valid
+    
+    def apply(self, query):
+        for item in self:
+            item.apply(query)
 
 class VirtualTable(ParentComponent):
     def __init__(self, name, cls, *args, **kwargs):
@@ -446,11 +469,11 @@ class VirtualTable(ParentComponent):
         else:
             self.columns = tuple(self.columns)
         
-        super(VirtualTable, self).__init__(*args, **kwargs)
+        super(VirtualTable, self).__init__(None, *args, **kwargs)
     
-    def toTree(self, parent):
-        li = HTMLIntf.SubElement(parent, u"li")
-        HTMLIntf.SubElement(li, u"a", href=u"../tables/{0}".format(self.name), title=self.description).text = self.name
+    #def toTree(self, parent):
+    #    li = HTMLIntf.SubElement(parent, u"li")
+    #    HTMLIntf.SubElement(li, u"a", href=u"../tables/{0}".format(self.name), title=self.description).text = self.name
         
     def select(self):
         store = self.store
@@ -466,19 +489,32 @@ class TableComponent(Component):
         pass
     
     def toTable(self, tbody):
-        self.toTableRow(XHTMLIntf.SubElement(tbody, u"tr"))
+        self.toTableRow(HTMLIntf.SubElement(tbody, u"tr"))
     
 class TableComponentWrapper(TableComponent):
     def __init__(self, component):
-        print(type(component))
         if not isinstance(component, Component):
             raise ValueError(u"Cannot wrap anything but a component subclass.")
-        super(TableComponentWrapper, self).__init__(component.model)
         self.component = component
+        super(TableComponentWrapper, self).__init__()
+        
+    def _instanceChanged(self, newInstance):
+        super(TableComponentWrapper, self)._instanceChanged(newInstance)
+        self.component.Instance = newInstance
+    
+    def _modelChanged(self, newModel):
+        super(TableComponentWrapper, self)._modelChanged(newModel)
+        self.component.Model = newModel
+    
+    def validate(self, query):
+        return self.component.validate(query)
+    
+    def apply(self, query):
+        return self.component.apply(query)
         
     def toTableRow(self, tr):
-        self.descriptionToTree(HTMLIntf.SubElement(tr, u"th"))
-        self.editorToTree(HTMLIntf.SubElement(tr, u"td"))
+        self.component.descriptionToTree(HTMLIntf.SubElement(tr, u"th"))
+        self.component.editorToTree(HTMLIntf.SubElement(tr, u"td"))
     
 class Table(ParentComponent):
     def __init__(self, *args, **kwargs):
@@ -507,7 +543,10 @@ class TableGroup(ParentComponent, TableComponent):
     
     def toTable(self, tbody):
         tr = HTMLIntf.SubElement(tbody, u"tr")
-        th = HTMLIntf.SubElement(tr, u"th", colspan=2)
+        th = HTMLIntf.SubElement(tr, u"th", attrib={
+            u"colspan": 2,
+            u"class": "group"
+        })
         th.text = self.title
         for child in self:
             child.toTable(tbody)

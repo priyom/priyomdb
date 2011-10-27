@@ -1,3 +1,7 @@
+from libPriyom.Helpers import TimeUtils
+from libPriyom import Formatting
+from datetime import datetime, timedelta
+
 class WrapFunction(object):
     def __init__(self, func, description):
         self.func = func
@@ -78,6 +82,11 @@ class Typecasts(object):
             if allowNone and (type(s) == str or type(s) == unicode):
                 if s.lower() == "none":
                     return None
+            if type(s) == int or type(s) == float:
+                if asDate:
+                    return TimeUtils.fromTimestamp(s)
+                else:
+                    return s
             if asDate:
                 return datetime.strptime(s, Formatting.priyomdate)
             else:
@@ -106,3 +115,13 @@ class Typecasts(object):
                 raise ValueError(u"{0} is not empty".format(repr(origs)))
             return u""
         return WrapFunction(empty, u"empty")
+    
+    @staticmethod
+    def NoneAsEmpty(typecast=unicode):
+        def none_as_empty(s):
+            if s is None:
+                return typecast("")
+            s = typecast(s)
+            if len(s) == 0:
+                return None
+        return WrapFunction(none_as_empty, unicode(typecast))

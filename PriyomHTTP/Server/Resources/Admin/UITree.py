@@ -25,7 +25,7 @@ authors:
     Jonas Wielicki <j.wielicki@sotecware.net>
 """
 from libPriyom import *
-from EditComponents import Input, TextArea, Select, SelectStormObject, VirtualTable, Table, TableGroup, IDTableGroup, Timestamp, CheckBox, ForeignInput
+from Components import Input, TextArea, Select, SelectStormObject, VirtualTable, Table, TableGroup, IDTableGroup, Timestamp, CheckBox, ForeignInput
 
 
 """u"schedules": VirtualTable(u"Schedule database", Schedule, 
