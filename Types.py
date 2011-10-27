@@ -79,9 +79,8 @@ class Typecasts(object):
     @staticmethod
     def PriyomTimestamp(allowNone=False, asDate=True):
         def priyom_timestamp(s):
-            if allowNone and (type(s) == str or type(s) == unicode):
-                if s.lower() == "none":
-                    return None
+            if allowNone and (((type(s) == str or type(s) == unicode) and (len(s) == 0 or s.lower() == "none")) or s is None):
+                return None
             if type(s) == int or type(s) == float:
                 if asDate:
                     return TimeUtils.fromTimestamp(s)

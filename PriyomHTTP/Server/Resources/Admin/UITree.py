@@ -150,7 +150,8 @@ virtualTables = {
                 Timestamp(
                     name=u"BroadcastEnd",
                     caption=u"Ends at",
-                    description=u"Time at which the broadcast ended (UTC)"
+                    description=u"Time at which the broadcast ended (UTC)",
+                    allowNone=True
                 ),
                 Input(
                     name=u"ScheduleLeafID",

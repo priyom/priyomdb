@@ -217,7 +217,12 @@ class Timestamp(Input):
     
     def editorToTree(self, parent):
         super(Timestamp, self).editorToTree(parent)
-        self.input.set(u"value", TimeUtils.toDatetime(self.Value).strftime(Formatting.priyomdate))
+        dt = self.Value
+        if dt is None:
+            value = ""
+        else:
+            value = TimeUtils.toDatetime(self.Value).strftime(Formatting.priyomdate)
+        self.input.set(u"value", value)
         
 class ForeignInput(Input):
     def __init__(self, foreignName=None, foreignLangName=None, foreignAttribute=None, **kwargs):
