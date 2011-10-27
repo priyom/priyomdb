@@ -26,7 +26,7 @@ authors:
 """
 from storm.locals import *
 from libPriyom import *
-from Components import Input, TextArea, Select, SelectStormObject, VirtualTable, Table, TableGroup, IDTableGroup, Timestamp, CheckBox, ForeignInput
+from Components import Input, TextArea, Select, SelectStormObject, VirtualTable, Table, TableGroup, IDTableGroup, Timestamp, CheckBox, ForeignInput, TransmissionContents
 
 
 """u"schedules": VirtualTable(u"Schedule database", Schedule, 
@@ -197,6 +197,12 @@ virtualTables = {
                 TextArea(
                     name=u"Remarks",
                     description=u"Any remarks about the transmission (like voice sex etc.)"
+                )
+            ),
+            TableGroup(u"Contents",
+                TransmissionContents(
+                    name=u"Contents",
+                    description=u"Contents of the transmission. The format of this depends on the selected transmission class."
                 )
             )
         ),

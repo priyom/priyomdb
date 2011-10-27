@@ -144,7 +144,6 @@ class AdminTablesResource(HTMLResource):
         parent.append(paginationElement.copy())
     
     def renderObjectEditor(self, parent, virtualTable, obj, h1):
-        h1.text = u"Editing: {0}".format(unicode(obj))
         virtualTable.Model = self.model
         virtualTable.Instance = obj
         validated = virtualTable.validate(self.query if "submit" in self.query else {})
@@ -157,9 +156,11 @@ class AdminTablesResource(HTMLResource):
                 virtualTable.apply(self.query)
                 obj.touch()
                 self.store.flush()
+                self.store.invalidate(obj)
             HTMLIntf.SubElement(form, u"input", name="submit", value="Save", type="submit")
         else:
             validate.tail = u" Please check your input."
+        h1.text = u"Editing: {0}".format(unicode(obj))
         
     def renderEditor(self, parent, path):
         h1 = HTMLIntf.SubElement(HTMLIntf.SubElement(parent, u"header"), u"h1")

@@ -34,6 +34,7 @@ from libPriyom.Helpers import TimeUtils
 from libPriyom import Formatting
 from datetime import datetime, timedelta
 from storm.locals import *
+from libPriyom.TransmissionParser import NodeError
 
 class Component(object):
     def __init__(self, model=None, **kwargs):
@@ -307,6 +308,7 @@ class Select(EditorComponent):
                 select.remove(option)
             if option.get(u"value") == unicode(self._rawValue):
                 option.set(u"selected", u"selected")
+        super(Select, self).editorToTree(parent)
 
 class SelectStormObject(EditorComponent):
     def __init__(self, stormClass=None, where=None, withMakeSingleUser=False, withEdit=False, withNone=False, **kwargs):
@@ -333,7 +335,8 @@ class SelectStormObject(EditorComponent):
             return None
         if isinstance(id, self.stormClass):
             return id
-        obj = self.store.find(self.stormClass, And(self.where, self.stormClass.ID == int(id))).any()
+        condition = self.stormClass.ID == int(id)
+        obj = self.store.find(self.stormClass, And(self.where, condition) if self.where is not None else condition).any()
         if obj is None:
             raise ValueError(u"ID {0} does not identify a valid {1} object.".format(int(id), self.stormClass))
         return obj
@@ -353,12 +356,13 @@ class SelectStormObject(EditorComponent):
             option.text = unicode(item)
             if item is self.Value:
                 option.set(u"selected", u"selected")
+        super(SelectStormObject, self).editorToTree(parent)
                 
 class TextArea(EditorComponent):
-    def __init__(self, rows=None, cols=None, fullWidth=False, **kwargs):
+    def __init__(self, rows=None, cols=None, fullWidth=False, typecast=Typecasts.NoneAsEmpty(), **kwargs):
         if cols is not None and fullWidth:
             raise ValueError(u"Cannot specify both cols= and fullWidth=True for a TextArea")
-        super(TextArea, self).__init__(typecast=Typecasts.NoneAsEmpty(), **kwargs)
+        super(TextArea, self).__init__(typecast=typecast, **kwargs)
         self.rows = int(rows) if rows is not None else None
         self.cols = int(cols) if cols is not None else None
         self.fullWidth = bool(fullWidth)
@@ -375,6 +379,38 @@ class TextArea(EditorComponent):
             parent.remove(area)
             wrapper.append(area)
             area.set(u"style", u"width: 100%")
+        super(TextArea, self).editorToTree(parent)
+
+class TransmissionContents(TextArea):
+    def __init__(self, **kwargs):
+        super(TransmissionContents, self).__init__(typecast=lambda x: x, **kwargs)
+        
+    def validate(self, query):
+        self._value = " ".join((unicode(block) for block in self.Instance.blocks))
+        if self.Disabled:
+            return True
+        if not self.name in query:
+            return True
+        try:
+            self._value = self.checkTransmission(query[self.name])
+        except (ValueError, NodeError, KeyError) as e:
+            self.Error = unicode(e)
+            return False
+        return True
+    
+    def apply(self, query):
+        if self.Disabled:
+            return
+        if not self.name in query:
+            return
+        self.Instance.Contents = query[self.name]
+    
+    def checkTransmission(self, value):
+        cls = self.Instance.Class
+        if cls is None:
+            raise ValueError("Cannot check transmission without having a transmission class selected (you may need to save beforehand)!")
+        result = cls.parsePlainText(value)
+        return value
 
 class ParentComponent(Component):
     #def _transfer(self, src, attribs):
