@@ -42,6 +42,7 @@ import os.path
 from cfg_priyomhttpd import application, response
 from Resources.Admin.UITree import virtualTables
 from Types import Typecasts
+
 #from Resources.API.FindStations import FindStations
 #from Resources.API.FindBroadcasts import FindBroadcasts
 #from Resources.API.FindTransmissions import FindTransmissions
@@ -153,10 +154,13 @@ def get_site_map(priyomInterface):
     return ContinueSelector(
         CompressionSelector(
             ExceptionSelector(
-                ResetSelector(model, 
-                    AuthenticationSelector(model.store, apiRoot)
+                CatchDisconnectSelector(
+                    ResetSelector(model, 
+                        AuthenticationSelector(model.store, apiRoot)
+                    ),
+                    model.store
                 ),
-                show = response["showExceptions"]
+                model
             )
         )
     )

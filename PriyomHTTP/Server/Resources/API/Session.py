@@ -46,6 +46,7 @@ class SessionAPI(API):
         self.allowedMethods = frozenset(["GET", "POST"])
     
     def handle(self, trans):
+        trans.hide_post = True
         trans.set_content_type(ContentType("text/plain", self.encoding))
         if (not "user" in self.query) or (not "pass" in self.query):
             if "cookie" in self.query:

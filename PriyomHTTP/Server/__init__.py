@@ -24,3 +24,4 @@ For feedback and questions about priyomdb please e-mail one of the
 authors:
     Jonas Wielicki <j.wielicki@sotecware.net>
 """
+__version__ = '1.1.0'
