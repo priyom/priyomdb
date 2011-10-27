@@ -223,7 +223,7 @@ class Resource(object):
         self.query = trans.get_fields_from_path()
         if trans.get_content_type().media_type == "application/x-www-form-urlencoded":
             trans.post_query = trans.get_fields_from_body("utf-8")
-            self.query.update(post_query)
+            self.query.update(trans.post_query)
         else:
             trans.post_query = {}
         ifModifiedSince = trans.get_header_values("If-Modified-Since")
