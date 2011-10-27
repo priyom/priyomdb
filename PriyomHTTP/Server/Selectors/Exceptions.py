@@ -104,7 +104,7 @@ the following exception occured at {2}:
 
 """.format(trans.get_request_method(), trans.get_path(), TimeUtils.nowDate().isoformat())
         plainTextMessage += self.generatePlainTextMessage(trans, exceptionType, exception, tb)
-        print(plainTextMessage)
+        print(plainTextMessage.encode("utf-8"))
         
         if "mail-to" in errors:
             try:
