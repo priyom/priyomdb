@@ -332,6 +332,9 @@ class TransmissionClass(PriyomBase):
             items.extend(self.parseNode(child, groups[child.ParentGroup]))
         return items
         
+    def __unicode__(self):
+        return self.DisplayName
+        
 class TransmissionClassTable(object):
     __storm_table__ = "transmissionClassTables"
     __storm_primary__ = "ClassID", "TableID"
