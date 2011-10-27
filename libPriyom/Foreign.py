@@ -68,8 +68,7 @@ class ForeignHelper:
         
     @Value.deleter
     def Value(self):
-        self.store.remove(self.supplement)
-        self.supplement = None
+        self.removeSupplement()
         
     @property
     def LangCode(self):
@@ -86,11 +85,16 @@ class ForeignHelper:
     
     @LangCode.deleter
     def LangCode(self):
-        self.store.remove(self.supplement)
-        self.supplement = None
+        self.removeSupplement()
         
     def hasForeign(self):
         return self.supplement is not None and bool(self.supplement)
+    
+    def removeSupplement(self):
+        if self.supplement is None:
+            return
+        self.store.remove(self.supplement)
+        self.supplement = None
         
     def toDom(self, parentNode, name, attrib={}):
         if self.hasForeign():

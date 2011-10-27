@@ -33,6 +33,7 @@ from Station import Station
 from PriyomBase import PriyomBase
 import types
 from TransmissionParser import TransmissionParserNode, TransmissionParserNodeField, NodeError
+import itertools
     
 class Transmission(PriyomBase, XMLIntf.XMLStorm):
     __storm_table__ = "transmissions"
@@ -73,6 +74,10 @@ class Transmission(PriyomBase, XMLIntf.XMLStorm):
         self.updateBlocks()
         
         self.ForeignCallsign = ForeignHelper(self, "Callsign")
+    
+    def __storm_flushed__(self):
+        # possibly some changes were made here which require reloading the blocks
+        self.updateBlocks()
         
     def _loadCallsign(self, element, context):
         if self.ForeignCallsign is None:
@@ -150,6 +155,47 @@ class Transmission(PriyomBase, XMLIntf.XMLStorm):
         except KeyError:
             pass
     
+    def clear(self):
+        store = Store.of(self)
+        for table in list(self.Class.tables):
+            for block in list(store.find(table.PythonClass, table.PythonClass.TransmissionID == self.ID)):
+                block.deleteForeignSupplements()
+                store.remove(block)
+                
+    def setParsedContents(self, contents):
+        self.clear()
+        store = Store.of(self)
+        for order, rowData in itertools.izip(xrange(len(contents)), contents):
+            tableClass = rowData[0].PythonClass
+            contentDict = rowData[1]
+            
+            row = tableClass(store)
+            row.Transmission = self
+            row.Order = order
+            
+            for key, (value, foreign) in contentDict.iteritems():
+                setattr(row, key, value)
+                if foreign is not None:
+                    supplement = row.supplements[key]
+                    supplement.LangCode = foreign[0]
+                    supplement.Value = foreign[1]
+    
+    @property
+    def Contents(self):
+        return u" ".join((unicode(block) for block in self.blocks))
+    
+    @Contents.setter
+    def Contents(self, value):
+        try:
+            parsed = self.Class.parsePlainText(value)
+        except NodeError as e:
+            raise ValueError(unicode(e))
+        self.setParsedContents(parsed)
+    
+    @Contents.deleter
+    def Contents(self):
+        self.clear()
+        
     def __unicode__(self):
         return u"Transmission with callsign {0} and {1} segments".format(self.Callsign, len(self.blocks))
 
@@ -212,7 +258,7 @@ class TransmissionClassBase(object):
     
     def deleteForeignSupplements(self):
         for supplement in self.supplements.itervalues():
-            del supplement.Value
+            supplement.removeSupplement()
     
     def __unicode__(self):
         return u" ".join((getattr(self, field.FieldName) for field in self.fields))
