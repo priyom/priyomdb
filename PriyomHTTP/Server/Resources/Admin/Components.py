@@ -33,6 +33,7 @@ from Types import Typecasts
 from libPriyom.Helpers import TimeUtils
 from libPriyom import Formatting
 from datetime import datetime, timedelta
+from storm.locals import *
 
 class Component(object):
     def __init__(self, model=None, **kwargs):
@@ -156,7 +157,8 @@ class EditorComponent(Component):
         except (ValueError, TypeError) as e:
             self.Error = unicode(e)
             return False
-            
+        return True
+    
     def apply(self, query):
         if self.Disabled:
             return
@@ -242,9 +244,14 @@ class ForeignInput(Input):
             return True
         if not self.name in query or not self.foreignName in query or not self.foreignLangName:
             return True
-        self._value = query[self.name]
-        self._foreignValue = query[self.foreignName]
-        self._foreignLang = query[self.foreignLangName]
+        try:
+            self._value = query[self.name]
+            self._foreignValue = query[self.foreignName]
+            self._foreignLang = query[self.foreignLangName]
+        except (ValueError, KeyError) as e:
+            self.Error = unicode(e)
+            return False
+        return True
         
     def apply(self, query):
         if self.Disabled:
@@ -281,14 +288,15 @@ class Select(EditorComponent):
         self.reference = HTMLIntf.Element(u"select", name=self.name)
         for value, caption, enabled in self.items:
             if not callable(enabled):
-                enabled = None
+                enabledCall = None
                 if not enabled:
                     continue
             else:
                 self.hasDynamicItems = True
+                enabledCall = enabled
             option = HTMLIntf.SubElement(self.reference, u"option", value=value)
             option.text = caption
-            option.enabled = enabled
+            option.enabled = enabledCall
         
     def editorToTree(self, parent):
         select = self.reference.copy()
@@ -321,9 +329,11 @@ class SelectStormObject(EditorComponent):
         self.withNone = withNone
         
     def validObject(self, id):
-        if id == u"" and self.withNone is not False:
+        if (id == u"" or id is None) and self.withNone is not False:
             return None
-        obj = self.store.find(self.stormClass, And(where, self.stormClass.ID == int(id))).any()
+        if isinstance(id, self.stormClass):
+            return id
+        obj = self.store.find(self.stormClass, And(self.where, self.stormClass.ID == int(id))).any()
         if obj is None:
             raise ValueError(u"ID {0} does not identify a valid {1} object.".format(int(id), self.stormClass))
         return obj
@@ -334,7 +344,11 @@ class SelectStormObject(EditorComponent):
         })
         if self.withNone is not False:
             HTMLIntf.SubElement(select, u"option", value=u"").text = self.withNone
-        for item in self.store.find(self.stormClass, where):
+        if self.where is not None:
+            query = self.store.find(self.stormClass, self.where)
+        else:
+            query = self.store.find(self.stormClass)
+        for item in query:
             option = HTMLIntf.SubElement(select, u"option", value=item.ID)
             option.text = unicode(item)
             if item is self.Value:
@@ -351,6 +365,7 @@ class TextArea(EditorComponent):
     
     def editorToTree(self, parent):
         area = HTMLIntf.SubElement(parent, u"textarea", name=self.name)
+        area.text = self.Value
         if self.rows:
             area.set(u"rows", unicode(self.rows))
         if self.cols:
@@ -360,7 +375,6 @@ class TextArea(EditorComponent):
             parent.remove(area)
             wrapper.append(area)
             area.set(u"style", u"width: 100%")
-        area.text = self.Value
 
 class ParentComponent(Component):
     #def _transfer(self, src, attribs):

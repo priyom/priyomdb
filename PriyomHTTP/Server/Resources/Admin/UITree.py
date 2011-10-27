@@ -24,6 +24,7 @@ For feedback and questions about priyomdb please e-mail one of the
 authors:
     Jonas Wielicki <j.wielicki@sotecware.net>
 """
+from storm.locals import *
 from libPriyom import *
 from Components import Input, TextArea, Select, SelectStormObject, VirtualTable, Table, TableGroup, IDTableGroup, Timestamp, CheckBox, ForeignInput
 
@@ -97,8 +98,8 @@ virtualTables = {
             ),
             TableGroup(u"Schedule",
                 CheckBox(
-                    name=u"Confirmed",
-                    caption=u"schedule confirmed"
+                    name=u"ScheduleConfirmed",
+                    caption=u"Schedule confirmed"
                 ),
                 SelectStormObject(
                     name=u"Schedule",
@@ -106,8 +107,9 @@ virtualTables = {
                     description=u"Select the schedule object from the database",
                     withMakeSingleUser=True,
                     withEdit=True,
+                    withNone=u"No schedule assigned",
                     #virtualTable=u"schedules"
-                    cls=Schedule,
+                    stormClass=Schedule,
                     where=(Schedule.Parent == None)
                 )
             )
@@ -183,7 +185,8 @@ virtualTables = {
                 SelectStormObject(
                     name=u"Class",
                     description=u"Transmission format class; This defines the format of the contents of the transmission",
-                    disabled=lambda tx: len(tx.blocks) > 0
+                    disabled=lambda tx: len(tx.blocks) > 0,
+                    stormClass=TransmissionClass
                 )
             ),
             TableGroup(u"Media",

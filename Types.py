@@ -123,4 +123,5 @@ class Typecasts(object):
             s = typecast(s)
             if len(s) == 0:
                 return None
+            return s
         return WrapFunction(none_as_empty, unicode(typecast))

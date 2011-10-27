@@ -36,6 +36,7 @@ from Types import Typecasts
 class AdminTablesResource(HTMLResource):
     def __init__(self, model):
         super(AdminTablesResource, self).__init__(model)
+        self.allowedMethods = frozenset(("GET", "POST"))
     
     def notFound(self):
         #self.trans.rollback()
@@ -57,12 +58,14 @@ class AdminTablesResource(HTMLResource):
             itemId
         )
     
-    def renderNavbar(self, parent):
+    def renderNavbar(self, parent, path):
         sec = HTMLIntf.SubElement(parent, u"section")
         HTMLIntf.SubElement(sec, u"h2").text = u"Available tables"
         ul = HTMLIntf.SubElement(sec, u"ul")
+        basePath = self.getUpwardsPath(u"", removeSegments=len(path)+1)
         for tableName, table in UITree.virtualTables.iteritems():
-            a = HTMLIntf.SubElement(HTMLIntf.SubElement(ul, u"li"), u"a", href=tableName, title=table.description)
+            href = basePath + tableName
+            a = HTMLIntf.SubElement(HTMLIntf.SubElement(ul, u"li"), u"a", href=href, title=table.description)
             a.text = tableName
             
     def renderTable(self, parent, virtualTable, h1):
@@ -79,9 +82,11 @@ class AdminTablesResource(HTMLResource):
         offset = self.getQueryValue(u"offset", int, default=0)
         limit = 30
         
-        pagesUl = HTMLIntf.SubElement(parent, u"ul", attrib={
+        paginationElement = HTMLIntf.SubElement(parent, u"div", attrib={
             u"class": u"pagination"
         })
+        HTMLIntf.SubElement(paginationElement, u"span").text = u"Pages:"
+        pagesUl = HTMLIntf.SubElement(paginationElement, u"ul")
         
         table = HTMLIntf.SubElement(parent, u"table", attrib={
             u"class": u"view"
@@ -117,7 +122,11 @@ class AdminTablesResource(HTMLResource):
         
         for obj in resultSet:
             tr = HTMLIntf.SubElement(tbody, u"tr")
-            HTMLIntf.SubElement(HTMLIntf.SubElement(tr, u"td"), u"a", href=self.editItemHref(obj.ID), title=u"Edit / View this row in detail").text = u"[E]"
+            actions = HTMLIntf.SubElement(tr, u"td", attrib={
+                u"class": u"buttons"
+            })
+            HTMLIntf.SubElement(actions, u"a", href=self.editItemHref(obj.ID), title=u"Edit / View this row in detail").text = u"E"
+            HTMLIntf.SubElement(actions, u"a", href=self.buildQueryOnSameTable(orderColumn=orderColumn, orderDirection=orderDirection, touch=obj.ID), title=u"Touch this object (set the Modified timestamp to the current time).").text = u"T"
             for column in columnNames:
                 HTMLIntf.SubElement(tr, u"td").text = getattr(obj, column)
         
@@ -132,14 +141,25 @@ class AdminTablesResource(HTMLResource):
             if pageNumber == (offset/limit)+1:
                 a.set(u"class", u"current")
         
-        parent.append(pagesUl.copy())
+        parent.append(paginationElement.copy())
     
     def renderObjectEditor(self, parent, virtualTable, obj, h1):
+        h1.text = u"Editing: {0}".format(unicode(obj))
         virtualTable.Model = self.model
         virtualTable.Instance = obj
-        virtualTable.validate({})
-        print("rendering to tree")
-        virtualTable.toTree(parent)
+        validated = virtualTable.validate(self.query if "submit" in self.query else {})
+        
+        form = HTMLIntf.SubElement(parent, u"form", method="POST", name="editor")
+        virtualTable.toTree(form)
+        validate = HTMLIntf.SubElement(form, u"input", name="submit", value="Validate", type="submit")
+        if "submit" in self.query and validated:
+            if self.query["submit"] == "Save":
+                virtualTable.apply(self.query)
+                obj.touch()
+                self.store.flush()
+            HTMLIntf.SubElement(form, u"input", name="submit", value="Save", type="submit")
+        else:
+            validate.tail = u" Please check your input."
         
     def renderEditor(self, parent, path):
         h1 = HTMLIntf.SubElement(HTMLIntf.SubElement(parent, u"header"), u"h1")
@@ -173,6 +193,12 @@ class AdminTablesResource(HTMLResource):
             query_string = "?" + query_string
         self.trans.redirect(self.trans.encode_path(path_without_query, "utf-8") + "/" + query_string)
         raise EndOfResponse
+        
+    def getUpwardsPath(self, append, removeSegments=2):
+        path = self.trans.get_path_without_query("utf-8")
+        pathSegments = path.split('/')
+        pathSegments = pathSegments[:-removeSegments]
+        return ("/".join(pathSegments))+"/"+append
     
     def redirectUpwards(self):
         self.trans.rollback()
@@ -207,5 +233,5 @@ class AdminTablesResource(HTMLResource):
             u"class": u"editor"
         })
         
-        self.renderNavbar(self.navbar)
+        self.renderNavbar(self.navbar, path[1:])
         self.renderEditor(self.editor, path[1:])
