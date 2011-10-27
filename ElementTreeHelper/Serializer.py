@@ -77,7 +77,7 @@ class Serializer(object):
         
     def encodeCData(self, s):
         if type(s) == str:
-            return s
+            s = self.decode(s)
         if type(s) != unicode:
             s = unicode(s)
         return self.escapeCData(s).encode(self.encoding, "xmlcharrefreplace")
