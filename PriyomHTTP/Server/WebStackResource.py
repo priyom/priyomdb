@@ -149,9 +149,12 @@ def get_site_map(priyomInterface):
     return ContinueSelector(
         CompressionSelector(
             ExceptionSelector(
-                ResetSelector(model, 
-                    AuthenticationSelector(model.store, apiRoot)
-                ),
+                CatchDisconnectSelector(
+                    ResetSelector(model, 
+                        AuthenticationSelector(model.store, apiRoot)
+                    ),
+                    model.store
+                )
                 show = response["showExceptions"]
             )
         )
