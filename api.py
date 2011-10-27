@@ -24,7 +24,7 @@ For feedback and questions about priyomdb please e-mail one of the
 authors:
     Jonas Wielicki <j.wielicki@sotecware.net>
 """
-import sys
+import sys, os
 sys.path.append('/etc/priyomdb/')
 from cfg_priyomhttpd import application, database
 sys.path.append(application["root"])
@@ -40,12 +40,19 @@ if not os.path.isdir(plots):
 application["mplconfigdir"] = mplconfig
 application["plots"] = plots
 
-
-from WebStack.Adapters.WSGI import WSGIAdapter
-from PriyomHTTP.Server.WebStackResource import get_site_map
-from libPriyom.Interface import PriyomInterface
-from Schema import DatabaseSchema
+import storm
 from storm.locals import *
+
+import WebStack
+from WebStack.Adapters.WSGI import WSGIAdapter
+
+import libPriyom
+from libPriyom.Interface import PriyomInterface
+
+import PriyomHTTP.Server
+from PriyomHTTP.Server.WebStackResource import get_site_map
+
+from Schema import DatabaseSchema
 
 db = create_database(database["stormURL"])
 store = Store(db)
@@ -53,3 +60,4 @@ DatabaseSchema.upgrade(store)
 intf = PriyomInterface(store)
 
 application = WSGIAdapter(get_site_map(intf), handle_errors=0)
+print("Priyom API server initialized. pid={0}, WebStack/{3}, libPriyom/{1}, PriyomHTTP.Server/{2}".format(os.getpid(), libPriyom.__version__, PriyomHTTP.Server.__version__, WebStack.__version__))
