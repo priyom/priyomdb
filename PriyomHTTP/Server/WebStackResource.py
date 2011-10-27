@@ -45,7 +45,7 @@ def intOrNone(str):
         return int(str)
     
 
-from cfg_priyomhttpd import application, response
+from cfg_priyomhttpd import application, response, errors
 #from Resources.API.FindStations import FindStations
 #from Resources.API.FindBroadcasts import FindBroadcasts
 #from Resources.API.FindTransmissions import FindTransmissions
@@ -155,7 +155,7 @@ def get_site_map(priyomInterface):
                     ),
                     model.store
                 ),
-                show = response["showExceptions"]
+                model
             )
         )
     )
