@@ -32,6 +32,7 @@ import itertools
 from Types import Typecasts
 from libPriyom.Helpers import TimeUtils
 from libPriyom import Formatting
+import libPriyom
 from datetime import datetime, timedelta
 from storm.locals import *
 from libPriyom.TransmissionParser import NodeError
@@ -96,8 +97,8 @@ class EditorComponent(Component):
         super(EditorComponent, self).__init__(**kwargs)
         if name is None:
             raise ValueError(u"EditorComponent name must not be None")
-        if not callable(typecast):
-            raise ValueError(u"Typecast given to EditorComponent must be callable")
+        if not callable(typecast) and typecast is not None:
+            raise ValueError(u"Typecast given to EditorComponent must be callable or None")
         self.name = name
         self.caption = caption or name
         self.attributeName = attributeName or name
@@ -333,7 +334,7 @@ class SelectStormObject(EditorComponent):
     def validObject(self, id):
         if (id == u"" or id is None) and self.withNone is not False:
             return None
-        if isinstance(id, self.stormClass):
+        if isinstance(id, self.stormClass) or id is None:
             return id
         condition = self.stormClass.ID == int(id)
         obj = self.store.find(self.stormClass, And(self.where, condition) if self.where is not None else condition).any()
@@ -411,6 +412,40 @@ class TransmissionContents(TextArea):
             raise ValueError("Cannot check transmission without having a transmission class selected (you may need to save beforehand)!")
         result = cls.parsePlainText(value)
         return value
+
+class BroadcastFrequencies(EditorComponent):
+    def __init__(self, disabled=False, **kwargs):
+        if disabled:
+            raise ValueError("BroadcastFrequencies must not be disabled.")
+        super(BroadcastFrequencies, self).__init__(typecast=None, disabled=False, **kwargs)
+        self.itemPrefix = self.name + "["
+        self.freqSuffix = "].Frequency"
+        self.modSuffix = "].Modulation"
+        self.newFreqName = self.name + "[New].Frequency"
+        self.newModName = self.name + "[New].Modulation"
+        self.deleteName = self.name + ".Delete"
+        self.addName = self.name + ".Add"
+    
+    def validate(self, query):
+        keys = list(set((key[:key.find("]")] for key in (key[len(self.itemPrefix):] for key in filter(lambda key: key.find(self.itemPrefix) == 0, query.iterkeys())) if key.find("]") >= 0)))
+        if not self.addName in query and "New" in keys:
+            keys.remove("New")
+        keys = [(self.itemPrefix+key+self.freqSuffix, self.itemPrefix+key+self.modSuffix) for key in keys]
+        
+        # thus, malformed entries are dropped silently
+        items = [(libPriyom.BroadcastFrequency.parseFrequency(query[freqName]), query[modName]) for (freqName, modName) in keys if (freqName in query) and (modName in query)]
+        if len(items) == 0:
+            return True
+        for i in xrange(len(items)):
+            item = items[i]
+            
+        
+    def apply(self, query):
+        pass
+        
+    def editorToTree(self, parent):
+        
+        super(BroadcastFrequencies, self).editorToTree(parent)
 
 class ParentComponent(Component):
     #def _transfer(self, src, attribs):

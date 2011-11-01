@@ -26,7 +26,7 @@ authors:
 """
 from storm.locals import *
 from libPriyom import *
-from Components import Input, TextArea, Select, SelectStormObject, VirtualTable, Table, TableGroup, IDTableGroup, Timestamp, CheckBox, ForeignInput, TransmissionContents
+from Components import Input, TextArea, Select, SelectStormObject, VirtualTable, Table, TableGroup, IDTableGroup, Timestamp, CheckBox, ForeignInput, TransmissionContents, BroadcastFrequencies
 
 
 """u"schedules": VirtualTable(u"Schedule database", Schedule, 
@@ -124,11 +124,16 @@ virtualTables = {
     u"broadcasts": VirtualTable(u"broadcasts", Broadcast, 
         Table(
             IDTableGroup(u"Basic information",
+                SelectStormObject(
+                    name=u"Station",
+                    description=u"Station the broadcast is assigned to",
+                    stormClass=Station
+                ),
                 Select(
                     name=u"Type",
                     description=u"The broadcast type. This must be data if transmissions are assigned",
                     items=[
-                        (u"continous", u"Continous (e.g. Channel marker)", lambda bc: bc.Transmissions.count() == 0),
+                        (u"continous", u"Continous (e.g. Channel marker)", lambda bc: Store.of(bc) is None or bc.Transmissions.count() == 0),
                         (u"data", u"Data broadcast (i.e. containing transmissions)", True)
                     ]
                 ),
@@ -160,6 +165,12 @@ virtualTables = {
                     caption=u"Schedule association ID",
                     description=u"Identifies this broadcast as created by a schedule",
                     disabled=True
+                )
+            ),
+            TableGroup(u"Frequencies",
+                BroadcastFrequencies(
+                    name=u"Frequencies",
+                    description=u"The frequencies this broadcast is on."
                 )
             )
         ),

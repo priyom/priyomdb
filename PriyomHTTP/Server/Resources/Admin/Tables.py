@@ -83,10 +83,18 @@ class AdminTablesResource(HTMLResource):
         limit = 30
         
         paginationElement = HTMLIntf.SubElement(parent, u"div", attrib={
-            u"class": u"pagination"
+            u"class": u"button-bar pagination"
         })
         HTMLIntf.SubElement(paginationElement, u"span").text = u"Pages:"
         pagesUl = HTMLIntf.SubElement(paginationElement, u"ul")
+        
+        tableActions = HTMLIntf.SubElement(parent, u"div", attrib={
+            u"class": u"button-bar"
+        })
+        HTMLIntf.SubElement(tableActions, u"span").text = u"Actions:"
+        actionsUl = HTMLIntf.SubElement(tableActions, u"ul")
+        new = HTMLIntf.SubElement(HTMLIntf.SubElement(actionsUl, u"li"), u"a", href=self.editItemHref("new"), title="Create a new object")
+        new.text = u"New"
         
         table = HTMLIntf.SubElement(parent, u"table", attrib={
             u"class": u"view"
@@ -153,14 +161,24 @@ class AdminTablesResource(HTMLResource):
         validate = HTMLIntf.SubElement(form, u"input", name="submit", value="Validate", type="submit")
         if "submit" in self.query and validated:
             if self.query["submit"] == "Save":
+                if Store.of(obj) is None:
+                    self.store.add(obj)
+                    isNew = True
+                else:
+                    isNew = False
                 virtualTable.apply(self.query)
                 obj.touch()
                 self.store.flush()
                 self.store.invalidate(obj)
+                if isNew:
+                    self.redirect(self.getUpwardsPath(unicode(obj.ID), 1))
             HTMLIntf.SubElement(form, u"input", name="submit", value="Save", type="submit")
         else:
             validate.tail = u" Please check your input."
-        h1.text = u"Editing: {0}".format(unicode(obj))
+        if Store.of(obj) is None:
+            h1.text = u"Add new object"
+        else:
+            h1.text = u"Editing: {0}".format(unicode(obj))
         
     def renderEditor(self, parent, path):
         h1 = HTMLIntf.SubElement(HTMLIntf.SubElement(parent, u"header"), u"h1")
@@ -180,19 +198,22 @@ class AdminTablesResource(HTMLResource):
             self.renderTable(parent, virtualTable, h1)
         elif len(path) == 1:
             try:
-                obj = Typecasts.ValidStormObject(virtualTable.cls, self.store)(path[0])
+                if path[0] == "new":
+                    obj = virtualTable.cls()
+                else:
+                    obj = Typecasts.ValidStormObject(virtualTable.cls, self.store)(path[0])
             except:
                 self.redirectUpwards()
             else:
                 self.renderObjectEditor(parent, virtualTable, obj, h1)
     
-    def redirect(self):
+    def redirect(self, toPath=None):
         self.trans.rollback()
-        path_without_query = self.trans.get_path_without_query("utf-8")
+        path_without_query = toPath or (self.trans.get_path_without_query("utf-8") + "/")
         query_string = self.trans.get_query_string()
         if query_string:
             query_string = "?" + query_string
-        self.trans.redirect(self.trans.encode_path(path_without_query, "utf-8") + "/" + query_string)
+        self.trans.redirect(self.trans.encode_path(toPath, "utf-8") + query_string)
         raise EndOfResponse
         
     def getUpwardsPath(self, append, removeSegments=2):
