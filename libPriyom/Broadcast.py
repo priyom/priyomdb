@@ -73,6 +73,24 @@ class BroadcastFrequency(object):
             return unicode((freq / 1000.0)) + u" kHz"
         else:
             return unicode(freq) + u" Hz"
+            
+    @classmethod
+    def fromValues(cls, store, frequency, modulationName, broadcast=None, createModulation=True):
+        modulation = store.find(Modulation, Modulation.Name == modulationName).any()
+        if modulation is None:
+            if not createModulation:
+                raise ValueError("Modulation \"{0}\" is not known.".format(modulation))
+            else:
+                modulation = Modulation()
+                modulation.Name = modulationName
+                store.add(modulation)
+        
+        obj = cls()
+        obj.Frequency = frequency
+        obj.Modulation = modulation
+        obj.Broadcast = broadcast
+        store.add(obj)
+        return obj
     
     @staticmethod
     def importFromETree(store, element, broadcast, context):
