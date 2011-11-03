@@ -36,7 +36,7 @@ import io
 from cfg_priyomhttpd import application, misc
 from ElementTreeHelper.Serializer import Serializer
 import libPriyom.XMLIntf as XMLIntf
-from Resources import HTMLIntf
+from PriyomHTTP.Server import HTMLIntf
 
 weekdayname = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 monthname = [None, 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']

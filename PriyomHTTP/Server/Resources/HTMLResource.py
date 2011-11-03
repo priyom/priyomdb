@@ -29,7 +29,7 @@ from libPriyom import XMLIntf
 import xml.etree.ElementTree as ElementTree
 from cfg_priyomhttpd import misc, application
 from WebStack.Generic import ContentType
-import HTMLIntf
+from PriyomHTTP.Server import HTMLIntf
 
 class HTMLResource(Resource):
     def __init__(self, model):

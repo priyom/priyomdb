@@ -35,7 +35,7 @@ from Types import Typecasts
 import libPriyom
 from libPriyom import Formatting
 from libPriyom.Helpers import TimeUtils
-from PriyomHTTP.Server.Resources import HTMLIntf
+from PriyomHTTP.Server import HTMLIntf
 from PriyomHTTP.Server.Resources.Admin.Components.Base import EditorComponent
 
 class Input(EditorComponent):

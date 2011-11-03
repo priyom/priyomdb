@@ -35,6 +35,7 @@ from libPriyom.Helpers import TimeUtils
 from cfg_priyomhttpd import application
 import os.path
 import binascii
+from PriyomHTTP.Server import HTMLIntf
 
 rnd = random.SystemRandom()
 
@@ -172,8 +173,10 @@ class APINews(object):
     Contents = Unicode()
     Timestamp = Int()
     
-    def html_row(self):
-        return u"""<tr><td>%s</td><th>%s</th><td><p>%s</p></td></tr>""" % (datetime.fromtimestamp(self.Timestamp).strftime(priyomdate), self.Title, self.Contents)
+    def toTableRow(self, tr):
+        HTMLIntf.SubElement(tr, u"td").text = TimeUtils.fromTimestamp(self.Timestamp).strftime(priyomdate)
+        HTMLIntf.SubElement(tr, u"th").text = self.Title
+        HTMLIntf.SubElement(HTMLIntf.SubElement(tr, u"td"), u"p").text = self.Contents
         
 class APIFileResource(object):
     __storm_table__ = "api-fileResources"
