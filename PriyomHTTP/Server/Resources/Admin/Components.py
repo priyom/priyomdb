@@ -164,6 +164,26 @@ class ReferenceColumn(VirtualColumn):
     def getRawValue(self, returnedTuple):
         return getattr(returnedTuple[0], self.attributeName)
 
+"""class ReferenceChainColumn(VirtualColumn):
+    def __init__(self, title, referenceChain, sortingColumns=None, disableFiltering=False, **kwargs):
+        super(ReferenceChainColumn, self).__init__(title, **kwargs)
+        self.chain = referenceChain
+        flags = set()
+        if not disableFiltering:
+            flags.add(Filterable)
+        if sortingColumns is None:
+            self.sortingColumns = sortingColumns
+        else:
+            flags.add(Sortable)
+            self.sortingColumns = list(sortingColumns)
+        self.flags = frozenset(flags)
+    
+    def stormArgs(self):
+        return tuple((reference._local_key == reference._remote_key for reference in self.chain[:-1]))
+    
+    def stormColumns(self):
+        """
+
 class IDColumn(StormColumn):
     def __init__(self, stormClass, title=u"ID", name=u"ID", **kwargs):
         super(IDColumn, self).__init__(title, stormClass.ID, name=name, **kwargs)
@@ -811,14 +831,40 @@ class ParentComponent(Component):
     def apply(self, query):
         for item in self:
             item.apply(query)
+            
+class ReferencingTable(object):
+    def __init__(self, name, cls, matchIdTo, displayName = None):
+        self.name = name
+        self.displayName = displayName or name
+        self.cls = cls
+        self.matchIdTo = matchIdTo
+    
+    def select(self, virtualTable, instance, sortColumn=None, sortDirection=u"ASC"):
+        return virtualTable.select(sortColumn or virtualTable.columns[0], sortDirection, self.matchIdTo == instance.ID)
 
 class VirtualTable(ParentComponent):
     def __init__(self, name, cls, *args, **kwargs):
         if cls is None:
             raise ValueError(u"VirtualTable must have a class assigned")
         self.description = kwargs.get(u"description", u"")
-        self.where = kwargs.get(u"where", None)
-        self.columns = kwargs.get(u"columns", [])
+        if u"where" in kwargs:
+            self.where = kwargs[u"where"]
+            del kwargs[u"where"]
+        else:
+            self.where = None
+        
+        if u"columns" in kwargs:
+            self.columns = kwargs[u"columns"]
+            del kwargs[u"columns"]
+        else:
+            self.columns = []
+        
+        if u"referencingTables" in kwargs:
+            self.referencingTables = kwargs[u"referencingTables"]
+            del kwargs[u"referencingTables"]
+        else:
+            self.referencingTables = []
+        
         self.name = name
         self.cls = cls
         if len(self.columns) == 0:
@@ -827,13 +873,14 @@ class VirtualTable(ParentComponent):
         #self.stormColumns = tuple(column.stormColumn for column in self.columns)
         self.columns = tuple(self.columns)
         self.columnMap = dict(((column.name, column) for column in self.columns))
+        self.referencingTableMap = dict(((table.name, table) for table in self.referencingTables))
         super(VirtualTable, self).__init__(None, *args, **kwargs)
     
     #def toTree(self, parent):
     #    li = HTMLIntf.SubElement(parent, u"li")
     #    HTMLIntf.SubElement(li, u"a", href=u"../tables/{0}".format(self.name), title=self.description).text = self.name
         
-    def select(self, sortColumn, sortDirection):
+    def select(self, sortColumn, sortDirection, moreWhere=None):
         store = self.store
         where = self.where
         args = list(
@@ -842,6 +889,10 @@ class VirtualTable(ParentComponent):
                 sortColumn.stormSortArgs()
             )
         )
+        if where is None:
+            where = moreWhere
+        elif moreWhere is not None:
+            where = And(where, moreWhere)
         if where is not None:
             args.append(where)
         resultSet = store.find(self.cls, *args)

@@ -218,7 +218,9 @@ table.list th:hover {
 table.list th a, 
 table.list th a:hover, 
 table.list th a:visited, 
-table.list th a:active {
+table.list th a:active,
+table.list th > div {
+    margin: 0;
     color: inherit;
     display: block;
     padding-top: 0.25em;
@@ -267,7 +269,8 @@ table.list th.buttons:first-child {
     text-align: right;
 }
 
-table.list th.buttons:hover {
+table.list th.buttons:hover,
+table.list th.static:hover {
     /*text-align: right;  */
     background-color: hsla(0, 80%, 80%, 1.0);
 }

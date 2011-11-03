@@ -26,7 +26,7 @@ authors:
 """
 from storm.locals import *
 from libPriyom import *
-from Components import Input, TextArea, Select, SelectStormObject, VirtualTable, Table, TableGroup, IDTableGroup, Timestamp, CheckBox, ForeignInput, TransmissionContents, BroadcastFrequencies, StormColumn, ReferenceColumn, IDColumn, TimestampColumn, CreatedColumn, ModifiedColumn
+from Components import Input, TextArea, Select, SelectStormObject, VirtualTable, Table, TableGroup, IDTableGroup, Timestamp, CheckBox, ForeignInput, TransmissionContents, BroadcastFrequencies, StormColumn, ReferenceColumn, IDColumn, TimestampColumn, CreatedColumn, ModifiedColumn, ReferencingTable
 
 
 """u"schedules": VirtualTable(u"Schedule database", Schedule, 
@@ -122,11 +122,10 @@ virtualTables = {
             StormColumn(u"Enigma ID", Station.EnigmaIdentifier, width="8em"),
             StormColumn(u"Priyom ID", Station.PriyomIdentifier, width="8em"),
             StormColumn(u"Nickname", Station.Nickname)
+        ),
+        referencingTables=(
+            ReferencingTable(u"broadcasts", Broadcast, Broadcast.StationID, u"Broadcasts of this station"),
         )
-        #relatedTables=(
-        #    ReferencingVirtualTable(u"broadcasts", match=Broadcast.Station),
-        #    ReferencedVirtualTable(u"schedules", match=Station.Schedule)
-        #)
     ),
     u"broadcasts": VirtualTable(u"broadcasts", Broadcast, 
         Table(
@@ -194,6 +193,9 @@ virtualTables = {
                 Station.PriyomIdentifier,
                 Station.Nickname
             )),
+        ),
+        referencingTables=(
+            ReferencingTable(u"transmissions", Transmission, Transmission.BroadcastID, u"Transmissions of this broadcast"),
         )
         #relatedTables=(
         #    ReferenedVirtualTable(u"stations", match=Broadcast.Station),

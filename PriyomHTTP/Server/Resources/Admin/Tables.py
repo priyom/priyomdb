@@ -32,6 +32,7 @@ from ..HTMLResource import HTMLResource
 from .. import HTMLIntf
 import urllib
 from Types import Typecasts
+from .Components import Sortable, Filterable
 
 class AdminTablesResource(HTMLResource):
     def __init__(self, model):
@@ -47,16 +48,15 @@ class AdminTablesResource(HTMLResource):
         HTMLIntf.SubElement(self.body, u"p").text = u"Table not found: \"{1}\"".format(self.trans.get_processed_virtual_path_info(), self.trans.get_virtual_path_info())
         
     def buildQueryOnSameTable(self, **dict):
-        return u"{0}?{1}".format(
-            self.table, 
+        return u"?{0}".format(
             urllib.urlencode(dict)
         )
         
-    def editItemHref(self, itemId, table=None):
-        return u"{0}/{1}".format(
-            table or self.table,
-            itemId
-        )
+    def editItemHref(self, table, itemId):
+        return self.getRootPath(u"{0}/{1}".format(table, itemId))
+    
+    def referencingTableHref(self, virtualTable, obj, referencingTable):
+        return self.getRootPath(u"{0}/{1}/{2}".format(virtualTable.name, obj.ID, referencingTable.name))
     
     def renderNavbar(self, parent, path):
         sec = HTMLIntf.SubElement(parent, u"section")
@@ -68,15 +68,7 @@ class AdminTablesResource(HTMLResource):
             a = HTMLIntf.SubElement(HTMLIntf.SubElement(ul, u"li"), u"a", href=href, title=table.description)
             a.text = tableName
             
-    def renderTable(self, parent, virtualTable, h1):
-        # just show the table
-        h1.text = virtualTable.description
-        
-        orderColumn = self.getQueryValue(u"orderColumn", virtualTable.columnMap.get, default=virtualTable.columns[0])
-        orderDirection = self.getQueryValue(u"orderDirection", unicode, default=u"ASC")
-        if not orderDirection in (u"ASC", u"DESC"):
-            orderDirection = u"ASC"
-        offset = self.getQueryValue(u"offset", int, default=0)
+    def renderHTMLTable(self, parent, virtualTable, resultSet, orderColumn, orderDirection, offset, limit=30, allowNew=False):
         limit = 30
         
         paginationElement = HTMLIntf.SubElement(parent, u"div", attrib={
@@ -85,13 +77,14 @@ class AdminTablesResource(HTMLResource):
         HTMLIntf.SubElement(paginationElement, u"span").text = u"Pages:"
         pagesUl = HTMLIntf.SubElement(paginationElement, u"ul")
         
-        tableActions = HTMLIntf.SubElement(parent, u"div", attrib={
-            u"class": u"button-bar"
-        })
-        HTMLIntf.SubElement(tableActions, u"span").text = u"Actions:"
-        actionsUl = HTMLIntf.SubElement(tableActions, u"ul")
-        new = HTMLIntf.SubElement(HTMLIntf.SubElement(actionsUl, u"li"), u"a", href=self.editItemHref("new"), title="Create a new object")
-        new.text = u"New"
+        if allowNew:
+            tableActions = HTMLIntf.SubElement(parent, u"div", attrib={
+                u"class": u"button-bar"
+            })
+            HTMLIntf.SubElement(tableActions, u"span").text = u"Actions:"
+            actionsUl = HTMLIntf.SubElement(tableActions, u"ul")
+            new = HTMLIntf.SubElement(HTMLIntf.SubElement(actionsUl, u"li"), u"a", href=self.editItemHref(virtualTable.name, "new"), title="Create a new object")
+            new.text = u"New"
         
         table = HTMLIntf.SubElement(parent, u"table", attrib={
             u"class": u"list view"
@@ -106,21 +99,25 @@ class AdminTablesResource(HTMLResource):
         
         for column in virtualTable.columns:
             th = HTMLIntf.SubElement(thead, u"th")
-            a = HTMLIntf.SubElement(th, u"a")
-            order = HTMLIntf.SubElement(a, u"div", attrib={
-                u"class": u"order"
-            })
-            order.tail = column.title
+            if Sortable in column:
+                a = HTMLIntf.SubElement(th, u"a")
+                order = HTMLIntf.SubElement(a, u"div", attrib={
+                    u"class": u"order"
+                })
+                order.tail = column.title
             
-            if orderColumn is not column:
-                a.set(u"href", self.buildQueryOnSameTable(orderColumn=column.name, orderDirection=column.defaultSort))
-            else:
-                if orderDirection == u"ASC":
-                    a.set(u"href", self.buildQueryOnSameTable(orderColumn=column.name, orderDirection=u"DESC"))
-                    order.text = u"▲"
+                if orderColumn is not column:
+                    a.set(u"href", self.buildQueryOnSameTable(orderColumn=column.name, orderDirection=column.defaultSort))
                 else:
-                    a.set(u"href", self.buildQueryOnSameTable(orderColumn=column.name, orderDirection=u"ASC"))
-                    order.text = u"▼"
+                    if orderDirection == u"ASC":
+                        a.set(u"href", self.buildQueryOnSameTable(orderColumn=column.name, orderDirection=u"DESC"))
+                        order.text = u"▲"
+                    else:
+                        a.set(u"href", self.buildQueryOnSameTable(orderColumn=column.name, orderDirection=u"ASC"))
+                        order.text = u"▼"
+            else:
+                th.set(u"class", u"static")
+                HTMLIntf.SubElement(th, u"div").text = column.title
             
             col = HTMLIntf.SubElement(colgroup, u"col", span="1")
             if column.width is not None:
@@ -129,8 +126,9 @@ class AdminTablesResource(HTMLResource):
         
         tbody = HTMLIntf.SubElement(table, u"tbody")
         
-        resultSet = virtualTable.select(orderColumn, orderDirection)
         amount = resultSet.count()
+        if offset >= amount:
+            offset = 0
         resultSet.config(offset=offset, limit=limit)
         
         for obj in resultSet:
@@ -143,12 +141,11 @@ class AdminTablesResource(HTMLResource):
             actions = HTMLIntf.SubElement(tr, u"td", attrib={
                 u"class": u"buttons"
             })
-            HTMLIntf.SubElement(actions, u"a", href=self.editItemHref(id), title=u"Edit / View this row in detail").text = u"E"
+            HTMLIntf.SubElement(actions, u"a", href=self.editItemHref(virtualTable.name, id), title=u"Edit / View this row in detail").text = u"E"
             HTMLIntf.SubElement(actions, u"a", href=self.buildQueryOnSameTable(orderColumn=orderColumn, orderDirection=orderDirection, touch=id), title=u"Touch this object (set the Modified timestamp to the current time).").text = u"T"
             for column in virtualTable.columns:
                 HTMLIntf.SubElement(tr, u"td").text = column.getFormattedValue(obj)
         
-        #amount, = list(self.store.execute("SELECT SQL_FOUND_ROWS()"))[0]
         pages = int(amount/limit)
         if pages*limit < amount:
             pages += 1
@@ -159,7 +156,19 @@ class AdminTablesResource(HTMLResource):
             if pageNumber == (offset/limit)+1:
                 a.set(u"class", u"current")
         
-        parent.append(paginationElement.copy())
+        parent.append(paginationElement)
+        
+    def renderTable(self, parent, virtualTable, h1):
+        # just show the table
+        h1.text = virtualTable.description
+        
+        orderColumn = self.getQueryValue(u"orderColumn", virtualTable.columnMap.get, default=virtualTable.columns[0])
+        orderDirection = self.getQueryValue(u"orderDirection", unicode, default=u"ASC")
+        if not orderDirection in (u"ASC", u"DESC"):
+            orderDirection = u"ASC"
+        offset = self.getQueryValue(u"offset", int, default=0)
+        
+        self.renderHTMLTable(parent, virtualTable, virtualTable.select(orderColumn, orderDirection), orderColumn, orderDirection, offset, allowNew=True)
     
     def renderObjectEditor(self, parent, virtualTable, obj, h1):
         virtualTable.Model = self.model
@@ -189,6 +198,36 @@ class AdminTablesResource(HTMLResource):
             h1.text = u"Add new object"
         else:
             h1.text = u"Editing: {0}".format(unicode(obj))
+            
+        if Store.of(obj) is not None:
+            self.renderObjectNavbar(self.navbar, virtualTable, obj)
+        
+    def renderObjectNavbar(self, navbar, virtualTable, obj):
+        if len(virtualTable.referencingTables) > 0:
+            section = HTMLIntf.SubElement(navbar, u"section")
+            HTMLIntf.SubElement(section, u"h2").text = u"Related table views"
+            ul = HTMLIntf.SubElement(section, u"ul")
+            for table in virtualTable.referencingTables:
+                li = HTMLIntf.SubElement(ul, u"li")
+                a = HTMLIntf.SubElement(li, u"a", href=self.referencingTableHref(virtualTable, obj, table))
+                a.text = table.displayName
+        
+    def renderReferencedTable(self, parent, virtualTable, obj, referencingTable, referencedVirtualTable, h1):
+        h1.text = u"Rows of “{1}” referencing {0}".format(unicode(obj), referencingTable.name)
+        referencedVirtualTable.Model = self.model
+        
+        orderColumn = self.getQueryValue(u"orderColumn", referencedVirtualTable.columnMap.get, default=referencedVirtualTable.columns[0])
+        orderDirection = self.getQueryValue(u"orderDirection", unicode, default=u"ASC")
+        if not orderDirection in (u"ASC", u"DESC"):
+            orderDirection = u"ASC"
+        offset = self.getQueryValue(u"offset", int, default=0)
+        
+        a = HTMLIntf.SubElement(parent, u"a", href=self.editItemHref(virtualTable.name, obj.ID))
+        a.text = u"Return to {0}".format(unicode(obj))
+        
+        self.renderHTMLTable(parent, referencedVirtualTable, referencingTable.select(referencedVirtualTable, obj, orderColumn, orderDirection), orderColumn, orderDirection, offset)
+        
+        self.renderObjectNavbar(self.navbar, virtualTable, obj)
         
     def renderEditor(self, parent, path):
         h1 = HTMLIntf.SubElement(HTMLIntf.SubElement(parent, u"header"), u"h1")
@@ -205,8 +244,10 @@ class AdminTablesResource(HTMLResource):
         
         virtualTable = UITree.virtualTables[self.table]
         if len(path) == 0:
+            # show the table
             self.renderTable(parent, virtualTable, h1)
         elif len(path) == 1:
+            # show item editor
             try:
                 if path[0] == "new":
                     obj = virtualTable.cls()
@@ -216,6 +257,18 @@ class AdminTablesResource(HTMLResource):
                 self.redirectUpwards()
             else:
                 self.renderObjectEditor(parent, virtualTable, obj, h1)
+        elif len(path) == 2:
+            # show table of related objects
+            if path[0] == "new":
+                self.redirectUpwards()
+            obj = Typecasts.ValidStormObject(virtualTable.cls, self.store)(path[0])
+            try:
+                referencingTable = virtualTable.referencingTableMap[path[1]]
+                referencedVirtualTable = UITree.virtualTables[referencingTable.name]
+            except KeyError:
+                self.redirectUpwards()
+            else:
+                self.renderReferencedTable(parent, virtualTable, obj, referencingTable, referencedVirtualTable, h1)
     
     def redirect(self, toPath=None):
         self.trans.rollback()
@@ -231,6 +284,9 @@ class AdminTablesResource(HTMLResource):
         pathSegments = path.split('/')
         pathSegments = pathSegments[:-removeSegments]
         return ("/".join(pathSegments))+"/"+append
+        
+    def getRootPath(self, path):
+        return self.trans.get_path_without_query("utf-8")[:-len(self.trans.get_virtual_path_info("utf-8"))] + '/' + path
     
     def redirectUpwards(self):
         self.trans.rollback()
