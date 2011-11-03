@@ -5,9 +5,10 @@ __all__ = ['Serializer']
 class Serializer(object):
     persistentNamespaceMap = {}
     
-    def __init__(self):
+    def __init__(self, useNamespaces=True):
         self.namespaceMap = None
         self.encoding = None
+        self.useNamespaces = useNamespaces
         
     def registerNamespacePrefix(self, prefix, uri):
         if len(prefix) > 0 and prefix[0] == u":":
@@ -129,7 +130,7 @@ class Serializer(object):
             namespaceAttribs = {}    
         
         tmpPrefix = False
-        if namespace is not None:
+        if namespace is not None and self.useNamespaces:
             if not namespace in self.namespaceMap:
                 prefix = self._allocateTmpNamespace(namespace)
                 namespaceAttribs[prefix] = namespace
@@ -139,7 +140,7 @@ class Serializer(object):
             qname = "{0}{2}{1}".format(prefix, tag, ":" if len(prefix) > 0 else "")
         
         attribs = " ".join(itertools.chain(
-            ('xmlns{2}{0}="{1}"'.format(key, self.encodeAttrib(self.decode(value)), ":" if len(key) > 0 else "") for key, value in sorted(namespaceAttribs.iteritems(), key=lambda x: x[0])),
+            ('xmlns{2}{0}="{1}"'.format(key, self.encodeAttrib(self.decode(value)), ":" if len(key) > 0 else "") for key, value in sorted(namespaceAttribs.iteritems(), key=lambda x: x[0])) if self.useNamespaces else (),
             ('{0}="{1}"'.format(key, self.encodeAttrib(value)) for key, value in element.items())
         ))
         
