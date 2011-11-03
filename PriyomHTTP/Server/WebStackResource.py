@@ -149,7 +149,7 @@ def get_site_map(priyomInterface):
             "jquery.js": FileResource(os.path.join(rootPath, "www-files/js/jquery.js"), ContentType("text/javascript", "utf-8"))
         })
     })
-    apiRoot["submit"][""] = apiRoot["submit"]
+    apiRoot["submit"][""] = apiRoot["submit"].resource
     
     return ContinueSelector(
         CompressionSelector(
