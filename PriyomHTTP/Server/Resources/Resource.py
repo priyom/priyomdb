@@ -221,11 +221,11 @@ class Resource(object):
         self.trans = trans
         self.out = trans.get_response_stream()
         self.query = trans.get_fields_from_path()
+        self.postQuery = {}
         if trans.get_content_type().media_type == "application/x-www-form-urlencoded":
-            trans.post_query = trans.get_fields_from_body("utf-8")
-            self.query.update(trans.post_query)
-        else:
-            trans.post_query = {}
+            self.postQuery = trans.get_fields_from_body("utf-8")
+            self.query.update(self.postQuery)
+        trans.post_query = self.postQuery
         ifModifiedSince = trans.get_header_values("If-Modified-Since")
         if len(ifModifiedSince) > 0:
             try:
