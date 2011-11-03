@@ -25,3 +25,27 @@ authors:
     Jonas Wielicki <j.wielicki@sotecware.net>
 """
 priyomdate = "%Y-%m-%dT%H:%M:%S"
+from Types import Typecasts, WrapFunction
+from Helpers import TimeUtils
+
+class Formatter(object):
+    @classmethod
+    def catchNone(cls, othFormatter, noneValue=u"None"):
+        def catch_none(value):
+            if value is None:
+                return noneValue
+            else:
+                return othFormatter(value)
+        return catch_none
+    
+    @classmethod
+    def Timestamp(cls):
+        def timestamp(value):
+            return TimeUtils.fromTimestamp(value).strftime(priyomdate)
+        return timestamp
+    
+    @classmethod
+    def Date(cls):
+        def date(value):
+            return value.strftime(priyomdate)
+        return date
