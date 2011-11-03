@@ -168,7 +168,7 @@ class AdminTablesResource(HTMLResource):
     def renderObjectEditor(self, parent, virtualTable, obj, h1):
         virtualTable.Model = self.model
         virtualTable.Instance = obj
-        validated = virtualTable.validate(self.query if "submit" in self.query else {})
+        validated = virtualTable.validate(self.postQuery)
         
         form = HTMLIntf.SubElement(parent, u"form", method="POST", name="editor")
         virtualTable.toTree(form)

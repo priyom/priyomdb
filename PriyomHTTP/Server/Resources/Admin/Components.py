@@ -35,6 +35,7 @@ from libPriyom import Formatting
 import libPriyom
 from datetime import datetime, timedelta
 from storm.locals import *
+from storm.expr import *
 from libPriyom.TransmissionParser import NodeError
 
 class Column(object):
@@ -461,29 +462,156 @@ class BroadcastFrequencies(EditorComponent):
         self.itemPrefix = self.name + "["
         self.freqSuffix = "].Frequency"
         self.modSuffix = "].Modulation"
-        self.newFreqName = self.name + "[New].Frequency"
-        self.newModName = self.name + "[New].Modulation"
-        self.deleteName = self.name + ".Delete"
+        self.deleteSuffix = "].Delete"
+        self.updateSuffix = "].Update"
+        self.newName = self.name + ".New.Value"
         self.addName = self.name + ".Add"
     
     def validate(self, query):
-        keys = list(set((key[:key.find("]")] for key in (key[len(self.itemPrefix):] for key in filter(lambda key: key.find(self.itemPrefix) == 0, query.iterkeys())) if key.find("]") >= 0)))
-        if not self.addName in query and "New" in keys:
-            keys.remove("New")
-        keys = [(self.itemPrefix+key+self.freqSuffix, self.itemPrefix+key+self.modSuffix) for key in keys]
+        # trigger rebuild of the modulation selector on each query
+        self._modSelect = None
+        self._newSelect = None
+        
+        if len(query) == 0: # no submission
+            self._value = [(unicode(i), frequency.Frequency, frequency.Modulation.Name) for i, frequency in itertools.izip(itertools.count(0), self.Instance.Frequencies)]
+            return True
+        
+        self._value = []
+        preselectedKeys = (key[len(self.itemPrefix):] for key in filter((lambda key: key.find(self.itemPrefix) == 0), query.iterkeys()))
+        keys = list(set((key[:key.find("]")] for key in preselectedKeys if key.find("]") >= 0)))
+        
+        # drop deleted entries here
+        keys = [(self.itemPrefix+key+self.freqSuffix, self.itemPrefix+key+self.modSuffix) for key in keys if not self.itemPrefix+key+self.deleteSuffix in query]
         
         # thus, malformed entries are dropped silently
-        items = [(libPriyom.BroadcastFrequency.parseFrequency(query[freqName]), query[modName]) for (freqName, modName) in keys if (freqName in query) and (modName in query)]
+        items = set((libPriyom.BroadcastFrequency.parseFrequency(query[freqName]), query[modName]) for (freqName, modName) in keys if (freqName in query) and (modName in query))
+        if self.addName in query and self.newName in query:
+            value = query[self.newName].partition(" ")
+            try:
+                freq = long(value[0])
+                modulation = value[2]
+                if len(modulation) < 1:
+                    raise ValueError("") # we catch these silently anyways
+            except ValueError, TypeError:
+                pass
+            else:
+                item = (freq, modulation)
+                if item in items:
+                    self.Error = u"{0}, {1} is already in the list.".format(libPriyom.BroadcastFrequency.formatFrequency(freq), modulation)
+                else:
+                    items.add(item)
+        items = [(unicode(i), freq, mod) for (i, (freq, mod)) in itertools.izip(xrange(len(items)), items)]
+        
+        def sortCmp(a, b):
+            v = cmp(a[1], b[1])
+            return v if v != 0 else cmp(a[2], b[2])
+        
+        items.sort(cmp=sortCmp)
+        
         if len(items) == 0:
-            return True
-        for i in xrange(len(items)):
-            item = items[i]
-            
+            self.Error = u"There must be at least one frequency for each broadcast (if you found it like that in the DB: Tough luck, you have to fix this in order to manipulate this broadcast)."
+            return False
+        self._value = items
+        return True
         
     def apply(self, query):
-        pass
+        for freqObj in list(self.Instance.Frequencies):
+            self.store.remove(freqObj)
+        for i, freq, modulation in self._value:
+            libPriyom.BroadcastFrequency.fromValues(self.store, freq, modulation, self.Instance)
+        
+    def modSelect(self, parent, name, selected):
+        select = HTMLIntf.SubElement(parent, u"select", attrib={
+            u"name": name
+        })
+        for modulation in self.store.find(libPriyom.Modulation).order_by(Asc(libPriyom.Modulation.Name)):
+            option = HTMLIntf.SubElement(select, u"option")
+            option.set(u"value", modulation.Name)
+            option.text = modulation.Name
+            if modulation.Name == selected:
+                option.set(u"selected", u"selected")
+        return select
+    
+    def newSelect(self, parent, name):
+        select = HTMLIntf.SubElement(parent, u"select", attrib={
+            u"name": name
+        })
+        option = HTMLIntf.SubElement(select, u"option")
+        option.set(u"value", u"0 AM")
+        option.text = u"Select a known frequency or just add a custom one"
+        knownFrequencies = self.store.using(
+            libPriyom.BroadcastFrequency, 
+            LeftJoin(libPriyom.Modulation, libPriyom.Modulation.ID == libPriyom.BroadcastFrequency.ModulationID), 
+            LeftJoin(libPriyom.Broadcast, libPriyom.BroadcastFrequency.BroadcastID == libPriyom.Broadcast.ID)
+        ).find(
+            (libPriyom.BroadcastFrequency.Frequency, libPriyom.Modulation.Name), 
+            libPriyom.Broadcast.StationID == self.Instance.Station.ID
+        ).config(distinct=True) if self.Instance.Station is not None else None
+        for frequency, modulation in knownFrequencies:
+            option = HTMLIntf.SubElement(select, u"option")
+            option.set(u"value", u"{0} {1}".format(frequency, modulation))
+            option.text = u"{0}, {1}".format(libPriyom.BroadcastFrequency.formatFrequency(frequency), modulation)
+        return select
+        
+    def inputToRow(self, row, item):
+        td = HTMLIntf.SubElement(row, u"td")
+        freqInput = HTMLIntf.SubElement(td, u"input", attrib={            
+            u"name": self.itemPrefix+item[0]+self.freqSuffix,
+            u"value": libPriyom.BroadcastFrequency.formatFrequency(item[1]),
+        })
+        
+        td = HTMLIntf.SubElement(row, u"td")
+        #modInput = HTMLIntf.SubElement(td, u"input", attrib={
+        #    u"name": self.itemPrefix+item[0]+self.modSuffix,
+        #    u"value": 
+        #})
+        modSelect = self.modSelect(td, self.itemPrefix+item[0]+self.modSuffix, item[2])
+        
+        td = HTMLIntf.SubElement(row, u"td")
+        updateInput = HTMLIntf.SubElement(td, u"input", attrib={
+            u"type": u"submit",
+            u"name": self.itemPrefix+item[0]+self.updateSuffix,
+            u"value": "Validate",
+            u"class": "hidden"
+        })
+        deleteInput = HTMLIntf.SubElement(td, u"input", attrib={
+            u"type": u"submit",
+            u"name": self.itemPrefix+item[0]+self.deleteSuffix,
+            u"value": u"✗"
+        })
         
     def editorToTree(self, parent):
+        table = HTMLIntf.SubElement(parent, u"table", attrib={
+            u"class": "list fit"
+        })
+        colgroup = HTMLIntf.SubElement(table, u"colgroup")
+        thead = HTMLIntf.SubElement(table, u"thead")
+        
+        HTMLIntf.SubElement(colgroup, u"col", span="1")
+        HTMLIntf.SubElement(colgroup, u"col", span="1")
+        HTMLIntf.SubElement(colgroup, u"col", span="1", attrib={
+            u"class": u"buttons"
+        })
+        
+        HTMLIntf.SubElement(thead, u"th").text = u"Frequency"
+        HTMLIntf.SubElement(thead, u"th").text = u"Modulation"
+        HTMLIntf.SubElement(thead, u"th", attrib={
+            u"class": u"buttons"
+        }).text = u"Act."
+        
+        tbody = HTMLIntf.SubElement(table, u"tbody")
+        for item in self.Value:
+            tr = HTMLIntf.SubElement(tbody, u"tr")
+            self.inputToRow(tr, item)
+        
+        addDiv = HTMLIntf.SubElement(parent, u"div")
+        newInput = self.newSelect(addDiv, self.newName)
+        
+        addInput = HTMLIntf.SubElement(addDiv, u"input", attrib={
+            u"name": self.addName,
+            u"type": u"submit",
+            u"value": u"Add"
+        })
         
         super(BroadcastFrequencies, self).editorToTree(parent)
 

@@ -145,12 +145,56 @@ table.view tbody tr:hover td {
     background-color: hsl(0, 25%, 80%);
 }*/
 
+col.buttons {
+    width: 4em;
+}
+
+table.editors {
+    border-collapse: collapse;
+    width: 100%;
+}
+
+table.editors th {
+    text-align: left;
+    width: 15em;
+    vertical-align: top;
+}
+
+table.editors th.group {
+    text-align: center;
+    width: auto;
+}
+
+table.editors th p {
+    font-weight: normal;
+    margin: 0;
+}
+
+table.editors th p.caption {
+    font-weight: bold;
+}
+
+table.editors th p.description {
+    font-size: 80%;
+}
+
+table.editors th, table.editors td {
+    border: 1px solid #000;
+}
+
+
 table.list {
     width: 100%;
     border-collapse: collapse;
     border: 1px solid #000;
     margin-top: 2px;
     margin-bottom: 2px;
+}
+
+table.editors .fit {
+    margin-top: -2px;
+    margin-left: -2px;
+    margin-right: -2px;
 }
 
 table.list th,
@@ -194,13 +238,13 @@ table.list th div.order {
 table.list th.buttons {
     padding-right: 0.1em;
     padding-left: 0.1em;
-    text-align: right;
 }
 
 table.list td {
     padding: 0.1em;
     padding-top: 0.25em;
     padding-bottom: 0.25em;
+    border: none;
     border-left: 1px dotted hsl(0, 25%, 25%);
 }
 
@@ -215,17 +259,25 @@ table.list tr:hover td {
 th.buttons {
     padding-left: 0.1em;
     border: none;
+    /*text-align: right;*/
+}
+
+th.buttons:first-child,
+table.list th.buttons:first-child {
     text-align: right;
 }
 
 table.list th.buttons:hover {
-    text-align: right;  
+    /*text-align: right;  */
     background-color: hsla(0, 80%, 80%, 1.0);
 }
 
 td.buttons {
-    text-align: right;
     border: none;
+}
+
+td.buttons:first-child {
+    text-align: right;
 }
 
 td.buttons a {
@@ -250,35 +302,6 @@ td.buttons a:visited {
     color: #fff;
 } 
 
-table.editors {
-    border-collapse: collapse;
-    width: 100%;
-}
-
-table.editors th {
-    text-align: left;
-    width: 15em;
-    vertical-align: top;
-}
-
-table.editors th.group {
-    text-align: center;
-    width: auto;
-}
-
-table.editors th p {
-    font-weight: normal;
-    margin: 0;
-}
-
-table.editors th p.caption {
-    font-weight: bold;
-}
-
-table.editors th p.description {
-    font-size: 80%;
-}
-
-table.editors th, table.editors td {
-    border: 1px solid #000;
+.hidden {
+    display: none;
 }
