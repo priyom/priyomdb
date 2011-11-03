@@ -36,6 +36,7 @@ import io
 from cfg_priyomhttpd import application, misc
 from ElementTreeHelper.Serializer import Serializer
 import libPriyom.XMLIntf as XMLIntf
+from Resources import HTMLIntf
 
 weekdayname = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 monthname = [None, 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
@@ -98,6 +99,7 @@ class WebModel(object):
         self.priyomInterface = priyomInterface
         self.store = self.priyomInterface.store
         self.serializer = XMLIntf.Serializer()
+        self.xhtmlSerializer = HTMLIntf.Serializer()
         self.currentFlags = None
         self.limit = None
         self.offset = None
@@ -144,16 +146,18 @@ class WebModel(object):
             return int(TimeUtils.now())
         return self.varLastUpdate.Value
         
-    def etreeToFile(self, file, etree, encoding="UTF-8", defaultNamespace=XMLIntf.namespace):
-        self.serializer.serializeTree(file, etree, encoding=encoding, xmlHeader=True, defaultNamespace=defaultNamespace, headerNamespaces=True)
+    def etreeToFile(self, file, etree, encoding="UTF-8", defaultNamespace=XMLIntf.namespace, serializer=None):
+        if serializer is None:
+            serializer = self.serializer
+        serializer.serializeTree(file, etree, encoding=encoding, xmlHeader=True, defaultNamespace=defaultNamespace, headerNamespaces=True)
         
-    def exportToETree(self, obj, flags = None):
+    def exportToETree(self, obj, flags=None):
         if flags is None:
             flags = self.currentFlags
         return self.priyomInterface.exportToETree(obj, flags)
     
-    def exportToFile(self, file, obj, flags = None, encoding=None):
-        self.etreeToFile(file, self.exportToETree(obj, flags=flags), encoding=encoding)
+    def exportToFile(self, file, obj, flags = None, encoding=None, serializer=None):
+        self.etreeToFile(file, self.exportToETree(obj, flags=flags), encoding=encoding, serializer=serializer)
         
     def exportListToETree(self, list, classType, flags = None):
         if flags is None:

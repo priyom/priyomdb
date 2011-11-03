@@ -274,8 +274,8 @@ class SubmitLogResource(SubmitResource):
         self.store.add(transmission)
         transmission.__storm_loaded__()
         transmission.Callsign = self.callsign
-        transmission.ForeignCallsign.supplement.LangCode = self.foreignCallsignLang
-        transmission.ForeignCallsign.supplement.ForeignText = self.foreignCallsign
+        transmission.ForeignCallsign.LangCode = self.foreignCallsignLang
+        transmission.ForeignCallsign.ForeignText = self.foreignCallsign
         transmission.Remarks = self.remarks
         transmission.Timestamp = timestamp
         transmission.RecordingURL = self.recordingURL

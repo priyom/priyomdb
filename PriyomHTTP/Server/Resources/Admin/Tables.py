@@ -227,7 +227,7 @@ class AdminTablesResource(HTMLResource):
         query_string = self.trans.get_query_string()
         if query_string:
             query_string = "?" + query_string
-        self.trans.redirect(self.trans.encode_path(toPath, "utf-8") + query_string)
+        self.trans.redirect(self.trans.encode_path(path_without_query, "utf-8") + query_string)
         raise EndOfResponse
         
     def getUpwardsPath(self, append, removeSegments=2):

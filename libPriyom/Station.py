@@ -65,7 +65,7 @@ class Station(PriyomBase, XMLIntf.XMLStorm):
                 (u"Nickname", self.Nickname)
             )
         )
-        subtree = ElementTree.XML(u"<Description>"+self.Description+u"</Description>")
+        subtree = ElementTree.XML((u"<Description>"+self.Description+u"</Description>").encode("utf-8"))
         XMLIntf.applyNamespace(subtree, XMLIntf.xhtmlNamespace)
         subtree.tag = u"{{{0}}}Description".format(XMLIntf.namespace)
         parentNode.append(subtree)

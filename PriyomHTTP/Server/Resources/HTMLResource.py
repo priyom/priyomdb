@@ -49,7 +49,7 @@ class HTMLResource(Resource):
         
         self.buildDoc(trans, (self.html, self.head, self.body))
         
-        self.model.etreeToFile(self.out, doc, self.encoding, XMLIntf.xhtmlNamespace)
+        self.model.etreeToFile(self.out, doc, self.encoding, XMLIntf.xhtmlNamespace, serializer=self.model.xhtmlSerializer)
         
     def buildDoc(trans, elements):
         pass

@@ -231,7 +231,7 @@ class ScheduleMaintainer(object):
         return until
     
     def updateSchedules(self, until, limit = None):
-        now = ScheduleMaintainer.now()
+        now = TimeUtils.now()
         if until is None or (until - now) > limits.schedule.maxLookahead:
             until = now + limits.schedule.maxLookahead
         validUntil = until

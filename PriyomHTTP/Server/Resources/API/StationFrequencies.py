@@ -50,7 +50,7 @@ class StationFrequenciesAPI(API):
         if self.head:
             return
         
-        doc = self.model.getExportDoc("station-frequencies")
+        doc = self.model.getExportTree("station-frequencies")
         rootNode = doc.getroot()
         
         for (freq, modulation, state, timestamp) in frequencies:

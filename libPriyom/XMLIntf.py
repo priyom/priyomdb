@@ -51,7 +51,7 @@ importNamespace = u"http://api.priyom.org/priyomdb/import"
 xhtmlNamespace = u"http://www.w3.org/1999/xhtml"
 debugXml = False
 
-_serializer = ElementTreeHelper.Serializer.Serializer()
+_serializer = ElementTreeHelper.Serializer.Serializer(useNamespaces=False)
 _serializer.registerNamespacePrefix(u"priyom", namespace)
 _serializer.registerNamespacePrefix(u"priyom-import", importNamespace)
 _serializer.registerNamespacePrefix(u"xhtml", xhtmlNamespace)
