@@ -204,8 +204,8 @@ class SubmitLogResource(SubmitResource):
                     status = u"Parsing ok, creates {0:d} items.".format(len(items))
                 else:
                     status = u"Parsing failed, no items"
-            else:
-                status = u"Parsing failed, parser returned None."
+            #else:
+            #    status = u"Parsing failed, parser returned None."
             parseTx.tail = status
         else:
             parseTx.tail = u"Select a transmission class and hit Check transmission to validate your input before submitting!"
