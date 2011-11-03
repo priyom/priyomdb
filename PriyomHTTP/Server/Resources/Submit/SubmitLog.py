@@ -194,7 +194,7 @@ class SubmitLogResource(SubmitResource):
             items = None
             status = u""
             try:
-                items = txClass.parsePlainText(self.transmissionRaw)
+                items = self.txClass.parsePlainText(self.transmissionRaw)
             except ValueError as e:
                 status = u"Parsing failed: {0:s}".format(e)
             except NodeError as e:
