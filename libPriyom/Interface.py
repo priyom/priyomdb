@@ -404,7 +404,7 @@ class PriyomInterface:
         return (lastModified, months)
         
     def getUpcomingBroadcasts(self, station, all, update, timeLimit, maxTimeRange, limiter = None, notModifiedCheck = None, head = False):
-        now = self.now()
+        now = TimeUtils.now()
         where = And(Or(Broadcast.BroadcastEnd > now, Broadcast.BroadcastEnd == None), (Broadcast.BroadcastStart < (now + timeLimit)))
         if not all:
             where = And(where, Broadcast.Type == u"data")
@@ -427,7 +427,7 @@ class PriyomInterface:
             untilDate += timedelta(seconds=timeLimit)
             untilDate = self.normalizeDate(untilDate)
             
-            until = self.toTimestamp(untilDate)
+            until = TimeUtils.toTimestamp(untilDate)
             
             if station is None:
                 validUntil = self.scheduleMaintainer.updateSchedules(until, maxTimeRange)
@@ -454,7 +454,7 @@ class PriyomInterface:
             notModifiedCheck(lastModified)
         
         if station.Schedule is None:
-            now = self.now()
+            now = TimeUtils.now()
             frequencies = self.store.find(
                 (Max(Broadcast.BroadcastEnd), Min(Broadcast.BroadcastStart), Broadcast.BroadcastStart > now, BroadcastFrequency.Frequency, Modulation.Name), 
                 BroadcastFrequency.ModulationID == Modulation.ID,

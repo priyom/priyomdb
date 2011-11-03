@@ -226,8 +226,8 @@ class TransmissionClassBase(object):
         
     def toDom(self, parentNode):
         group = XMLIntf.SubElement(parentNode, u"group", {
-            u"class": self.TransmissionClassTable.XMLGroupClass,
-            u"name": self.TransmissionClassTable.TableName
+            u"class": self.TransmissionTable.XMLGroupClass,
+            u"name": self.TransmissionTable.TableName
         })
         
         for (field, value) in self:

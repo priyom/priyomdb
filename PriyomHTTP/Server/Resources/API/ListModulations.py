@@ -47,7 +47,7 @@ class ListModulationsAPI(API):
         items = self.store.find(Modulation)
         self.model.limitResults(items)
         
-        doc = self.model.getExportDoc("priyom-modulations")
+        doc = self.model.getExportTree("priyom-modulations")
         rootNode = doc.getroot()
         for modulation in items:
             modulation.toDom(rootNode)

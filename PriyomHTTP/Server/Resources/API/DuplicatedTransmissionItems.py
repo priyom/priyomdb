@@ -27,7 +27,6 @@ authors:
 from WebStack.Generic import ContentType
 from libPriyom import *
 from API import API, CallSyntax, Argument
-import xml.dom.minidom as dom
 
 class DupeRecord(object):
     def __init__(self, doc, node):
@@ -91,7 +90,7 @@ class DuplicatedTransmissionItemsAPI(API):
         if self.head:
             return
         
-        doc = self.model.getExportDoc("duplicated-transmissions")
+        doc = self.model.getExportTree("duplicated-transmissions")
         rootNode = doc.getroot()
         
         dupeDict = {}
@@ -108,12 +107,11 @@ class DuplicatedTransmissionItemsAPI(API):
                 dupeDict[key] = rec
                 continue
             
-            node = doc.createElementNS(XMLIntf.namespace, "duplicated-transmission")
+            node = XMLIntf.SubElement(rootNode, u"duplicated-transmission")
             #node.setAttribute("key", key)
             rec = DupeRecord(doc, node)
             rec.add(bc1, tx1, txItem1)
             rec.add(bc2, tx2, txItem2)
             dupeDict[key] = rec
-            rootNode.appendChild(node)
         
         self.model.etreeToFile(self.out, doc, encoding=self.encoding)

@@ -48,7 +48,7 @@ class TransmissionStatsAPI(API):
         if self.head:
             return
         
-        doc = self.model.getExportDoc("transmission-stats")
+        doc = self.model.getExportTree("transmission-stats")
         rootNode = doc.getroot()
         
         for month in months:
