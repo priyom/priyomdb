@@ -51,28 +51,30 @@ class Column(object):
                 return othFormatter(value)
         return fmt_none
     
-    def __init__(self, stormColumn, title, formatter=None):
+    def __init__(self, stormColumn, title, formatter=None, width=None, defaultSort=u"ASC"):
         if formatter is None:
             formatter = self.fmtNone(unicode)
         self.stormColumn = stormColumn
         self.title = title
         self.formatter = formatter
+        self.width = width
+        self.defaultSort = defaultSort if defaultSort in (u"ASC", u"DESC") else u"ASC"
     
     @classmethod
-    def ID(cls, stormClass):
-        return cls(getattr(stormClass, "ID"), "ID")
+    def ID(cls, stormClass, width="4em", **kwargs):
+        return cls(getattr(stormClass, "ID"), "ID", width=width, **kwargs)
         
     @classmethod
-    def Timestamp(cls, stormColumn, title):
-        return cls(stormColumn, title, cls.fmtTimestamp)
+    def Timestamp(cls, stormColumn, title, width="13em", **kwargs):
+        return cls(stormColumn, title, cls.fmtNone(cls.fmtTimestamp), width=width, **kwargs)
     
     @classmethod
-    def Created(cls, stormClass):
-        return cls.Timestamp(getattr(stormClass, "Created"), "Created")
+    def Created(cls, stormClass, defaultSort=u"DESC", **kwargs):
+        return cls.Timestamp(getattr(stormClass, "Created"), "Created", defaultSort=defaultSort, **kwargs)
     
     @classmethod
-    def Modified(cls, stormClass):
-        return cls.Timestamp(getattr(stormClass, "Modified"), "Modified")
+    def Modified(cls, stormClass, defaultSort=u"DESC", **kwargs):
+        return cls.Timestamp(getattr(stormClass, "Modified"), "Modified", defaultSort=defaultSort, **kwargs)
     
 
 class Component(object):

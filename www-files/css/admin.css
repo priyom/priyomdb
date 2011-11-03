@@ -1,6 +1,8 @@
 html {
     margin: 0;
     padding: 0;
+    font-family: "Cantarell", "DejaVu Sans", "Liberation Sans", sans;
+    font-size: 10pt;
 }
 
 body {
@@ -127,7 +129,7 @@ div.pagination ul li a {
     padding-right: 0.1em;
 }
 
-table.view {
+/* table.view {
     width: 100%;
 }
 
@@ -141,20 +143,92 @@ table.view thead th {
 
 table.view tbody tr:hover td {
     background-color: hsl(0, 25%, 80%);
+}*/
+
+table.list {
+    width: 100%;
+    border-collapse: collapse;
+    border: 1px solid #000;
+    margin-top: 2px;
+    margin-bottom: 2px;
 }
 
-table.view th.buttons {
-    background: transparent;
+table.list th,
+table.list th.buttons {
+    border: 1px solid #000;
+    padding-top: 0;
+    padding-bottom: 0;
+    font-weight: normal;
+    text-shadow: 0px 1px 0px #fff;
+    background: linear-gradient(top, rgba(0,0,0,0.2) 0%,rgba(0,0,0,0.05) 100%); /* W3C */
+    background: -moz-linear-gradient(top, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.05) 100%); /* FF3.6+ */    
+    background-color: hsla(0, 80%, 80%, 1.0);
+    font-size: 90%;
+    text-align: left;
+}
+
+table.list th:hover {
+    background-color: hsla(0, 100%, 90%, 1.0);
+}
+
+table.list th a, 
+table.list th a:hover, 
+table.list th a:visited, 
+table.list th a:active {
+    color: inherit;
+    display: block;
+    padding-top: 0.25em;
+    padding-bottom: 0.25em;
+    padding-left: 0.1em;
+    padding-right: 1.0em;
+    text-decoration: none;
+}
+
+table.list th div.order {
+    display: block;
+    float: right;
+    margin-right: -1em;
+    color: #111;
+}
+
+table.list th.buttons {
+    padding-right: 0.1em;
+    padding-left: 0.1em;
+    text-align: right;
+}
+
+table.list td {
+    padding: 0.1em;
+    padding-top: 0.25em;
+    padding-bottom: 0.25em;
+    border-left: 1px dotted hsl(0, 25%, 25%);
+}
+
+table.list td:first-child {
+    border: none;
+}
+
+table.list tr:hover td {
+    background-color: hsl(0, 25%, 80%);
+}
+
+th.buttons {
+    padding-left: 0.1em;
     border: none;
     text-align: right;
 }
 
-table.view td.buttons {
+table.list th.buttons:hover {
+    text-align: right;  
+    background-color: hsla(0, 80%, 80%, 1.0);
+}
+
+td.buttons {
     text-align: right;
     border: none;
 }
 
-table.view td.buttons a {
+td.buttons a {
     padding-left: 0.2em;
     padding-right: 0.2em;
     margin-left: 0.2em;
@@ -166,15 +240,15 @@ table.view td.buttons a {
     border-radius: 3px;
 }
 
-table.view td.buttons a:hover {
+td.buttons a:hover {
     border: 1px solid hsl(0, 25%, 25%);
     background-color: hsl(0, 50%, 80%);
     box-shadow: 0px 0px 1px #000;
 }
 
-table.view td.buttons a:visited {
+td.buttons a:visited {
     color: #fff;
-}
+} 
 
 table.editors {
     border-collapse: collapse;

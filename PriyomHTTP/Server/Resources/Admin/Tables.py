@@ -94,25 +94,41 @@ class AdminTablesResource(HTMLResource):
         new.text = u"New"
         
         table = HTMLIntf.SubElement(parent, u"table", attrib={
-            u"class": u"view"
+            u"class": u"list view"
         })
+        colgroup = HTMLIntf.SubElement(table, u"colgroup")
         thead = HTMLIntf.SubElement(table, u"thead")
         
         HTMLIntf.SubElement(thead, u"th", attrib={
             u"class": u"buttons"
         }).text = u"Act."
+        HTMLIntf.SubElement(colgroup, u"col", span="1").set("style", "width: 8em;")
+        
         
         for column in virtualTable.columns:
-            a = HTMLIntf.SubElement(HTMLIntf.SubElement(thead, u"th"), u"a")
+            th = HTMLIntf.SubElement(thead, u"th")
+            col = HTMLIntf.SubElement(colgroup, u"col", span="1")
+            if column.width is not None:
+                col.set(u"style", u"width: {0};".format(column.width))
+            a = HTMLIntf.SubElement(th, u"a")
             a.text = column.title
             columnName = column.stormColumn.name
             if orderColumn is not column:
-                a.set(u"href", self.buildQueryOnSameTable(orderColumn=columnName, orderDirection=u"ASC"))
+                a.set(u"href", self.buildQueryOnSameTable(orderColumn=columnName, orderDirection=column.defaultSort))
             else:
+                divOrder = HTMLIntf.Element(u"div", attrib={
+                    u"class": "order"
+                })
+                #th.insert(0, divOrder)
+                divOrder.tail = a.text
+                a.text = u""
+                a.append(divOrder)
                 if orderDirection == u"ASC":
                     a.set(u"href", self.buildQueryOnSameTable(orderColumn=columnName, orderDirection=u"DESC"))
+                    divOrder.text = u"▲"
                 else:
                     a.set(u"href", self.buildQueryOnSameTable(orderColumn=columnName, orderDirection=u"ASC"))
+                    divOrder.text = u"▼"
                     
         tbody = HTMLIntf.SubElement(table, u"tbody")
         
@@ -142,7 +158,7 @@ class AdminTablesResource(HTMLResource):
             pages += 1
         
         for pageNumber in xrange(1,pages+1):
-            a = HTMLIntf.SubElement(HTMLIntf.SubElement(pagesUl, u"li"), u"a", href=self.buildQueryOnSameTable(orderColumn=orderColumn, orderDirection=orderDirection, offset=(pageNumber-1)*limit))
+            a = HTMLIntf.SubElement(HTMLIntf.SubElement(pagesUl, u"li"), u"a", href=self.buildQueryOnSameTable(orderColumn=orderColumn.stormColumn.name, orderDirection=orderDirection, offset=(pageNumber-1)*limit))
             a.text = unicode(pageNumber)
             if pageNumber == (offset/limit)+1:
                 a.set(u"class", u"current")

@@ -119,8 +119,8 @@ virtualTables = {
             Column.ID(Station),
             Column.Created(Station),
             Column.Modified(Station),
-            Column(Station.EnigmaIdentifier, "Enigma ID"),
-            Column(Station.PriyomIdentifier, "Priyom ID"),
+            Column(Station.EnigmaIdentifier, "Enigma ID", width="8em"),
+            Column(Station.PriyomIdentifier, "Priyom ID", width="8em"),
             Column(Station.Nickname, "Nickname")
         )
         #relatedTables=(
