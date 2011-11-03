@@ -73,17 +73,38 @@ class BroadcastFrequency(object):
             return unicode((freq / 1000.0)) + u" kHz"
         else:
             return unicode(freq) + u" Hz"
+            
+    @classmethod
+    def fromValues(cls, store, frequency, modulationName, broadcast=None, createModulation=True):
+        modulation = store.find(Modulation, Modulation.Name == modulationName).any()
+        if modulation is None:
+            if not createModulation:
+                raise ValueError("Modulation \"{0}\" is not known.".format(modulation))
+            else:
+                modulation = Modulation()
+                modulation.Name = modulationName
+                store.add(modulation)
+        
+        obj = cls()
+        obj.Frequency = frequency
+        obj.Modulation = modulation
+        obj.Broadcast = broadcast
+        store.add(obj)
+        return obj
     
     @staticmethod
-    def importFromDom(store, node, broadcast, context):
-        frequency = int(XMLIntf.getText(node))
-        modname = node.getAttribute("modulation")
+    def importFromETree(store, element, broadcast, context):
+        frequency = int(element.text)
+        modname = node.get(u"modulation")
         checklist = store.find(BroadcastFrequency, 
-            (BroadcastFrequency.Frequency == frequency) and
-            (BroadcastFrequency.BroadcastID == broadcast.ID))
-        for broadcastFrequency in checklist:
-            if broadcastFrequency.Modulation.Name == modname:
-                return broadcastFrequency
+            BroadcastFrequency.Frequency == frequency,
+            BroadcastFrequency.BroadcastID == broadcast.ID,
+            BroadcastFrequency.ModulationID == Modulation.ID,
+            Modulation.Name == unicode(modname)
+        )
+        freq = checklist.any()
+        if freq is not None:
+            return freq
         
         obj = BroadcastFrequency()
         store.add(obj)
@@ -91,19 +112,18 @@ class BroadcastFrequency(object):
         obj.fromDom(node, context)
         return obj
     
-    def fromDom(self, node, context):
-        self.Frequency = int(XMLIntf.getText(node))
-        self.Modulation = Store.of(self).find(Modulation, Modulation.Name == node.getAttribute("modulation")).any()
+    def fromDom(self, element, context):
+        self.Frequency = int(element.text)
+        self.Modulation = Store.of(self).find(Modulation, Modulation.Name == node.get(u"modulation")).any()
         if self.Modulation is None:
             self.Modulation = Modulation()
             Store.of(self).add(self.Modulation)
-            self.Modulation.Name = node.getAttribute("modulation")
+            self.Modulation.Name = node.get(u"modulation")
     
     def toDom(self, parentNode):
-        doc = parentNode.ownerDocument
-        frequency = XMLIntf.buildTextElementNS(doc, "frequency", unicode(self.Frequency), XMLIntf.namespace)
-        frequency.setAttribute("modulation", self.Modulation.Name)
-        parentNode.appendChild(frequency)
+        XMLIntf.appendTextElement(parentNode, u"frequency", unicode(self.Frequency), attrib={
+            u"modulatiom": self.Modulation.Name
+        })
         
     def __unicode__(self):
         return u"{0} ({1})".format(
@@ -141,30 +161,30 @@ class Broadcast(PriyomBase, XMLIntf.XMLStorm):
         self.Comment = None
         self.StationID = 0
         
-    def _dummy(self, element):
+    def _dummy(self, element, context):
         pass
         
     def _loadStart(self, element, context):
-        time = long(element.getAttribute("unix"))
+        time = long(element.get(u"unix"))
         self.BroadcastStart = time
         
     def _loadEnd(self, element, context):
-        time = long(element.getAttribute("unix"))
+        time = long(element.get(u"unix"))
         self.BroadcastEnd = time
         
     def _loadConfirmed(self, element, context):
-        if element.hasAttribute("delete"):
+        if element.get("delete") is not None:
             self.Confirmed = False
         else:
             self.Confirmed = True
     
     def _loadFrequency(self, element, context):
-        broadcastFrequency = BroadcastFrequency.importFromDom(Store.of(self), element, self, context)
-        if element.hasAttribute("delete"):
+        broadcastFrequency = BroadcastFrequency.importFromETree(Store.of(self), element, self, context)
+        if element.get("delete") is not None:
             Store.of(self).remove(broadcastFrequency)
             
     def _loadStationID(self, node, context):
-        self.Station = context.resolveId(Station, int(XMLIntf.getText(node)))
+        self.Station = context.resolveId(Station, int(node.text))
     
     def getIsOnAir(self):
         now = datetime.datetime.utcnow()
@@ -180,20 +200,19 @@ class Broadcast(PriyomBase, XMLIntf.XMLStorm):
         
     
     def toDom(self, parentNode, flags=None):
-        doc = parentNode.ownerDocument
-        broadcast = doc.createElementNS(XMLIntf.namespace, "broadcast")
+        broadcast = XMLIntf.SubElement(parentNode, u"broadcast")
         
-        XMLIntf.appendTextElement(broadcast, "ID", unicode(self.ID))
-        XMLIntf.appendDateElement(broadcast, "Start", self.BroadcastStart)
+        XMLIntf.appendTextElement(broadcast, u"ID", unicode(self.ID))
+        XMLIntf.appendDateElement(broadcast, u"Start", self.BroadcastStart)
         if self.BroadcastEnd is not None:
-            XMLIntf.appendDateElement(broadcast, "End", self.BroadcastEnd)
+            XMLIntf.appendDateElement(broadcast, u"End", self.BroadcastEnd)
         XMLIntf.appendTextElements(broadcast,
             [
-                ("StationID", unicode(self.StationID)),
-                ("Type", self.Type),
-                ("Confirmed", "" if self.Confirmed else None),
-                ("on-air", "" if self.getIsOnAir() else None),
-                ("has-transmissions", "" if self.Transmissions.count() > 0 else None)
+                (u"StationID", unicode(self.StationID)),
+                (u"Type", self.Type),
+                (u"Confirmed", "" if self.Confirmed else None),
+                (u"on-air", "" if self.getIsOnAir() else None),
+                (u"has-transmissions", "" if self.Transmissions.count() > 0 else None)
             ]
         )
         for frequency in self.Frequencies:
@@ -203,10 +222,7 @@ class Broadcast(PriyomBase, XMLIntf.XMLStorm):
             for transmission in self.Transmissions:
                 transmission.toDom(broadcast, flags)
         
-        parentNode.appendChild(broadcast)
-        
-    def loadDomElement(self, node, context):
-        print("loading %s" % node.tagName)
+    def loadElement(self, tag, element, context):
         try:
             {
                 u"Start": self._loadStart,
@@ -215,7 +231,7 @@ class Broadcast(PriyomBase, XMLIntf.XMLStorm):
                 u"on-air": self._dummy,
                 u"has-transmissions": self._dummy,
                 u"frequency": self._loadFrequency
-            }[node.tagName](node, context)
+            }[tag](element, context)
         except KeyError:
             pass
         

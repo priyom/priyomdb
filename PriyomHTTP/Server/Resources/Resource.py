@@ -206,9 +206,9 @@ class Resource(object):
             self.setDictValue(newQueryDict, key, value)
         return newQueryDict
         
-    def normalizeQueryDict(self):
-        for key in self.query.iterkeys():
-            self.query[key] = self.query[key][0]
+    def normalizeQueryDict(self, query):
+        for key in query.iterkeys():
+            query[key] = query[key][0]
         
     def respond(self, trans):
         if not trans.get_request_method() in self.allowedMethods:
@@ -221,11 +221,11 @@ class Resource(object):
         self.trans = trans
         self.out = trans.get_response_stream()
         self.query = trans.get_fields_from_path()
+        self.postQuery = {}
         if trans.get_content_type().media_type == "application/x-www-form-urlencoded":
-            trans.post_query = trans.get_fields_from_body("utf-8")
-            self.query.update(trans.post_query)
-        else:
-            trans.post_query = {}
+            self.postQuery = trans.get_fields_from_body("utf-8")
+            self.query.update(self.postQuery)
+        trans.post_query = self.postQuery
         ifModifiedSince = trans.get_header_values("If-Modified-Since")
         if len(ifModifiedSince) > 0:
             try:
@@ -238,7 +238,8 @@ class Resource(object):
         else:
             self.ifModifiedSince = None
             self.ifModifiedSinceUnix = None
-        self.normalizeQueryDict()
+        self.normalizeQueryDict(self.query)
+        self.normalizeQueryDict(self.postQuery)
         self.setupModel()
         self.head = trans.get_request_method() == "HEAD"
         try:

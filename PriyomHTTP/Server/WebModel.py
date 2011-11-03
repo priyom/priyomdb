@@ -25,9 +25,8 @@ authors:
     Jonas Wielicki <j.wielicki@sotecware.net>
 """
 from storm.locals import AutoReload
-import xml.dom.minidom as dom
+import xml.etree.ElementTree as ElementTree
 import time
-import json
 from datetime import datetime, timedelta
 from libPriyom import Transmission, Station, Broadcast, Schedule, TimeUtils, Formatting
 from APIDatabase import Variable
@@ -35,6 +34,9 @@ import re
 import cStringIO
 import io
 from cfg_priyomhttpd import application, misc
+from ElementTreeHelper.Serializer import Serializer
+import libPriyom.XMLIntf as XMLIntf
+from Resources import HTMLIntf
 
 weekdayname = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 monthname = [None, 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
@@ -77,20 +79,6 @@ asctime = {
     "yearmode": "%Y"
 }
 
-class WrapFunction(object):
-    def __init__(self, func, description):
-        self.func = func
-        self.description = description
-    
-    def __call__(self, *args, **kwargs):
-        return self.func(*args, **kwargs)
-    
-    def __str__(self):
-        return str(self.description)
-        
-    def __unicode__(self):
-        return self.description
-    
 
 class Encoder(io.IOBase):
     def __init__(self, targetEncoding):
@@ -107,85 +95,16 @@ class Encoder(io.IOBase):
         self.buffer.close()
 
 class WebModel(object):
-    # some typecasts
-    @staticmethod    
-    def rangeChecked(type, min, max):
-        def range_checked(s):
-            i = type(s)
-            if i is None:
-                return None
-            if ((min is not None) and (min > i)) or ((max is not None) and (max < i)):
-                raise ValueError(u"value out of bounds ({1}..{2}): {0}".format(i, min if min is not None else u"-infinity", max if max is not None else u"infinity"))
-            return i
-        return range_checked
-        
-    @staticmethod
-    def validStormObject(type, store):
-        def valid_storm_object(id):
-            obj = store.get(type, int(id))
-            if obj is None:
-                raise ValueError(u"{0} does not identify a valid {1}".format(id, type))
-            return obj
-        return valid_storm_object
-        
-    @staticmethod
-    def validStation(store):
-        def valid_station(id):
-            intId = None
-            try:
-                intId = int(id)
-            except ValueError:
-                pass
-            if intId is not None:
-                obj = store.get(Station, intId)
-                if obj is not None:
-                    return obj
-            obj = store.find(Station, Station.EnigmaIdentifier == unicode(id)).any()
-            if obj is not None:
-                return obj
-            obj = store.find(Station, Station.PriyomIdentifier == unicode(id)).any()
-            if obj is None:
-                raise ValueError(u"{0} does not identify a valid {1}".format(id, Station))
-            return obj
-        return WrapFunction(valid_station, u"valid station identifier (a db id identifying a station, enigma identifier or priyom identifier)")
-        
-    @staticmethod
-    def PriyomTimestamp(allowNone=False):
-        def priyom_timestamp(s):
-            if allowNone and (type(s) == str or type(s) == unicode):
-                if s.lower() == "none":
-                    return None
-            return datetime.strptime(s, Formatting.priyomdate)
-        return WrapFunction(priyom_timestamp, u"datetime according to the standard priyom date format (YYYY-MM-DDTHH:MM:SS)")
-    
-    @staticmethod
-    def AllowBoth(type1, type2):
-        def redefine_both_callable(s):
-            try:
-                return type1(s)
-            except:
-                return type2(s)
-        return WrapFunction(redefine_both_callable, u"{0} or {1}".format(unicode(type1), unicode(type2)))
-        
-    @staticmethod
-    def EmptyString():
-        def empty(s):
-            origs = s
-            if type(s) != str and type(s) != unicode:
-                s = unicode(s)
-            if len(s.lstrip().rstrip()) > 0:
-                raise ValueError(u"{0} is not empty".format(repr(origs)))
-            return u""
-        return WrapFunction(empty, u"empty")
-    
     def __init__(self, priyomInterface):
         self.priyomInterface = priyomInterface
         self.store = self.priyomInterface.store
+        self.serializer = XMLIntf.Serializer()
+        self.xhtmlSerializer = HTMLIntf.Serializer()
         self.currentFlags = None
         self.limit = None
         self.offset = None
         self.distinct = False
-        self.resetStore()
+        self.resetStore()        
         
     def setCurrentFlags(self, flags):
         self.currentFlags = frozenset(flags)
@@ -227,30 +146,28 @@ class WebModel(object):
             return int(TimeUtils.now())
         return self.varLastUpdate.Value
         
-    def domToXml(self, dom, encoding):
-        writer = Encoder(encoding)
-        dom.writexml(writer)
-        str = writer.getvalue()
-        writer.close()
-        return str
+    def etreeToFile(self, file, etree, encoding="UTF-8", defaultNamespace=XMLIntf.namespace, serializer=None):
+        if serializer is None:
+            serializer = self.serializer
+        serializer.serializeTree(file, etree, encoding=encoding, xmlHeader=True, defaultNamespace=defaultNamespace, headerNamespaces=True)
         
-    def exportToDom(self, obj, flags = None):
+    def exportToETree(self, obj, flags=None):
         if flags is None:
             flags = self.currentFlags
-        return self.priyomInterface.exportToDom(obj, flags)
+        return self.priyomInterface.exportToETree(obj, flags)
     
-    def exportToXml(self, obj, flags = None, encoding=None):
-        return self.domToXml(self.exportToDom(obj, flags), encoding)
+    def exportToFile(self, file, obj, flags = None, encoding=None, serializer=None):
+        self.etreeToFile(file, self.exportToETree(obj, flags=flags), encoding=encoding, serializer=serializer)
         
-    def exportListToDom(self, list, classType, flags = None):
+    def exportListToETree(self, list, classType, flags = None):
         if flags is None:
             flags = self.currentFlags
-        return self.priyomInterface.exportListToDom(list, classType, flags)
+        return self.priyomInterface.exportListToETree(list, classType, flags)
+    
+    def exportListToFile(self, file, list, classType, flags=None, encoding=None):
+        self.etreeToFile(file, self.exportListToETree(list, classType, flags), encoding=encoding)
         
-    def exportListToXml(self, list, classType, flags = None, encoding=None):
-        return self.domToXml(self.exportListToDom(list, classType, flags), encoding)
-        
-    def getExportDoc(self, rootNodeName):
+    def getExportTree(self, rootNodeName):
         return self.priyomInterface.createDocument(rootNodeName)
         
     def limitResults(self, resultSet):
@@ -291,23 +208,16 @@ class WebModel(object):
     def parseHTTPTimestamp(self, httpDate):
         return TimeUtils.toTimestamp(self.parseHTTPDate(httpDate))
         
-    def importFromXml(self, doc, context = None, flags = None):
-        context = self.priyomInterface.importTransaction(doc)
+    def importFromETree(self, tree, context = None, flags = None):
+        context = self.priyomInterface.importTransaction(tree)
         self.varLastUpdate.Value = unicode(int(TimeUtils.now()))
         self.store.commit()
         self.resetStore()
         return context
         
     def importFromXmlStr(self, data, context = None, flags = None):
-        doc = dom.parseString(data)
-        return self.importFromXml(doc, context, flags)
-        
-    def importFromJson(self, tree, context = None, flags = None):
-        raise Exception('JSON import not supported yet.')
-        
-    def importFromJsonStr(self, data, context = None, flags = None):
-        tree = json.loads(data)
-        return self.importFromJson(tree, context, flags)
+        tree = ElementTree.XML(data)
+        return self.importFromETree(tree, context, flags)
         
     def formatHTMLTitle(self, pageTitle, appNameSuffix = u""):
         return u"""{0}{1}{2}""".format(

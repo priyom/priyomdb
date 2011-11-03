@@ -1,0 +1,307 @@
+html {
+    margin: 0;
+    padding: 0;
+    font-family: "Cantarell", "DejaVu Sans", "Liberation Sans", sans;
+    font-size: 10pt;
+}
+
+body {
+    margin: 0;
+    margin-left: 12.5em;
+    padding: 0;
+    padding-left: 0.5em;
+    padding-right: 0.5em;
+}
+
+navbar {
+    display: block;
+    position: fixed;
+    left: 0px;
+    top: 0px;
+    width: 12.5em;
+    height: 100%;
+    background-color: hsl(120, 25%, 75%);
+    box-shadow: 1px 0px 1px rgba(68,68,68,0.6);
+}
+
+navbar section {
+    padding: 0.5em;
+}
+
+navbar h2 {
+    font-size: 110%;
+    font-weight: bold;
+    margin: 0;
+    margin-bottom: 0.5em;
+    text-shadow: rgba(255, 255, 255, 0.5) 1px 1px 1px;
+}
+
+navbar ul {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+}
+
+section.editor {
+    display: block;
+    padding: 0;
+    margin: 0;
+}
+
+section.editor header {
+    display: block;
+    margin-left: -1em;
+    margin-right: -0.5em;
+    margin-bottom: 0.5em;
+    padding: 0.25em;
+    padding-left: 1em;
+    background-color: hsl(240, 25%, 75%);
+    box-shadow: 0px 1px 1px rgba(68, 68, 68, 0.6); 
+}
+
+section.editor header h1 {
+    margin: 0;
+    padding: 0;
+}
+
+div.button-bar {
+    font-size: 85%;
+    float: right;
+    border-radius: 3px;
+    background-color: hsla(0, 0%, 25%, 0.25);
+    margin-left: 0.5em;
+    margin-right: 0.5em;
+}
+
+div.button-bar span {
+    border: 1px solid hsl(0, 0%, 25%);
+    border-right: none;
+    background-color: #f0f;
+    border-top-left-radius: inherit;
+    border-bottom-left-radius: inherit;
+    padding-right: 0.5em;
+    padding-left: 0.25em;
+    background-color: hsla(0, 0%, 25%, 0.25);
+}
+
+div.button-bar ul {
+    border: 1px solid hsl(0, 0%, 25%);
+    border-left: none;
+    border-top-right-radius: inherit;
+    border-bottom-right-radius: inherit;
+    display: inline;
+    margin: 0;
+    padding: 0;
+    list-style-type: none;
+}
+
+div.button-bar ul li {
+    display: inline;
+    margin: 0;
+    padding: 0;
+}
+
+div.button-bar ul li a {
+    display: inline-block;
+    padding-left: 0.2em;
+    padding-right: 0.2em;
+    text-align: center;
+    border-left: 1px solid hsl(0, 0%, 25%);
+}
+
+div.button-bar ul li a, div.button-bar ul li a:visited, div.button-bar ul li a:active {
+    text-decoration: none;
+    color: hsl(240, 80%, 50%);
+}
+
+div.button-bar ul li a:hover {
+    background-color: hsla(0, 0%, 25%, 0.25);
+}
+
+div.button-bar ul li a.current {
+    color: inherit;
+    font-weight: bold;
+}
+
+div.pagination ul li a {
+    width: 2em;
+    padding-left: 0.1em;
+    padding-right: 0.1em;
+}
+
+/* table.view {
+    width: 100%;
+}
+
+table.view thead th, table.view tbody td {
+    border: 1px solid hsla(0, 50%, 75%, 0.6);
+}
+
+table.view thead th {
+    background-color: hsl(0, 50%, 75%);
+}
+
+table.view tbody tr:hover td {
+    background-color: hsl(0, 25%, 80%);
+}*/
+
+col.buttons {
+    width: 4em;
+}
+
+table.editors {
+    border-collapse: collapse;
+    width: 100%;
+}
+
+table.editors th {
+    text-align: left;
+    width: 15em;
+    vertical-align: top;
+}
+
+table.editors th.group {
+    text-align: center;
+    width: auto;
+}
+
+table.editors th p {
+    font-weight: normal;
+    margin: 0;
+}
+
+table.editors th p.caption {
+    font-weight: bold;
+}
+
+table.editors th p.description {
+    font-size: 80%;
+}
+
+table.editors th, table.editors td {
+    border: 1px solid #000;
+}
+
+
+table.list {
+    width: 100%;
+    border-collapse: collapse;
+    border: 1px solid #000;
+    margin-top: 2px;
+    margin-bottom: 2px;
+}
+
+table.editors .fit {
+    margin-top: -2px;
+    margin-left: -2px;
+    margin-right: -2px;
+}
+
+table.list th,
+table.list th.buttons {
+    border: 1px solid #000;
+    padding-top: 0;
+    padding-bottom: 0;
+    font-weight: normal;
+    text-shadow: 0px 1px 0px #fff;
+    background: linear-gradient(top, rgba(0,0,0,0.2) 0%,rgba(0,0,0,0.05) 100%); /* W3C */
+    background: -moz-linear-gradient(top, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.05) 100%); /* FF3.6+ */    
+    background-color: hsla(0, 80%, 80%, 1.0);
+    font-size: 90%;
+    text-align: left;
+}
+
+table.list th:hover {
+    background-color: hsla(0, 100%, 90%, 1.0);
+}
+
+table.list th a, 
+table.list th a:hover, 
+table.list th a:visited, 
+table.list th a:active {
+    color: inherit;
+    display: block;
+    padding-top: 0.25em;
+    padding-bottom: 0.25em;
+    padding-left: 0.1em;
+    padding-right: 1.0em;
+    text-decoration: none;
+}
+
+table.list th div.order {
+    display: block;
+    float: right;
+    margin-right: -1em;
+    color: #111;
+}
+
+table.list th.buttons {
+    padding-right: 0.1em;
+    padding-left: 0.1em;
+}
+
+table.list td {
+    padding: 0.1em;
+    padding-top: 0.25em;
+    padding-bottom: 0.25em;
+    border: none;
+    border-left: 1px dotted hsl(0, 25%, 25%);
+}
+
+table.list td:first-child {
+    border: none;
+}
+
+table.list tr:hover td {
+    background-color: hsl(0, 25%, 80%);
+}
+
+th.buttons {
+    padding-left: 0.1em;
+    border: none;
+    /*text-align: right;*/
+}
+
+th.buttons:first-child,
+table.list th.buttons:first-child {
+    text-align: right;
+}
+
+table.list th.buttons:hover {
+    /*text-align: right;  */
+    background-color: hsla(0, 80%, 80%, 1.0);
+}
+
+td.buttons {
+    border: none;
+}
+
+td.buttons:first-child {
+    text-align: right;
+}
+
+td.buttons a {
+    padding-left: 0.2em;
+    padding-right: 0.2em;
+    margin-left: 0.2em;
+    margin-right: 0.2em;
+    border: 1px solid hsl(0, 0%, 25%);
+    background-color: hsl(0, 15%, 60%);
+    text-decoration: none;
+    color: #fff;
+    border-radius: 3px;
+}
+
+td.buttons a:hover {
+    border: 1px solid hsl(0, 25%, 25%);
+    background-color: hsl(0, 50%, 80%);
+    box-shadow: 0px 0px 1px #000;
+}
+
+td.buttons a:visited {
+    color: #fff;
+} 
+
+.hidden {
+    display: none;
+}

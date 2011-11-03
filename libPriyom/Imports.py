@@ -60,19 +60,19 @@ class ImportContext(object):
                 self.log(u"%s with id %d was requested, but its not in the database. Import will be skipped." % (unicode(cls), id))
         return obj
     
-    def importFromDomNode(self, node, cls):
-        idNode = XMLIntf.getChild(node, "ID")
+    def importFromETree(self, element, cls):
+        idNode = element.find(u"{{{0}}}ID".format(XMLIntf.importNamespace))
         if idNode is None:
-            if node.hasAttribute("id"):
-                return self.resolveId(int(node.getAttribute("id")))
+            if node.get(u"id") is not None:
+                return self.resolveId(int(node.get(u"id")))
             else:
                 self.log("Found id-less node: %s" % (node.tagName))
                 return None
-        id = int(idNode.childNodes[0].data)
+        id = int(idNode.text)
         obj = self._getForImport(cls, id)
         if obj is None:
             return obj
-        obj.fromDom(node, self)
+        obj.fromDom(element, self)
         if id < 0:
             self._addObject(cls, id, obj) # important: use id here, we want to be able to resolve negative ids later!
         self.store.flush()

@@ -46,22 +46,60 @@ class ForeignHelper:
         self.supplement = self.store.find(ForeignSupplement, 
             And((ForeignSupplement.LocalID == self.instance.ID),
             (ForeignSupplement.FieldName == self.fieldName))).any()
+            
+    def generateSupplement(self):
+        self.supplement = ForeignSupplement()
+        self.supplement.FieldName = self.fieldName
+        self.supplement.LocalID = self.instance.ID
+        self.store.add(self.supplement)
+    
+    @property
+    def Value(self):
         if self.supplement is None:
-            self.supplement = ForeignSupplement()
-            self.supplement.LocalID = self.instance.ID
-            self.supplement.FieldName = self.fieldName
-            self.store.add(self.supplement)
+            return None
+        else:
+            return self.supplement.ForeignText
+            
+    @Value.setter
+    def Value(self, value):
+        if self.supplement is None:
+            self.generateSupplement()
+        self.supplement.ForeignText = value
+        
+    @Value.deleter
+    def Value(self):
+        self.removeSupplement()
+        
+    @property
+    def LangCode(self):
+        if self.supplement is None:
+            return None
+        else:
+            return self.supplement.LangCode
+            
+    @LangCode.setter
+    def LangCode(self, value):
+        if self.supplement is None:
+            self.generateSupplement()
+        self.supplement.LangCode = value
+    
+    @LangCode.deleter
+    def LangCode(self):
+        self.removeSupplement()
         
     def hasForeign(self):
-        return (self.supplement.ForeignText is not None) and (self.supplement.ForeignText != "")
+        return self.supplement is not None and bool(self.supplement)
+    
+    def removeSupplement(self):
+        if self.supplement is None:
+            return
+        self.store.remove(self.supplement)
+        self.supplement = None
         
-    def toDom(self, parentNode, name):
+    def toDom(self, parentNode, name, attrib={}):
         if self.hasForeign():
-            doc = parentNode.ownerDocument
-            node = doc.createElementNS(XMLIntf.namespace, name)
-            node.appendChild(doc.createTextNode(self.supplement.ForeignText))
-            node.setAttribute("lang", self.supplement.LangCode)
-            parentNode.appendChild(node)
+            node = XMLIntf.SubElement(parentNode, name, attrib=attrib, lang=self.supplement.LangCode)
+            node.text = self.supplement.ForeignText
             return node
         else:
             return None

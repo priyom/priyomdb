@@ -33,19 +33,16 @@ from WebModel import WebModel
 import libPriyom
 from Resources import *
 from Resources.API import *
+from Resources.Submit import *
+from Resources.Admin import *
 from Selectors import *
 import libPriyom.Plots as Plots
 import libPriyom.PlotDataSources as PlotDataSources
 import os.path
+from cfg_priyomhttpd import application, response
+from Resources.Admin.UITree import virtualTables
+from Types import Typecasts
 
-def intOrNone(str):
-    if str.lower() == "none":
-        return None
-    else:
-        return int(str)
-    
-
-from cfg_priyomhttpd import application, response, errors
 #from Resources.API.FindStations import FindStations
 #from Resources.API.FindBroadcasts import FindBroadcasts
 #from Resources.API.FindTransmissions import FindTransmissions
@@ -55,6 +52,9 @@ def get_site_map(priyomInterface):
     rootPath = application["root"]
     
     model = WebModel(priyomInterface)
+    
+    for table in virtualTables.itervalues():
+        table.Model = model
     
     apiMap = MapSelector("calls", {
         "getUpcomingBroadcasts": UpcomingBroadcastsAPI(model),
@@ -78,21 +78,21 @@ def get_site_map(priyomInterface):
                     PlotDataSources.PlotDataWeekHourPunch(model.store), 
                     Plots.PlotPunchCard(), 
                     [
-                        ("station", WebModel.validStation(model.store), "station")
+                        ("station", Typecasts.ValidStation(model.store), "station")
                     ],
                     u"punchcard-hw"),
                 "hourMonthPunchCard": PlotAPI(model, 
                     PlotDataSources.PlotDataMonthHourPunch(model.store), 
                     Plots.PlotPunchCard(), 
                     [
-                        ("station", WebModel.validStation(model.store), "station")
+                        ("station", Typecasts.ValidStation(model.store), "station")
                     ],
                     u"punchcard-mw"),
                 "hourWeekColourCard": PlotAPI(model, 
                     PlotDataSources.PlotDataWeekHourPunch(model.store), 
                     Plots.PlotColourCard(), 
                     [
-                        ("station", WebModel.validStation(model.store), "station")
+                        ("station", Typecasts.ValidStation(model.store), "station")
                     ],
                     u"colourcard-hw",
                     subdivision=32,
@@ -102,7 +102,7 @@ def get_site_map(priyomInterface):
                     PlotDataSources.PlotDataMonthHourPunch(model.store), 
                     Plots.PlotColourCard(), 
                     [
-                        ("station", WebModel.validStation(model.store), "station")
+                        ("station", Typecasts.ValidStation(model.store), "station")
                     ],
                     u"colourcard-mw",
                     subdivision=32,
@@ -113,8 +113,8 @@ def get_site_map(priyomInterface):
                 PlotDataSources.PlotDataUptime(model.store),
                 Plots.PlotStackedGraph(),
                 [
-                    ("station", WebModel.validStation(model.store), "station", None),
-                    ("years", WebModel.rangeChecked(int, 1, 10), "years", 5)
+                    ("station", Typecasts.ValidStation(model.store), "station", None),
+                    ("years", Typecasts.RangeCheck(int, 1, 10), "years", 5)
                 ],
                 u"uptime",
                 years=5)
@@ -130,21 +130,26 @@ def get_site_map(priyomInterface):
         "schedule": IDResource(model, libPriyom.Schedule),
         "submit": AuthorizationSelector(MapSelector(u"submit", {
             "log": SubmitLogResource(model),
-            "": None
+            "event": SubmitEventResource(model)
         }), ["log", "log-moderated"]),
+        "admin": AuthorizationSelector(MapSelector(u"admin", {
+            "": AdminHomeResource(model),
+            "tables":  AuthorizationSelector(AdminTablesResource(model), ["admin"]),
+        }), ["moderate", "admin"]),
         "call": apiMap,
         "doc": DocumentationSelector(apiMap),
         "": HomeResource(model),
         "css": MapResource({
             "home.css": FileResource(os.path.join(rootPath, "www-files/css/home.css"), ContentType("text/css", "utf-8")),
             "error.css": FileResource(os.path.join(rootPath, "www-files/css/error.css"), ContentType("text/css", "utf-8")),
-            "submit.css": FileResource(os.path.join(rootPath, "www-files/css/submit.css"), ContentType("text/css", "utf-8"))
+            "submit.css": FileResource(os.path.join(rootPath, "www-files/css/submit.css"), ContentType("text/css", "utf-8")),
+            "admin.css": FileResource(os.path.join(rootPath, "www-files/css/admin.css"), ContentType("text/css", "utf-8"))
         }),
         "js": MapResource({
             "jquery.js": FileResource(os.path.join(rootPath, "www-files/js/jquery.js"), ContentType("text/javascript", "utf-8"))
         })
     })
-    apiRoot["submit"].resource[""] = apiRoot["submit"].resource
+    apiRoot["submit"][""] = apiRoot["submit"]
     
     return ContinueSelector(
         CompressionSelector(

@@ -1,5 +1,5 @@
 """
-File name: Modulation.py
+File name: __init__.py
 This file is part of: priyomdb
 
 LICENSE
@@ -24,13 +24,5 @@ For feedback and questions about priyomdb please e-mail one of the
 authors:
     Jonas Wielicki <j.wielicki@sotecware.net>
 """
-from storm.locals import *
-import XMLIntf
-
-class Modulation(object):
-    __storm_table__ = "modulations"
-    ID = Int(primary = True)
-    Name = Unicode()
-    
-    def toDom(self, parentNode):
-        XMLIntf.appendTextElement(parentNode, u"modulation", self.Name)
+from SubmitLog import SubmitLogResource
+from SubmitEvent import SubmitEventResource

@@ -27,7 +27,6 @@ authors:
 from WebStack.Generic import ContentType
 from libPriyom import *
 from API import API, CallSyntax, Argument
-import xml.dom.minidom as dom
 
 class DupeRecord(object):
     def __init__(self, doc, node):
@@ -40,20 +39,15 @@ class DupeRecord(object):
             return
         self.items.append(transmission.ID)
         
-        node = self.doc.createElementNS(XMLIntf.namespace, "duplicate-entry")
+        node = XMLIntf.SubElement(self.node, u"duplicate-entry")
         broadcast.toDom(node)
         transmission.toDom(node)
-        contents = XMLIntf.getChild(XMLIntf.getChild(node, "transmission"), "Contents")
+        
+        
+        contents = node.find(u"{{{0}}}transmission".format(XMLIntf.namespace)).find(u"{{{0}}}Contents".format(XMLIntf.namespace))
         index = transmission.blocks.index(item)
         
-        for group in filter(lambda node: node.nodeType == dom.Node.ELEMENT_NODE and node.tagName == "group", contents.childNodes):
-            if index == 0:
-                group.setAttribute("highlighted", "true")
-                break
-            index -= 1
-        
-        self.node.appendChild(node)
-        
+        contents[index].set(u"highlighted", u"true")
 
 class DuplicatedTransmissionItemsAPI(API):
     title = u"getDuplicatedTransmissionItems"
@@ -96,8 +90,8 @@ class DuplicatedTransmissionItemsAPI(API):
         if self.head:
             return
         
-        doc = self.model.getExportDoc("duplicated-transmissions")
-        rootNode = doc.documentElement
+        doc = self.model.getExportTree("duplicated-transmissions")
+        rootNode = doc.getroot()
         
         dupeDict = {}
         
@@ -113,12 +107,11 @@ class DuplicatedTransmissionItemsAPI(API):
                 dupeDict[key] = rec
                 continue
             
-            node = doc.createElementNS(XMLIntf.namespace, "duplicated-transmission")
+            node = XMLIntf.SubElement(rootNode, u"duplicated-transmission")
             #node.setAttribute("key", key)
             rec = DupeRecord(doc, node)
             rec.add(bc1, tx1, txItem1)
             rec.add(bc2, tx2, txItem2)
             dupeDict[key] = rec
-            rootNode.appendChild(node)
         
-        print >>self.out, self.model.domToXml(doc, self.encoding)
+        self.model.etreeToFile(self.out, doc, encoding=self.encoding)

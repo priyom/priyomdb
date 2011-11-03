@@ -24,79 +24,106 @@ For feedback and questions about priyomdb please e-mail one of the
 authors:
     Jonas Wielicki <j.wielicki@sotecware.net>
 """
-import xml.dom.minidom as dom
+import xml.etree.ElementTree as ElementTree
 import datetime
 import Formatting
 from Helpers import TimeUtils
+import ElementTreeHelper.Serializer
 
-namespace = "http://priyom.org/station-db"
+__all__ = [
+    'checkAndStripNamespace', 
+    'Serializer', 
+    'SubElement', 
+    'appendDateElement', 
+    'appendTextElement', 
+    'appendTextElements', 
+    'XMLStorm', 
+    'NoneHandlers', 
+    'namespace', 
+    'importNamespace', 
+    'debugXml',
+    'applyNamespace',
+    'xhtmlNamespace'
+]
+
+namespace = u"http://api.priyom.org/priyomdb"
+importNamespace = u"http://api.priyom.org/priyomdb/import"
+xhtmlNamespace = u"http://www.w3.org/1999/xhtml"
 debugXml = False
+
+_serializer = ElementTreeHelper.Serializer.Serializer(useNamespaces=False)
+_serializer.registerNamespacePrefix(u"priyom", namespace)
+_serializer.registerNamespacePrefix(u"priyom-import", importNamespace)
+_serializer.registerNamespacePrefix(u"xhtml", xhtmlNamespace)
+
+def Serializer():
+    global _serializer
+    return _serializer
+
+def checkAndStripNamespace(element, namespace=importNamespace, context = None):
+    part = element.tag.partition("}")
+    if len(part[1]) == 0:
+        if context is not None:
+            context.log("Encountered non-namespaced element: {0}. Expected namespace: {1}".format(element.tag, namespace))
+        return None
+    if part[0][1:] != namespace:
+        if context is not None:
+            context.log("Unexpected namespace {0} on tag {2}. Expected namespace: {1}".format(part[0][1:], namespace, part[2]))
+        return None
+    return part[2]
 
 class NoneHandlers:
     @staticmethod
     def asTag(name):
         return ""
         
+
 class XMLStorm(object):
-    def loadProperty(self, tagName, data, element, context):
+    def loadProperty(self, tag, element, context):
         if debugXml:
             context.log("Failed to map property: %s" % (tagName))
             # print()
-        self.loadDomElement(element, context)
+        self.loadElement(tag, element, context)
         
-    def loadDomElement(self, element, context):
+    def loadElement(self, tag, element, context):
         pass
     
-    def loadProperties(self, node, context):
-        for child in node.childNodes:
-            if child.nodeType == dom.Node.ELEMENT_NODE:
-                if len(child.childNodes) == 1 and child.childNodes[0].nodeType == dom.Node.TEXT_NODE:
-                    if child.tagName in self.xmlMapping:
-                        mapped = self.xmlMapping[child.tagName]
-                        if type(mapped) == tuple:
-                            setattr(self, mapped[0], mapped[1](child.childNodes[0].data))
-                        else:
-                            setattr(self, mapped, child.childNodes[0].data)
+    def loadProperties(self, parentElement, context):
+        for element in parentElement:
+            tag = checkAndStripNamespace(node, importNamespace, context)
+            if tag is None:
+                continue
+            if len(child) > 0:
+                self.loadElement(tag, child, context)
+            else:
+                mapping = self.xmlMapping.get(tag, None)
+                if mapping is not None:
+                    if type(mapping) == tuple:
+                        setattr(self, mapped[0], mapped[1](child.text))
                     else:
-                        self.loadProperty(child.tagName, child.childNodes[0].data, child, context)
-                elif len(child.childNodes) == 0:
-                    if child.tagName in self.xmlMapping:
-                        setattr(self, self.xmlMapping[child.tagName], u"")
-                    else:
-                        self.loadDomElement(child, context)
+                        setattr(self, mapped, child.text)
                 else:
-                    self.loadDomElement(child, context)
+                    self.loadProperty(tag, child, context)
                     
     def fromDom(self, node, context):
         self.loadProperties(node, context)
-    
-def buildTextElementNS(doc, name, value, namespace):
-    node = doc.createElementNS(namespace, name)
-    if len(value) > 0:
-        node.appendChild(doc.createTextNode(value))
-    return node
-    
-def buildTextElement(doc, name, value):
-    node = doc.createElement(name)
-    if len(value) > 0:
-        node.appendChild(doc.createTextNode(value))
-    return node
+        
+def SubElement(parent, nsLessTagName, attrib={}, xmlns=namespace, **extra):
+    return ElementTree.SubElement(parent, u"{{{0}}}{1}".format(xmlns, nsLessTagName), attrib=attrib, **extra)
 
-def appendTextElement(parentNode, name, value, useNamespace = namespace, doNotAppend = False):
+def appendTextElement(parentNode, name, value, useNamespace=namespace, attrib={}, **extra):
     node = None
     if useNamespace is not None:
-        node = buildTextElementNS(parentNode.ownerDocument, name, value, useNamespace)
+        node = SubElement(parentNode, name, xmlns=useNamespace, attrib=attrib, **extra)
     else:
-        node = buildTextElement(parentNode.ownerDocument, name, value)
-    if not doNotAppend:
-        parentNode.appendChild(node)
+        node = ElementTree.SubElement(parentNode, name, attrib=attrib, **extra)
+    node.text = value
     return node
 
-def appendTextElements(parentNode, data, useNamespace = namespace, noneHandler = None):
-    doc = parentNode.ownerDocument
-    builder = buildTextElement
-    if useNamespace is not None:
-        builder = lambda doc, name, value: buildTextElementNS(doc, name, value, useNamespace)
+def appendTextElements(parentNode, data, xmlns=namespace, attrib={}, noneHandler=None, **extra):
+    builder = ElementTree.SubElement
+    if xmlns is not None:
+        builder = lambda parent, tag, attrib, **extra: SubElement(parent, tag, attrib=attrib, xmlns=xmlns, **extra)
     for (name, value) in data:
         if value is None:
             if noneHandler is not None:
@@ -105,26 +132,16 @@ def appendTextElements(parentNode, data, useNamespace = namespace, noneHandler =
                     continue
             else:
                 continue
-        parentNode.appendChild(builder(doc, name, value))
+        builder(parentNode, name, attrib, **extra).text = unicode(value)
 
-def appendDateElement(parentNode, name, value, useNamespace = namespace, doNotAppend = False):
+def appendDateElement(parentNode, name, value, useNamespace = namespace):
     date = TimeUtils.fromTimestamp(value)
-    node = appendTextElement(parentNode, name, date.strftime(Formatting.priyomdate), useNamespace, True)
-    node.setAttribute("unix", unicode(value))
-    if not doNotAppend:
-        parentNode.appendChild(node)
+    node = appendTextElement(parentNode, name, date.strftime(Formatting.priyomdate), useNamespace = useNamespace)
+    node.set(u"unix", unicode(value))
     return node
-    
-def getChild(node, tagName):
-    for child in node.childNodes:
-        if child.nodeType == dom.Node.ELEMENT_NODE:
-            if child.tagName == tagName:
-                return child
-    return None
 
-def getText(node):
-    s = ""
-    for child in node.childNodes:
-        if child.nodeType == dom.Node.TEXT_NODE:
-            s = s + child.data
-    return s
+def applyNamespace(subtree, namespace):
+    for element in subtree.iter():
+        tag = element.tag.partition(u"}")
+        if len(tag[1]) == 0:
+            element.tag = u"{{{0}}}{1}".format(namespace, tag[0])

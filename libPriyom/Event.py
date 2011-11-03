@@ -1,3 +1,4 @@
+# encoding=utf-8
 """
 File name: Event.py
 This file is part of: priyomdb
@@ -27,6 +28,9 @@ authors:
 from storm.locals import *
 from Station import Station
 from PriyomBase import PriyomBase
+import Formatting
+import XMLIntf
+import Helpers.TimeUtils as TimeUtils
 
 class EventClass(object):
     __storm_table__ = "eventClasses"
@@ -34,6 +38,19 @@ class EventClass(object):
     ID = Int(primary=True)
     Title = Unicode()
     StateChanging = Bool()
+    
+    def toTree(self, parent):
+        eventClass = XMLIntf.SubElement(parent, u"event-class")
+        XMLIntf.appendTextElements(eventClass, 
+            (
+                (u"ID", self.ID),
+                (u"Title", self.Title)
+            )
+        )
+        return eventClass
+        
+    def __unicode__(self):
+        return u"{0}{1}".format(self.Title, u" (state changing)" if self.StateChanging else u"")
     
 class Event(PriyomBase):
     __storm_table__ = "events"
@@ -48,3 +65,28 @@ class Event(PriyomBase):
     Description = Unicode()
     StartTime = Int()
     EndTime = Int()
+    
+    def toTree(self, parent):
+        event = XMLIntf.SubElement(parent, u"event")
+        XMLIntf.appendTextElements(event,
+            (
+                (u"ID", self.ID),
+                (u"StationID", self.StationID),
+                (u"Description", self.Description)
+            )
+        )
+        if self.EventClass is not None:
+            self.EventClass.toTree(event)
+        else:
+            XMLIntf.SubElement(parent, u"raw-event")
+        XMLIntf.appendDateElement(event, u"StartTime", self.StartTime)
+        if self.EndTime is not None:
+            XMLIntf.appendDateElement(event, u"EndTime", self.EndTime)
+        return event
+        
+    def __unicode__(self):
+        return u"{1} event \"{0}\" at {2}".format(
+            self.Description,
+            unicode(self.EventClass) if self.EventClass is not None else u"raw",
+            TimeUtils.fromTimestamp(self.StartTime).strftime(Formatting.priyomdate)
+        )
