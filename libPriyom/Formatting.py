@@ -25,10 +25,9 @@ authors:
     Jonas Wielicki <j.wielicki@sotecware.net>
 """
 priyomdate = "%Y-%m-%dT%H:%M:%S"
-from Types import Typecasts, WrapFunction
-from Helpers import TimeUtils
+from libPriyom.Helpers import TimeUtils
 
-class Formatter(object):
+class Formatters(object):
     @classmethod
     def catchNone(cls, othFormatter, noneValue=u"None"):
         def catch_none(value):

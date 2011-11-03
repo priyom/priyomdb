@@ -104,53 +104,49 @@ class AdminTablesResource(HTMLResource):
         }).text = u"Act."
         HTMLIntf.SubElement(colgroup, u"col", span="1").set("style", "width: 8em;")
         
-        
         for column in virtualTable.columns:
             th = HTMLIntf.SubElement(thead, u"th")
+            a = HTMLIntf.SubElement(th, u"a")
+            order = HTMLIntf.SubElement(a, u"div", attrib={
+                u"class": u"order"
+            })
+            order.tail = column.title
+            
+            if orderColumn is not column:
+                a.set(u"href", self.buildQueryOnSameTable(orderColumn=column.name, orderDirection=column.defaultSort))
+            else:
+                if orderDirection == u"ASC":
+                    a.set(u"href", self.buildQueryOnSameTable(orderColumn=column.name, orderDirection=u"DESC"))
+                    order.text = u"▲"
+                else:
+                    a.set(u"href", self.buildQueryOnSameTable(orderColumn=column.name, orderDirection=u"ASC"))
+                    order.text = u"▼"
+            
             col = HTMLIntf.SubElement(colgroup, u"col", span="1")
             if column.width is not None:
                 col.set(u"style", u"width: {0};".format(column.width))
-            a = HTMLIntf.SubElement(th, u"a")
-            a.text = column.title
-            columnName = column.stormColumn.name
-            if orderColumn is not column:
-                a.set(u"href", self.buildQueryOnSameTable(orderColumn=columnName, orderDirection=column.defaultSort))
-            else:
-                divOrder = HTMLIntf.Element(u"div", attrib={
-                    u"class": "order"
-                })
-                #th.insert(0, divOrder)
-                divOrder.tail = a.text
-                a.text = u""
-                a.append(divOrder)
-                if orderDirection == u"ASC":
-                    a.set(u"href", self.buildQueryOnSameTable(orderColumn=columnName, orderDirection=u"DESC"))
-                    divOrder.text = u"▲"
-                else:
-                    a.set(u"href", self.buildQueryOnSameTable(orderColumn=columnName, orderDirection=u"ASC"))
-                    divOrder.text = u"▼"
-                    
+            
+        
         tbody = HTMLIntf.SubElement(table, u"tbody")
         
-        resultSet = virtualTable.select()
+        resultSet = virtualTable.select(orderColumn, orderDirection)
         amount = resultSet.count()
-        resultSet.order_by({
-            u"ASC": Asc,
-            u"DESC": Desc
-        }[orderDirection](orderColumn.stormColumn))
         resultSet.config(offset=offset, limit=limit)
-        # TODO: ordering
-        # TODO: proper limiting!
         
         for obj in resultSet:
+            if not isinstance(obj, tuple):
+                id = obj.ID
+                obj = (obj,)
+            else:
+                id = obj[0].ID
             tr = HTMLIntf.SubElement(tbody, u"tr")
             actions = HTMLIntf.SubElement(tr, u"td", attrib={
                 u"class": u"buttons"
             })
-            HTMLIntf.SubElement(actions, u"a", href=self.editItemHref(obj.ID), title=u"Edit / View this row in detail").text = u"E"
-            HTMLIntf.SubElement(actions, u"a", href=self.buildQueryOnSameTable(orderColumn=orderColumn, orderDirection=orderDirection, touch=obj.ID), title=u"Touch this object (set the Modified timestamp to the current time).").text = u"T"
+            HTMLIntf.SubElement(actions, u"a", href=self.editItemHref(id), title=u"Edit / View this row in detail").text = u"E"
+            HTMLIntf.SubElement(actions, u"a", href=self.buildQueryOnSameTable(orderColumn=orderColumn, orderDirection=orderDirection, touch=id), title=u"Touch this object (set the Modified timestamp to the current time).").text = u"T"
             for column in virtualTable.columns:
-                HTMLIntf.SubElement(tr, u"td").text = column.formatter(getattr(obj, column.stormColumn.name))
+                HTMLIntf.SubElement(tr, u"td").text = column.getFormattedValue(obj)
         
         #amount, = list(self.store.execute("SELECT SQL_FOUND_ROWS()"))[0]
         pages = int(amount/limit)
@@ -158,7 +154,7 @@ class AdminTablesResource(HTMLResource):
             pages += 1
         
         for pageNumber in xrange(1,pages+1):
-            a = HTMLIntf.SubElement(HTMLIntf.SubElement(pagesUl, u"li"), u"a", href=self.buildQueryOnSameTable(orderColumn=orderColumn.stormColumn.name, orderDirection=orderDirection, offset=(pageNumber-1)*limit))
+            a = HTMLIntf.SubElement(HTMLIntf.SubElement(pagesUl, u"li"), u"a", href=self.buildQueryOnSameTable(orderColumn=orderColumn.name, orderDirection=orderDirection, offset=(pageNumber-1)*limit))
             a.text = unicode(pageNumber)
             if pageNumber == (offset/limit)+1:
                 a.set(u"class", u"current")

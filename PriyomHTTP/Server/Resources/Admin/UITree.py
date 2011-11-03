@@ -26,7 +26,7 @@ authors:
 """
 from storm.locals import *
 from libPriyom import *
-from Components import Input, TextArea, Select, SelectStormObject, VirtualTable, Table, TableGroup, IDTableGroup, Timestamp, CheckBox, ForeignInput, TransmissionContents, BroadcastFrequencies, Column
+from Components import Input, TextArea, Select, SelectStormObject, VirtualTable, Table, TableGroup, IDTableGroup, Timestamp, CheckBox, ForeignInput, TransmissionContents, BroadcastFrequencies, StormColumn, ReferenceColumn, IDColumn, TimestampColumn, CreatedColumn, ModifiedColumn
 
 
 """u"schedules": VirtualTable(u"Schedule database", Schedule, 
@@ -116,12 +116,12 @@ virtualTables = {
         ),
         description=u"Shortwave station registry",
         columns=(
-            Column.ID(Station),
-            Column.Created(Station),
-            Column.Modified(Station),
-            Column(Station.EnigmaIdentifier, "Enigma ID", width="8em"),
-            Column(Station.PriyomIdentifier, "Priyom ID", width="8em"),
-            Column(Station.Nickname, "Nickname")
+            IDColumn(Station),
+            CreatedColumn(Station),
+            ModifiedColumn(Station),
+            StormColumn(u"Enigma ID", Station.EnigmaIdentifier, width="8em"),
+            StormColumn(u"Priyom ID", Station.PriyomIdentifier, width="8em"),
+            StormColumn(u"Nickname", Station.Nickname)
         )
         #relatedTables=(
         #    ReferencingVirtualTable(u"broadcasts", match=Broadcast.Station),
@@ -183,12 +183,17 @@ virtualTables = {
         ),
         description=u"Broadcast database",
         columns=(
-            Column.ID(Broadcast),
-            Column.Created(Broadcast),
-            Column.Modified(Broadcast),
-            Column(Broadcast.Type, u"Type"),
-            Column.Timestamp(Broadcast.BroadcastStart, u"Start time"),
-            Column.Timestamp(Broadcast.BroadcastEnd, u"End time")
+            IDColumn(Broadcast),
+            CreatedColumn(Broadcast),
+            ModifiedColumn(Broadcast),
+            TimestampColumn(u"Start time", Broadcast.BroadcastStart),
+            TimestampColumn(u"End time", Broadcast.BroadcastEnd),
+            StormColumn(u"Type", Broadcast.Type),
+            ReferenceColumn(u"Station", Broadcast.Station, Station, u"Station", sortingColumns=(
+                Station.EnigmaIdentifier,
+                Station.PriyomIdentifier,
+                Station.Nickname
+            )),
         )
         #relatedTables=(
         #    ReferenedVirtualTable(u"stations", match=Broadcast.Station),
@@ -233,11 +238,11 @@ virtualTables = {
         ),
         description=u"Transmission database",
         columns=(
-            Column.ID(Transmission),
-            Column.Created(Transmission),
-            Column.Modified(Transmission),
-            Column.Timestamp(Transmission.Timestamp, u"Timestamp"),
-            Column(Transmission.Callsign, u"Callsign")
+            IDColumn(Transmission),
+            CreatedColumn(Transmission),
+            ModifiedColumn(Transmission),
+            TimestampColumn(u"Timestamp", Transmission.Timestamp),
+            StormColumn(u"Callsign", Transmission.Callsign)
         )
     )
 }
