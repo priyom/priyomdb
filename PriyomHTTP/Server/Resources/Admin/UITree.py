@@ -26,7 +26,7 @@ authors:
 """
 from storm.locals import *
 from libPriyom import *
-from Components import Input, TextArea, Select, SelectStormObject, VirtualTable, Table, TableGroup, IDTableGroup, Timestamp, CheckBox, ForeignInput, TransmissionContents, BroadcastFrequencies
+from Components import Input, TextArea, Select, SelectStormObject, VirtualTable, Table, TableGroup, IDTableGroup, Timestamp, CheckBox, ForeignInput, TransmissionContents, BroadcastFrequencies, Column
 
 
 """u"schedules": VirtualTable(u"Schedule database", Schedule, 
@@ -115,7 +115,14 @@ virtualTables = {
             )
         ),
         description=u"Shortwave station registry",
-        columns=(Station.ID, Station.Created, Station.Modified, Station.EnigmaIdentifier, Station.PriyomIdentifier, Station.Nickname)
+        columns=(
+            Column.ID(Station),
+            Column.Created(Station),
+            Column.Modified(Station),
+            Column(Station.EnigmaIdentifier, "Enigma ID"),
+            Column(Station.PriyomIdentifier, "Priyom ID"),
+            Column(Station.Nickname, "Nickname")
+        )
         #relatedTables=(
         #    ReferencingVirtualTable(u"broadcasts", match=Broadcast.Station),
         #    ReferencedVirtualTable(u"schedules", match=Station.Schedule)
@@ -175,7 +182,14 @@ virtualTables = {
             )
         ),
         description=u"Broadcast database",
-        columns=(Broadcast.ID, Broadcast.Created, Broadcast.Modified, Broadcast.Type, Broadcast.BroadcastStart, Broadcast.BroadcastEnd)
+        columns=(
+            Column.ID(Broadcast),
+            Column.Created(Broadcast),
+            Column.Modified(Broadcast),
+            Column(Broadcast.Type, u"Type"),
+            Column.Timestamp(Broadcast.BroadcastStart, u"Start time"),
+            Column.Timestamp(Broadcast.BroadcastEnd, u"End time")
+        )
         #relatedTables=(
         #    ReferenedVirtualTable(u"stations", match=Broadcast.Station),
         #    ReferencingVirtualTable(u"transmission", match=Transmission.Broadcast)
@@ -218,6 +232,12 @@ virtualTables = {
             )
         ),
         description=u"Transmission database",
-        columns=(Transmission.ID, Transmission.Created, Transmission.Modified, Transmission.Timestamp, Transmission.Callsign)
+        columns=(
+            Column.ID(Transmission),
+            Column.Created(Transmission),
+            Column.Modified(Transmission),
+            Column.Timestamp(Transmission.Timestamp, u"Timestamp"),
+            Column(Transmission.Callsign, u"Callsign")
+        )
     )
 }

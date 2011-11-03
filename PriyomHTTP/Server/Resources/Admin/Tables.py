@@ -70,12 +70,9 @@ class AdminTablesResource(HTMLResource):
             
     def renderTable(self, parent, virtualTable, h1):
         # just show the table
-        columnNames = [column.name for column in virtualTable.columns]
         h1.text = virtualTable.description
         
-        orderColumn = self.getQueryValue(u"orderColumn", unicode, default=columnNames[0])
-        if not orderColumn in columnNames:
-            orderColumn = columnNames[0]                
+        orderColumn = self.getQueryValue(u"orderColumn", virtualTable.columnMap.get, default=virtualTable.columns[0])
         orderDirection = self.getQueryValue(u"orderDirection", unicode, default=u"ASC")
         if not orderDirection in (u"ASC", u"DESC"):
             orderDirection = u"ASC"
@@ -105,16 +102,17 @@ class AdminTablesResource(HTMLResource):
             u"class": u"buttons"
         }).text = u"Act."
         
-        for column in columnNames:
+        for column in virtualTable.columns:
             a = HTMLIntf.SubElement(HTMLIntf.SubElement(thead, u"th"), u"a")
-            a.text = column
-            if orderColumn != column:
-                a.set(u"href", self.buildQueryOnSameTable(orderColumn=column, orderDirection=u"ASC"))
+            a.text = column.title
+            columnName = column.stormColumn.name
+            if orderColumn is not column:
+                a.set(u"href", self.buildQueryOnSameTable(orderColumn=columnName, orderDirection=u"ASC"))
             else:
                 if orderDirection == u"ASC":
-                    a.set(u"href", self.buildQueryOnSameTable(orderColumn=column, orderDirection=u"DESC"))
+                    a.set(u"href", self.buildQueryOnSameTable(orderColumn=columnName, orderDirection=u"DESC"))
                 else:
-                    a.set(u"href", self.buildQueryOnSameTable(orderColumn=column, orderDirection=u"ASC"))
+                    a.set(u"href", self.buildQueryOnSameTable(orderColumn=columnName, orderDirection=u"ASC"))
                     
         tbody = HTMLIntf.SubElement(table, u"tbody")
         
@@ -123,7 +121,7 @@ class AdminTablesResource(HTMLResource):
         resultSet.order_by({
             u"ASC": Asc,
             u"DESC": Desc
-        }[orderDirection](getattr(virtualTable.cls, orderColumn)))
+        }[orderDirection](orderColumn.stormColumn))
         resultSet.config(offset=offset, limit=limit)
         # TODO: ordering
         # TODO: proper limiting!
@@ -135,8 +133,8 @@ class AdminTablesResource(HTMLResource):
             })
             HTMLIntf.SubElement(actions, u"a", href=self.editItemHref(obj.ID), title=u"Edit / View this row in detail").text = u"E"
             HTMLIntf.SubElement(actions, u"a", href=self.buildQueryOnSameTable(orderColumn=orderColumn, orderDirection=orderDirection, touch=obj.ID), title=u"Touch this object (set the Modified timestamp to the current time).").text = u"T"
-            for column in columnNames:
-                HTMLIntf.SubElement(tr, u"td").text = getattr(obj, column)
+            for column in virtualTable.columns:
+                HTMLIntf.SubElement(tr, u"td").text = column.formatter(getattr(obj, column.stormColumn.name))
         
         #amount, = list(self.store.execute("SELECT SQL_FOUND_ROWS()"))[0]
         pages = int(amount/limit)

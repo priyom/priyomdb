@@ -37,6 +37,44 @@ from datetime import datetime, timedelta
 from storm.locals import *
 from libPriyom.TransmissionParser import NodeError
 
+class Column(object):
+    @staticmethod
+    def fmtTimestamp(timestamp):
+        return TimeUtils.fromTimestamp(timestamp).strftime(Formatting.priyomdate)
+    
+    @staticmethod
+    def fmtNone(othFormatter, noneValue=u"None"):
+        def fmt_none(value):
+            if value is None:
+                return noneValue
+            else:
+                return othFormatter(value)
+        return fmt_none
+    
+    def __init__(self, stormColumn, title, formatter=None):
+        if formatter is None:
+            formatter = self.fmtNone(unicode)
+        self.stormColumn = stormColumn
+        self.title = title
+        self.formatter = formatter
+    
+    @classmethod
+    def ID(cls, stormClass):
+        return cls(getattr(stormClass, "ID"), "ID")
+        
+    @classmethod
+    def Timestamp(cls, stormColumn, title):
+        return cls(stormColumn, title, cls.fmtTimestamp)
+    
+    @classmethod
+    def Created(cls, stormClass):
+        return cls.Timestamp(getattr(stormClass, "Created"), "Created")
+    
+    @classmethod
+    def Modified(cls, stormClass):
+        return cls.Timestamp(getattr(stormClass, "Modified"), "Modified")
+    
+
 class Component(object):
     def __init__(self, model=None, **kwargs):
         #super(Component, self).__init__(**kwargs)
@@ -554,11 +592,9 @@ class VirtualTable(ParentComponent):
         if len(self.columns) == 0:
             raise ValueError(u"Must have a list of columns")
         
-        if type(self.columns[0]) == unicode or type(self.columns[0]) == str:
-            self.columns = tuple((getattr(self.cls, column) for column in self.columns))
-        else:
-            self.columns = tuple(self.columns)
-        
+        self.stormColumns = tuple(column.stormColumn for column in self.columns)
+        self.columns = tuple(self.columns)
+        self.columnMap = dict(((column.stormColumn.name, column) for column in self.columns))
         super(VirtualTable, self).__init__(None, *args, **kwargs)
     
     #def toTree(self, parent):
