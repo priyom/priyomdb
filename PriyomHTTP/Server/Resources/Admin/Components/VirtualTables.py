@@ -32,7 +32,7 @@ from storm.locals import *
 from storm.expr import *
 import itertools
 
-import libPriyom.Formatting import Formatting
+import libPriyom.Formatting as Formatting
 from PriyomHTTP.Server.Resources.Admin.Components.Base import ParentComponent
 
 Sortable = 1

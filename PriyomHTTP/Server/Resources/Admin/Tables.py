@@ -31,7 +31,7 @@ import urllib
 
 import PriyomHTTP.Server.HTMLIntf as HTMLIntf
 from PriyomHTTP.Server.Resources.HTMLResource import HTMLResource
-import PriyomHTTP.Server.Resources.Admin.UITree as UITree
+import UITree as UITree
 from PriyomHTTP.Server.Resources.Admin.Components import Sortable, Filterable
 from Types import Typecasts
 
