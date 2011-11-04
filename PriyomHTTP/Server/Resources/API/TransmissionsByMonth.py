@@ -25,10 +25,9 @@ authors:
     Jonas Wielicki <j.wielicki@sotecware.net>
 """
 from WebStack.Generic import ContentType
+
 from libPriyom import *
-from API import API, CallSyntax, Argument
-import time
-from datetime import datetime, timedelta
+from PriyomHTTP.Server.Resources.API.API import API, CallSyntax, Argument
 
 class TransmissionsByMonthAPI(API):
     title = u"getTransmissionsByMonth"

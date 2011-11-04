@@ -24,13 +24,15 @@ For feedback and questions about priyomdb please e-mail one of the
 authors:
     Jonas Wielicki <j.wielicki@sotecware.net>
 """
-from WebStack.Generic import ContentType, EndOfResponse
-from libPriyom import *
-from API import API, CallSyntax, Argument
-from ...APIDatabase import APIFileResource
-import mmap
 from cfg_priyomhttpd import application
+from WebStack.Generic import ContentType, EndOfResponse
+import mmap
+
+from libPriyom import *
 from libPriyom.PlotDataSources import NoDataError, NoDataArgError
+
+from PriyomHTTP.Server.APIDatabase import APIFileResource
+from PriyomHTTP.Server.Resources.API.API import API, CallSyntax, Argument
 
 class PlotAPI(API):
     def __init__(self, model, dataSource, renderer, queryArgs, resourceType, fileFormat=u"{0}/{{1}}.png", contentType=ContentType("image/png"), **kwargs):

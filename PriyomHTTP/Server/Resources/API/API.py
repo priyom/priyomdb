@@ -25,7 +25,7 @@ authors:
     Jonas Wielicki <j.wielicki@sotecware.net>
 """
 from WebStack.Generic import EndOfResponse
-from ..Resource import Resource, CallSyntax, Argument
+from PriyomHTTP.Server.Resources.Resource import Resource, CallSyntax, Argument
 
 class API(Resource):
     def __init__(self, model):

@@ -26,7 +26,7 @@ authors:
 """
 from WebStack.Generic import ContentType
 from libPriyom import *
-from API import API, CallSyntax, Argument
+from PriyomHTTP.Server.Resources.API.API import API, CallSyntax, Argument
 
 class ListAPI(API):
     def __init__(self, model, cls, requriedPrivilegue = None):
