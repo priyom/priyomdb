@@ -27,7 +27,7 @@ authors:
 """
 
 from WebStack.Generic import ContentType, EndOfResponse
-from PriyomHTTP.Server import HTMLIntf
+import PriyomHTTP.Server.HTMLIntf as HTMLIntf
 from PriyomHTTP.Server.Resources.HTMLResource import HTMLResource
 
 
