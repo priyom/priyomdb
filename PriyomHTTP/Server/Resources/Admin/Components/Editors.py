@@ -32,10 +32,12 @@ from storm.locals import *
 from storm.expr import *
 import itertools
 from Types import Typecasts
+
 import libPriyom
-from libPriyom import Formatting
-from libPriyom.Helpers import TimeUtils
-from PriyomHTTP.Server import HTMLIntf
+import libPriyom.Formatting as Formatting
+import libPriyom.Helpers.TimeUtils as TimeUtils
+
+import PriyomHTTP.Server.HTMLIntf as HTMLIntf
 from PriyomHTTP.Server.Resources.Admin.Components.Base import EditorComponent
 
 class Input(EditorComponent):

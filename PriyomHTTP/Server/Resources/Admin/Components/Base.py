@@ -27,7 +27,7 @@ authors:
 __all__ = ["Component", "EditorComponent", "ParentComponent"]
 
 import xml.etree.ElementTree as ElementTree
-from PriyomHTTP.Server import HTMLIntf
+import PriyomHTTP.Server.HTMLIntf as HTMLIntf
 
 class Component(object):
     def __init__(self, model=None, **kwargs):

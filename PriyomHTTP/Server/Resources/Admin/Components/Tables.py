@@ -28,10 +28,11 @@ authors:
 
 __all__ = ["TableComponent", "Table", "TableGroup", "IDTableGroup"]
 
-from PriyomHTTP.Server import HTMLIntf
+import itertools
+import PriyomHTTP.Server.HTMLIntf as HTMLIntf
 from PriyomHTTP.Server.Resources.Admin.Components.Base import Component, ParentComponent
 from PriyomHTTP.Server.Resources.Admin.Components.Editors import Input, Timestamp
-import itertools
+
 
 class TableComponent(Component):
     def toTableRow(self, tr):

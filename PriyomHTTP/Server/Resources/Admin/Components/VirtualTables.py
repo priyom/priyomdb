@@ -28,11 +28,11 @@ authors:
 
 __all__ = ["VirtualColumn", "StormColumn", "ReferenceColumn", "IDColumn", "ModifiedColumn", "CreatedColumn", "TimestampColumn", "VirtualTable", "ReferencingTable", "Sortable", "Filterable"]
 
-from libPriyom import Formatting
 from storm.locals import *
 from storm.expr import *
 import itertools
-from libPriyom import Formatting
+
+import libPriyom.Formatting import Formatting
 from PriyomHTTP.Server.Resources.Admin.Components.Base import ParentComponent
 
 Sortable = 1
