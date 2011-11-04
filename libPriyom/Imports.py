@@ -25,8 +25,8 @@ authors:
     Jonas Wielicki <j.wielicki@sotecware.net>
 """
 from storm.locals import *
-import XMLIntf
-import Log
+import libPriyom.XMLIntf as XMLIntf
+import libPriyom.Log as XMLIntf
 
 class ImportContext(object):
     def __init__(self, store):

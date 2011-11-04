@@ -25,7 +25,7 @@ authors:
     Jonas Wielicki <j.wielicki@sotecware.net>
 """
 from storm.locals import *
-import XMLIntf
+import libPriyom.XMLIntf as XMLIntf
 
 class Modulation(object):
     __storm_table__ = "modulations"

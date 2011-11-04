@@ -25,7 +25,7 @@ authors:
     Jonas Wielicki <j.wielicki@sotecware.net>
 """
 priyomdate = "%Y-%m-%dT%H:%M:%S"
-from libPriyom.Helpers import TimeUtils
+import libPriyom.Helpers.TimeUtils as TimeUtils
 
 class Formatters(object):
     @classmethod

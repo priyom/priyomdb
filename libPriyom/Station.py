@@ -26,12 +26,12 @@ authors:
 """
 from storm.locals import *
 import XMLIntf
-from Schedule import Schedule
-import Imports
-from Broadcast import Broadcast
 import xml.etree.ElementTree as ElementTree
-from PriyomBase import PriyomBase
-from Helpers import TimeUtils
+from libPriyom.PriyomBase import PriyomBase
+from libPriyom.Schedule import Schedule
+import libPriyom.Imports as Imports
+from libPriyom.Broadcast import Broadcast
+import libPriyom.Helpers.TimeUtils as TimeUtils
 
 class Station(PriyomBase, XMLIntf.XMLStorm):
     __storm_table__ = "stations"

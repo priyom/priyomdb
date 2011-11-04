@@ -31,10 +31,11 @@ import math
 from matplotlib import pyplot, transforms
 import matplotlib.font_manager as fonts
 import matplotlib.colors as colors
-import itertools
-from .PlotDataSources import *
 from datetime import datetime, timedelta
-from .Helpers.TimeUtils import monthname
+import itertools
+
+from libPriyom.PlotDataSources import *
+from libPriyom.Helpers.TimeUtils import monthname
 
 defaultColours = [
     (1.0, 0.0, 0.0, 1.0),

@@ -29,7 +29,7 @@ from storm.locals import *
 from storm.exceptions import NoStoreError
 import time
 from datetime import datetime
-from Helpers.TimeUtils import now
+from libPriyom.Helpers.TimeUtils import now
 
 def AutoSetModified(instance, propertyName, newValue):
     instance.touch()

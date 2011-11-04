@@ -25,7 +25,7 @@ authors:
     Jonas Wielicki <j.wielicki@sotecware.net>
 """
 import datetime
-import Formatting
+import libPriyom.Formatting as Formatting
 
 class LogEntry(object):
     def __init__(self, obj, facility):

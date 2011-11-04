@@ -28,17 +28,17 @@ authors:
 __version__ = '0.8.1'
 
 from storm.locals import *
-from Modulation import Modulation
-from Broadcast import BroadcastFrequency, Broadcast
-from Transmission import Transmission, TransmissionClass, TransmissionTable, TransmissionTableField
-from Schedule import Schedule, ScheduleLeaf
-from Station import Station
-from Foreign import ForeignSupplement
-import XMLIntf
-from Interface import PriyomInterface
-from TransmissionParser import TransmissionParserNode, TransmissionParserNodeField, NodeError
-from Helpers import TimeUtils
-from Event import Event, EventClass
+from libPriyom.Modulation import Modulation
+from libPriyom.Broadcast import BroadcastFrequency, Broadcast
+from libPriyom.Transmission import Transmission, TransmissionClass, TransmissionTable, TransmissionTableField
+from libPriyom.Schedule import Schedule, ScheduleLeaf
+from libPriyom.Station import Station
+from libPriyom.Foreign import ForeignSupplement
+from libPriyom.TransmissionParser import TransmissionParserNode, TransmissionParserNodeField, NodeError
+from libPriyom.Event import Event, EventClass
+from libPriyom.Interface import PriyomInterface
+import libPriyom.XMLIntf as XMLIntf
+import libPriyom.Helpers.TimeUtils as TimeUtils
 
 BroadcastFrequency.Broadcast = Reference(BroadcastFrequency.BroadcastID, Broadcast.ID)
 Broadcast.Station = Reference(Broadcast.StationID, Station.ID)
