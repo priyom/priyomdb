@@ -26,9 +26,9 @@ authors:
 """
 import xml.etree.ElementTree as ElementTree
 import datetime
-import Formatting
-from Helpers import TimeUtils
 import ElementTreeHelper.Serializer
+import libPriyom.Formatting as Formatting
+import libPriyom.Helpers.TimeUtils as TimeUtils
 
 __all__ = [
     'checkAndStripNamespace', 

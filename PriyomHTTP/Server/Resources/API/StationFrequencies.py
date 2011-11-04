@@ -25,9 +25,11 @@ authors:
     Jonas Wielicki <j.wielicki@sotecware.net>
 """
 from WebStack.Generic import ContentType
+
 from libPriyom import *
-from API import API, CallSyntax, Argument
 from libPriyom.Interface import PAST, ONAIR, UPCOMING
+
+from PriyomHTTP.Server.Resources.API.API import API, CallSyntax, Argument
 
 class StationFrequenciesAPI(API):
     title = u"getStationFrequencies"

@@ -26,7 +26,7 @@ authors:
 """
 from storm.locals import *
 from storm.exceptions import NoStoreError
-import XMLIntf
+import libPriyom.XMLIntf as XMLIntf
 
 class ForeignSupplement(object):
     __storm_table__ = "foreignSupplement"

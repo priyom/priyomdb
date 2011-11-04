@@ -26,7 +26,7 @@ authors:
 """
 from WebStack.Generic import ContentType
 from libPriyom import *
-from API import API, CallSyntax, Argument
+from PriyomHTTP.Server.Resources.API.API import API, CallSyntax, Argument
 
 class DupeRecord(object):
     def __init__(self, doc, node):

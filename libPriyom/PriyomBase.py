@@ -1,3 +1,4 @@
+# encoding=utf-8
 """
 File name: PriyomBase.py
 This file is part of: priyomdb
@@ -24,12 +25,11 @@ For feedback and questions about priyomdb please e-mail one of the
 authors:
     Jonas Wielicki <j.wielicki@sotecware.net>
 """
-# encoding=utf-8
 from storm.locals import *
 from storm.exceptions import NoStoreError
 import time
 from datetime import datetime
-from Helpers.TimeUtils import now
+from libPriyom.Helpers.TimeUtils import now
 
 def AutoSetModified(instance, propertyName, newValue):
     instance.touch()

@@ -26,11 +26,11 @@ authors:
     Jonas Wielicki <j.wielicki@sotecware.net>
 """
 from storm.locals import *
-from Station import Station
-from PriyomBase import PriyomBase
-import Formatting
-import XMLIntf
-import Helpers.TimeUtils as TimeUtils
+from libPriyom.PriyomBase import PriyomBase
+from libPriyom.Station import Station
+import libPriyom.Formatting as Formatting
+import libPriyom.XMLIntf as XMLIntf
+import libPriyom.Helpers.TimeUtils as TimeUtils
 
 class EventClass(object):
     __storm_table__ = "eventClasses"

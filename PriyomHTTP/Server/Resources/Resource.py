@@ -24,12 +24,13 @@ For feedback and questions about priyomdb please e-mail one of the
 authors:
     Jonas Wielicki <j.wielicki@sotecware.net>
 """
-from WebStack.Generic import EndOfResponse, ContentType
 from cfg_priyomhttpd import response, doc, misc, application
+from WebStack.Generic import EndOfResponse, ContentType
 from fnmatch import fnmatch
 import re
-from libPriyom.Helpers import TimeUtils
 import sys
+
+import libPriyom.Helpers.TimeUtils as TimeUtils
 
 dictfield = re.compile("\[([^\]]+)\]")
 

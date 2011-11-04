@@ -27,10 +27,10 @@ authors:
 from storm.locals import *
 from xml.etree.ElementTree import ElementTree
 import XMLIntf
-from Modulation import Modulation
 import datetime
-import Formatting
-from PriyomBase import PriyomBase
+from libPriyom.Modulation import Modulation
+import libPriyom.Formatting as Formatting
+from libPriyom.PriyomBase import PriyomBase
 
 class Schedule(PriyomBase, XMLIntf.XMLStorm):
     __storm_table__ = "schedules"

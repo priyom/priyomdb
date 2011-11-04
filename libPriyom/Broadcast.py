@@ -26,12 +26,12 @@ authors:
 """
 from storm.locals import *
 import XMLIntf
-from Modulation import Modulation
 import datetime
-from PriyomBase import PriyomBase, now
-from Formatting import priyomdate
-from Helpers import TimeUtils
 import re
+from libPriyom.Modulation import Modulation
+from libPriyom.PriyomBase import PriyomBase, now
+from libPriyom.Formatting import priyomdate
+from libPriyom.Helpers import TimeUtils
 
 freqRe = re.compile("([0-9]+(\.[0-9]*)?|\.[0-9]+)\s*(([mkg]?)hz)?", re.I)
 siPrefixes = {

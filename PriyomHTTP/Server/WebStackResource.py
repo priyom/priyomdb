@@ -24,24 +24,30 @@ For feedback and questions about priyomdb please e-mail one of the
 authors:
     Jonas Wielicki <j.wielicki@sotecware.net>
 """
+import os.path
+from cfg_priyomhttpd import application, response
+
 from WebStack.Resources.ResourceMap import MapResource
 from WebStack.Resources.Static import FileResource
 from WebStack.Generic import ContentType
 
-from APIDatabase import APICapability
-from WebModel import WebModel
 import libPriyom
-from Resources import *
-from Resources.API import *
-from Resources.Submit import *
-from Resources.Admin import *
-from Selectors import *
 import libPriyom.Plots as Plots
 import libPriyom.PlotDataSources as PlotDataSources
-import os.path
-from cfg_priyomhttpd import application, response
-from Resources.Admin.UITree import virtualTables
+
 from Types import Typecasts
+
+from PriyomHTTP.Server.APIDatabase import APICapability
+from PriyomHTTP.Server.WebModel import WebModel
+
+from PriyomHTTP.Server.Resources import *
+from PriyomHTTP.Server.Resources.API import *
+from PriyomHTTP.Server.Resources.Submit import *
+from PriyomHTTP.Server.Resources.Admin import *
+from PriyomHTTP.Server.Selectors import *
+
+from PriyomHTTP.Server.Resources.Admin.UITree import virtualTables
+
 
 #from Resources.API.FindStations import FindStations
 #from Resources.API.FindBroadcasts import FindBroadcasts

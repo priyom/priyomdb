@@ -26,7 +26,7 @@ authors:
 """
 from WebStack.Generic import ContentType
 from libPriyom import *
-from API import API
+from PriyomHTTP.Server.Resources.API.API import API, CallSyntax, Argument
 
 class ImportAPI(API):
     title = u"import"

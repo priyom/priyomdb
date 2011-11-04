@@ -1,6 +1,6 @@
-#!/usr/bin/python2
+# encoding=utf-8
 """
-File name: clearPlotCache.py
+File name: __init__.py
 This file is part of: priyomdb
 
 LICENSE
@@ -25,22 +25,7 @@ For feedback and questions about priyomdb please e-mail one of the
 authors:
     Jonas Wielicki <j.wielicki@sotecware.net>
 """
-import sys
-sys.path.append('/etc/priyomdb/')
-from cfg_priyomhttpd import application
-sys.path.append(application["root"])
-from priyomdbtest import *
-from PriyomHTTP.Server.APIDatabase import APIFileResource
-import os
-import os.path
-store.execute("LOCK TABLES `api-fileResources` WRITE")
-resources = store.find(APIFileResource)
-for resource in list(resources):
-  if os.path.isfile(resource.FileName):
-    try:
-      os.unlink(resource.FileName)
-      store.remove(resource)
-    except OSError as e:
-      print(unicode(e))
-      pass
-store.execute("UNLOCK TABLES")
+from Base import *
+from Editors import *
+from Tables import *
+from VirtualTables import *

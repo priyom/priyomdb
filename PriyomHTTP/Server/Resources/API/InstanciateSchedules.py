@@ -25,12 +25,14 @@ authors:
     Jonas Wielicki <j.wielicki@sotecware.net>
 """
 from WebStack.Generic import ContentType
-from libPriyom import *
-from API import API, CallSyntax, Argument
-from ...limits import queryLimits
 import time
 from datetime import datetime, timedelta
+
+from libPriyom import *
 from libPriyom.Formatting import priyomdate
+
+from PriyomHTTP.Server.limits import queryLimits
+from PriyomHTTP.Server.Resources.API.API import API, CallSyntax, Argument
 
 class InstanciateSchedulesAPI(API):
     title = u"instanciateSchedules"

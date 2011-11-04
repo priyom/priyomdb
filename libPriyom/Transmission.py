@@ -27,13 +27,13 @@ authors:
 import xml.etree.ElementTree as ElementTree
 from storm.locals import *
 import XMLIntf
-from Foreign import ForeignHelper
-from Broadcast import Broadcast
-from Station import Station
-from PriyomBase import PriyomBase
 import types
-from TransmissionParser import TransmissionParserNode, TransmissionParserNodeField, NodeError
 import itertools
+from libPriyom.PriyomBase import PriyomBase
+from libPriyom.Foreign import ForeignHelper
+from libPriyom.Broadcast import Broadcast
+from libPriyom.Station import Station
+from libPriyom.TransmissionParser import TransmissionParserNode, TransmissionParserNodeField, NodeError
     
 class Transmission(PriyomBase, XMLIntf.XMLStorm):
     __storm_table__ = "transmissions"

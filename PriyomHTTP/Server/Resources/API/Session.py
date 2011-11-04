@@ -26,9 +26,8 @@ authors:
     Jonas Wielicki <j.wielicki@sotecware.net>
 """
 from WebStack.Generic import ContentType
-from ...APIDatabase import APIUser
-from API import API, CallSyntax, Argument
-
+from PriyomHTTP.Server.APIDatabase import APIUser
+from PriyomHTTP.Server.Resources.API.API import API, CallSyntax, Argument
 
 class SessionAPI(API):
     title = u"getSession"

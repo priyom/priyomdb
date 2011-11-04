@@ -27,8 +27,9 @@ authors:
 """
 
 from WebStack.Generic import ContentType, EndOfResponse
-from ..HTMLResource import HTMLResource
-from .. import HTMLIntf
+import PriyomHTTP.Server.HTMLIntf as HTMLIntf
+from PriyomHTTP.Server.Resources.HTMLResource import HTMLResource
+
 
 class AdminHomeResource(HTMLResource):
     def __init__(self, model):

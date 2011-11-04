@@ -27,12 +27,13 @@ authors:
 """
 from storm.locals import *
 from WebStack.Generic import ContentType, EndOfResponse
-import UITree
-from ..HTMLResource import HTMLResource
-from .. import HTMLIntf
 import urllib
+
+import PriyomHTTP.Server.HTMLIntf as HTMLIntf
+from PriyomHTTP.Server.Resources.HTMLResource import HTMLResource
+import UITree as UITree
+from PriyomHTTP.Server.Resources.Admin.Components import Sortable, Filterable
 from Types import Typecasts
-from .Components import Sortable, Filterable
 
 class AdminTablesResource(HTMLResource):
     def __init__(self, model):

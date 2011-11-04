@@ -26,60 +26,89 @@ authors:
     Jonas Wielicki <j.wielicki@sotecware.net>
 """
 from storm.locals import *
-from ..APIDatabase import APINews
+from cfg_priyomhttpd import admin
 from WebStack.Generic import ContentType
-from Resource import Resource
 
-class HomeResource(Resource):
-    def handle(self, trans):
-        trans.set_content_type(ContentType("text/html", self.encoding))
+import PriyomHTTP.Server.HTMLIntf as HTMLIntf
+from PriyomHTTP.Server.APIDatabase import APINews
+from PriyomHTTP.Server.Resources.HTMLResource import HTMLResource
+
+class HomeResource(HTMLResource):
+    technologies = [
+        (u"https://fedoraproject.org/", u"Fedora Linux", u" (secured with SELinux) as server and development operating system"),
+        (u"https://httpd.apache.org/", u"Apache", u" (with mod_wsgi and mod_php) for HTTP communication"),
+        (u"https://www.mysql.com/", u"MySQL", u" as database server"),
+        (u"http://www.phpmyadmin.net/", u"phpMyAdmin", u" for database management"),
+        (u"http://www.python.org/", u"Python", u" 2.7 for all logic", [
+            (u"https://storm.canonical.com/", u"Storm", u" (ORM package for Python) for database access"),
+            (u"https://pypi.python.org/pypi/WebStack", u"WebStack", u" as communication layer"),
+        ]),
+        (u"http://www.w3.org/XML/", u"XML", u" as container format in communications"),
+    ]
+    
+    def technologyListToTree(self, parent, node):
+        ul = HTMLIntf.SubElement(parent, u"ul")
+        for item in node:
+            li = HTMLIntf.SubElement(ul, u"li")
+            a = HTMLIntf.SubElement(li, u"a", href=item[0])
+            a.text = item[1]
+            a.tail = item[2]
+            if len(item) == 4:
+                self.technologyListToTree(li, item[3])
+        return ul
+    
+    def buildDoc(self, trans, elements):
+        self.link(u"css/home.css")
+        self.setTitle(u"Priyom.org API")
+        
+        section = HTMLIntf.SubElement(self.body, u"section")
+        HTMLIntf.SubElement(section, u"h1").text = u"Welcome!"
+        HTMLIntf.SubElement(section, u"h2").text = u"… to the priyom.org API server."
+        p = HTMLIntf.SubElement(section, u"p")
+        p.text = u"This is the API server which does the hard number station database work behind the curtains of "
+        a = HTMLIntf.SubElement(p, u"a", href=u"http://priyom.org")
+        a.text = u"priyom.org"
+        a.tail = u"."
+            
+        p = HTMLIntf.SubElement(section, u"p")
+        stats = self.priyomInterface.getStatistics()
+        p.text = u"Currently, we have {0} stations with {1} broadcasts and {2} transmissions, containing {4} transmission items in our database. In average, about {3} transmissions occur per broadcast and each transmission contains (in average) {5} transmission items.".format(*stats)
+        
+        p = HTMLIntf.SubElement(section, u"p")
+        p.text = u"Found a malfunction? Flic over a mail to "
+        a = HTMLIntf.SubElement(p, u"a", href=u"mailto:{0}".format(admin.get(u"mail", u"horrorcat@sotecware.net")))
+        a.text = admin.get(u"name", u"Horrorcat")
+        a.tail = u" or check out our IRC channel "
+        a = HTMLIntf.SubElement(p, u"a", href=u"irc:irc.freenode.net/#priyom")
+        a.text = u"#priyom on irc.freenode.net"
+        a.tail = u"."
+        
+        p = HTMLIntf.SubElement(section, u"p")
+        p.text = u"Looking for documentation? Try "
+        a = HTMLIntf.SubElement(p, u"a", href=u"doc/")
+        a.text = u"this link"
+        a.tail = u"."
+        
+        HTMLIntf.SubElement(section, u"p").text = u"This database server is set on open-source techonolgies only:"
+        self.technologyListToTree(section, self.technologies)
+        
+        newsSection = HTMLIntf.SubElement(section, u"section")
+        HTMLIntf.SubElement(newsSection, u"h3").text = u"News / current information"
+        
+        table = HTMLIntf.SubElement(newsSection, u"table", attrib={
+            u"class": u"news-table"
+        })
+        thead = HTMLIntf.SubElement(table, u"thead")
+        HTMLIntf.SubElement(thead, u"th", width=u"200pt").text = u"Timestamp"
+        HTMLIntf.SubElement(thead, u"th", width=u"350pt").text = u"Title"
+        HTMLIntf.SubElement(thead, u"th").text = u"Contents"
+        
+        tbody = HTMLIntf.SubElement(table, u"tbody")
         news = self.store.find(APINews)
         news.order_by(Desc(APINews.Timestamp))
         news.config(limit=5)
-        newsRows = "\n                ".join((newsItem.html_row() for newsItem in news))
-        if len(newsRows) == 0:
-            newsRows = '<tr><td colspan="3">No news</td></tr>'
-        print >>self.out, u"""
-<html>
-    <head>
-        <title>Priyom.org API</title>
-        <link rel="stylesheet" type="text/css" href="{0}" />
-    </head>
-    <body>
-        <h1>Welcome!</h1>
-        <h2>… to the priyom.org API server.</h2>
-        <p>This is the API server which does the hard number station database work behind the curtains of <a href="http://priyom.org">priyom.org</a>.</p>
-        <p>Found a malfunction? Flic over a mail to <a href="mailto:horrorcat@sotecware.net">Horrorcat</a> or check out our IRC channel <a href="irc:irc.freenode.net/#priyom">#priyom on irc.freenode.net</a>.</p>
-        <p>Looking for documentation? Try <a href="doc/">this link</a>.</p>
-        <p>This database server is set on open-source techonolgies only:</p>
-        <ul>
-            <li><a href="https://fedoraproject.org/">Fedora Linux</a> (secured with SELinux) as server and development operating system</li>
-            <li><a href="https://httpd.apache.org/">Apache</a> (with mod_wsgi and mod_php) for HTTP communication</li>
-            <li><a href="https://www.mysql.com/">MySQL</a> as database server</li>
-            <li><a href="http://www.phpmyadmin.net/">phpMyAdmin</a> for database management</li>
-            <li><a href="http://www.python.org/">Python</a> 2.7 for all logic
-            <ul>
-                <li><a href="https://storm.canonical.com/">Storm</a> (ORM package for Python) for database access</li>
-                <li><a href="https://pypi.python.org/pypi/WebStack">WebStack</a> as communication layer</li>
-            </ul></li>
-            <li><a href="http://www.w3.org/XML/">XML</a> as container format in communications</li>
-            <li><a href="http://freepascal.org">FreePascal</a> as compiler for the priyom.org desktop application</li>
-        </ul>
-        <h3>News / current information</h3>
-        <table class="news-table">
-            <thead>
-                <tr>
-                    <th width="200pt">Timestamp</th>
-                    <th width="350pt">Title</th>
-                    <th>Contents</th>
-                </tr>
-            </thead>
-            <tbody>
-                {1}
-            </tbody>
-        </table>
-    </body>
-</html>""".format(
-            self.model.rootPath("css/home.css"),
-            newsRows
-        ).encode(self.encoding, 'replace')
+        
+        for item in news:
+            tr = HTMLIntf.SubElement(tbody, u"tr")
+            item.toTableRow(tr)
+    

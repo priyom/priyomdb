@@ -25,7 +25,7 @@ authors:
     Jonas Wielicki <j.wielicki@sotecware.net>
 """
 from WebStack.Generic import ContentType, EndOfResponse
-from ..APIDatabase import APIKey, APISession
+from PriyomHTTP.Server.APIDatabase import APIKey, APISession
 
 class AuthenticationFailed(Exception):
     pass

@@ -28,14 +28,18 @@ authors:
 from storm.locals import *
 from storm.expr import *
 from WebStack.Generic import ContentType, EndOfResponse
-from SubmitResource import SubmitResource, SubmitParameterError
-from libPriyom import *
-from datetime import datetime, timedelta
-from time import mktime, time
+
 import itertools
 import xml.etree.ElementTree as ElementTree
 import math
+from datetime import datetime, timedelta
+from time import mktime, time
+
 from Types import Typecasts
+
+from libPriyom import *
+
+from PriyomHTTP.Server.Resources.Submit.SubmitResource import SubmitResource, SubmitParameterError
 
 class SubmitLogResource(SubmitResource):
     def __init__(self, model):

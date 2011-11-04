@@ -26,7 +26,7 @@ authors:
 """
 from libPriyom import *
 from WebStack.Generic import ContentType
-from Resource import Resource
+from PriyomHTTP.Server.Resources.Resource import Resource
 
 class IDResource(Resource):
     def __init__(self, model, classType):

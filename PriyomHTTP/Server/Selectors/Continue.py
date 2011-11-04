@@ -25,7 +25,7 @@ authors:
     Jonas Wielicki <j.wielicki@sotecware.net>
 """
 from WebStack.Generic import EndOfResponse, ContentType
-from Selector import Selector
+from PriyomHTTP.Server.Selectors.Selector import Selector
 
 class ContinueSelector(Selector):
     def __init__(self, resource):

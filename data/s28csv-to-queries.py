@@ -1,4 +1,5 @@
 #!/usr/bin/python3
+
 """
 File name: s28csv-to-queries.py
 This file is part of: priyomdb
@@ -25,7 +26,6 @@ For feedback and questions about priyomdb please e-mail one of the
 authors:
     Jonas Wielicki <j.wielicki@sotecware.net>
 """
-
 stationId = 1
 frequency = 4625000
 modulationId = 3
