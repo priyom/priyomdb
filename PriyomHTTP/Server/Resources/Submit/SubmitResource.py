@@ -26,18 +26,16 @@ authors:
     Jonas Wielicki <j.wielicki@sotecware.net>
 """
 from storm.locals import *
-from ..HTMLResource import HTMLResource
-from libPriyom import *
 from datetime import datetime, timedelta
 from time import mktime, time
 import itertools
 import xml.etree.ElementTree as ElementTree
 
+from libPriyom import *
+from PriyomHTTP.Server.Resources.HTMLResource import HTMLResource
 
 class SubmitParameterError(BaseException):
     pass
-
-
 
 class SubmitResource(HTMLResource):
     def _stationSelect(self, parent, name=u"station", value=None):

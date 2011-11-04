@@ -27,11 +27,14 @@ authors:
 """
 from storm.locals import *
 from WebStack.Generic import ContentType, EndOfResponse
-from libPriyom import *
-from datetime import datetime, timedelta
-from SubmitResource import SubmitResource, SubmitParameterError
 from xml.sax.saxutils import escape
+from datetime import datetime, timedelta
+
 from Types import Typecasts
+
+from libPriyom import *
+
+from PriyomHTTP.Server.Resources.Submit.SubmitResource import SubmitResource, SubmitParameterError
 
 class SubmitEventResource(SubmitResource):
     def __init__(self, model):
