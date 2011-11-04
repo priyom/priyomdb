@@ -25,7 +25,7 @@ authors:
     Jonas Wielicki <j.wielicki@sotecware.net>
 """
 import xml.etree.ElementTree as ElementTree
-from libPriyom import XMLIntf
+import libPriyom.XMLIntf as XMLIntf
 import ElementTreeHelper.Serializer
 
 xhtmlNamespace = XMLIntf.xhtmlNamespace
