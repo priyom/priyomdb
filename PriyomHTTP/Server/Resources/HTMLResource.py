@@ -24,12 +24,14 @@ For feedback and questions about priyomdb please e-mail one of the
 authors:
     Jonas Wielicki <j.wielicki@sotecware.net>
 """
-from Resource import Resource, CallSyntax, Argument
-from libPriyom import XMLIntf
-import xml.etree.ElementTree as ElementTree
 from cfg_priyomhttpd import misc, application
+import xml.etree.ElementTree as ElementTree
 from WebStack.Generic import ContentType
-from PriyomHTTP.Server import HTMLIntf
+
+import libPriyom.XMLIntf as XMLIntf
+
+import PriyomHTTP.Server.HTMLIntf as HTMLIntf
+from PriyomHTTP.Server.Resources.Resource import Resource, CallSyntax, Argument
 
 class HTMLResource(Resource):
     def __init__(self, model):

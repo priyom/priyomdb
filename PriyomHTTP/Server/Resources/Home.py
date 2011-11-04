@@ -26,11 +26,12 @@ authors:
     Jonas Wielicki <j.wielicki@sotecware.net>
 """
 from storm.locals import *
-from ..APIDatabase import APINews
-from WebStack.Generic import ContentType
-from HTMLResource import HTMLResource
 from cfg_priyomhttpd import admin
-from PriyomHTTP.Server import HTMLIntf
+from WebStack.Generic import ContentType
+
+import PriyomHTTP.Server.HTMLIntf as HTMLIntf
+from PriyomHTTP.Server.APIDatabase import APINews
+from PriyomHTTP.Server.Resources.HTMLResource import HTMLResource
 
 class HomeResource(HTMLResource):
     technologies = [
