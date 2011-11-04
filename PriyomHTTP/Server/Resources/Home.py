@@ -69,6 +69,10 @@ class HomeResource(HTMLResource):
         a = HTMLIntf.SubElement(p, u"a", href=u"http://priyom.org")
         a.text = u"priyom.org"
         a.tail = u"."
+            
+        p = HTMLIntf.SubElement(section, u"p")
+        stats = self.priyomInterface.getStatistics()
+        p.text = u"Currently, we have {0} stations with {1} broadcasts and {2} transmissions, containing {4} transmission items in our database. In average, about {3} transmissions occur per broadcast and each transmission contains (in average) {5} transmission items.".format(*stats)
         
         p = HTMLIntf.SubElement(section, u"p")
         p.text = u"Found a malfunction? Flic over a mail to "

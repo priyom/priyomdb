@@ -29,6 +29,7 @@ from storm.expr import *
 import time
 import xml.etree.ElementTree as ElementTree
 from datetime import datetime, timedelta
+import math
 
 import libPriyom.Imports as Imports
 import libPriyom.XMLIntf as XMLIntf
@@ -514,4 +515,38 @@ class PriyomInterface:
             
             
         return (lastModified, dupes.order_by(Asc(tx1.Timestamp)))
+    
+    def getStatistics(self):
+        """Returns a tuple with the following statistical values (in order):
+        * Station count
+        * Broadcast count
+        * Transmission count
+        * Transmissions / broadcast mean
+        * Items
+        * Items / transmission mean"""
+        
+        stationCount = self.store.find(Station).count()
+        broadcastCount = self.store.find(Broadcast).count()
+        transmissionCount = self.store.find(Transmission).count()
+        
+        tables = self.store.find(TransmissionTable)
+        itemCount = 0
+        #countLists = []
+        for table in tables:
+            itemCount += self.store.find(table.PythonClass).count()
             
+            """countList = list(self.store.using(
+                Transmission,
+                LeftJoin(table.PythonClass, Transmission.ID == table.PythonClass.TransmissionID)
+            ).find(Count() - Func("IF", table.PythonClass.TransmissionID == None, 1, 0)).group_by(Transmission.ID))
+            countLists.append(countList)"""
+        """print("\n".join((unicode(countList) for countList in countLists)))
+        countList = [sum((countList[i] for countList in countLists)) for i in xrange(transmissionCount)]
+        mean = float(itemCount) / float(transmissionCount)
+        meansqr = mean * mean
+        s = 0
+        for item in countList:
+            s += (item - mean) * (item - mean)
+        s = math.sqrt(1./(len(countList)*(len(countList)-1.))*s)"""
+        
+        return (stationCount, broadcastCount, transmissionCount, float(transmissionCount)/float(broadcastCount), itemCount, float(itemCount)/float(transmissionCount))
