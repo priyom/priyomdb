@@ -24,8 +24,9 @@ For feedback and questions about priyomdb please e-mail one of the
 authors:
     Jonas Wielicki <j.wielicki@sotecware.net>
 """
-from libPriyom.Helpers import TimeUtils
-from libPriyom import Formatting
+import libPriyom.Helpers.TimeUtils import TimeUtils
+import libPriyom.Formatting as Formatting
+from libPriyom import Station
 from datetime import datetime, timedelta
 
 class WrapFunction(object):
