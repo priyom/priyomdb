@@ -24,7 +24,7 @@ For feedback and questions about priyomdb please e-mail one of the
 authors:
     Jonas Wielicki <j.wielicki@sotecware.net>
 """
-import libPriyom.Helpers.TimeUtils import TimeUtils
+import libPriyom.Helpers.TimeUtils as TimeUtils
 import libPriyom.Formatting as Formatting
 from libPriyom import Station
 from datetime import datetime, timedelta
