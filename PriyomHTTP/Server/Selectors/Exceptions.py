@@ -114,7 +114,7 @@ the following exception occured at {2}:
                 sender = mailConfig["sender"]
                 smtp = mailConfig["smtp"]
                 
-                mail = MIMEText(plainTextMessage)
+                mail = MIMEText(plainTextMessage.encode("utf-8"), _charset="utf-8")
                 mail["Subject"] = subject
                 mail["To"] = ",".join(to)
                 mail["From"] = sender
