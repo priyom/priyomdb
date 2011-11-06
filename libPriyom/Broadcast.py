@@ -122,7 +122,7 @@ class BroadcastFrequency(object):
     
     def toDom(self, parentNode):
         XMLIntf.appendTextElement(parentNode, u"frequency", unicode(self.Frequency), attrib={
-            u"modulatiom": self.Modulation.Name
+            u"modulation": self.Modulation.Name
         })
         
     def __unicode__(self):
