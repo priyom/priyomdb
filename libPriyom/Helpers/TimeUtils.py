@@ -43,9 +43,9 @@ def now():
 
 def nextMonth(dt):
     if dt.month == 12:
-        return datetime(year=dt.year+1, month=1, 1)
+        return datetime(year=dt.year+1, month=1, day=1)
     else:
-        return datetime(year=dt.year, month=dt.month+1, 1)
+        return datetime(year=dt.year, month=dt.month+1, day=1)
 
 def monthTimeRange(year, month):
     first = datetime(year, month, 1)
