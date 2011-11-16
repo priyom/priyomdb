@@ -143,7 +143,15 @@ class PriyomInterface:
             if len(staleForeignSupplements) > 0:
                 self.store.execute("""DELETE FROM foreignSupplement WHERE ID IN ({0})""".format(",".join(staleForeignSupplements)))
             staleForeignSupplementCount += len(staleForeignSupplements)
-            
+        
+        emptySupplements = self.store.find(ForeignSupplement, 
+            Or(
+                ForeignSupplement.LangCode == u"",
+                ForeignSupplement.ForeignText == u""
+            ))
+        emptySupplementCount = emptySupplements.count()
+        emptySupplements.remove()
+
         staleTXItemCount = 0
         for table in self.store.find(TransmissionTable):
             staleTXItems = list((str(t[0]) for t in self.store.execute("""SELECT `{0}`.ID FROM `{0}` LEFT OUTER JOIN transmissions ON (`{0}`.TransmissionID = transmissions.ID) WHERE transmissions.ID IS NULL""".format(table.TableName))))
@@ -151,7 +159,7 @@ class PriyomInterface:
             if len(staleTXItems) > 0:
                 self.store.execute("""DELETE FROM `{0}` WHERE ID IN ({1})""".format(table.TableName, ",".join(staleTXItems)))
         
-        return (len(staleBroadcasts), len(staleTransmissions), staleForeignSupplementCount, staleTXItemCount)
+        return (len(staleBroadcasts), len(staleTransmissions), staleForeignSupplementCount, staleTXItemCount, emptySupplementCount)
         
     def deleteTransmissionBlock(self, obj, force = False):
         store = self.store
