@@ -40,6 +40,24 @@ def nowDate():
     
 def now():
     return toTimestamp(nowDate())
-    
+
+def nextMonth(dt):
+    if dt.month == 12:
+        return datetime(year=dt.year+1, month=1, 1)
+    else:
+        return datetime(year=dt.year, month=dt.month+1, 1)
+
+def monthTimeRange(year, month):
+    first = datetime(year, month, 1)
+    return (toTimestamp(first), toTimestamp(nextMonth(first)))
+
+def yearTimeRange(year):
+    return (toTimestamp(datetime(year, 1, 1)), toTimestamp(datetime(year+1, 1, 1)))
+
+def calendarTimeRange(year, month=None):
+    if month is not None:
+        return monthTimeRange(year, month)
+    else:
+        return yearTimeRange(year)
 
 fromTimestamp = toDatetime
