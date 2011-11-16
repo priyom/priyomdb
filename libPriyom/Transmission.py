@@ -259,9 +259,17 @@ class TransmissionClassBase(object):
     def deleteForeignSupplements(self):
         for supplement in self.supplements.itervalues():
             supplement.removeSupplement()
+        
+    def formatField(self, fieldName):
+        value = getattr(self, fieldName)
+        supplement = self.supplements[fieldName]
+        if supplement.hasForeign():
+            return u"{0}/{1}:{2}".format(value, supplement.Value, supplement.LangCode)
+        else:
+            return u"{0}".format(value)
     
     def __unicode__(self):
-        return u" ".join((getattr(self, field.FieldName) for field in self.fields))
+        return u" ".join((self.formatField(field.FieldName) for field in self.fields))
 
 def NewTransmissionClass(table):
     cls = types.ClassType(table.TableName.encode("utf-8"), (TransmissionClassBase, ), {})
