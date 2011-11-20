@@ -188,6 +188,7 @@ class AdminTablesResource(HTMLResource):
                     isNew = False
                 virtualTable.apply(self.query)
                 obj.touch()
+                self.store.commit()
                 self.store.flush()
                 self.store.invalidate(obj)
                 if isNew:
