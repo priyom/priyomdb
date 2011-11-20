@@ -36,7 +36,7 @@ class ForeignSupplement(object):
     ForeignText = Unicode()
     LangCode = Unicode()
     
-class ForeignHelper:
+class ForeignHelper(object):
     def __init__(self, instance, fieldName):
         self.instance = instance
         self.fieldName = unicode(instance.__storm_table__) + u"." + fieldName
