@@ -143,7 +143,7 @@ class AdminTablesResource(HTMLResource):
                 u"class": u"buttons"
             })
             HTMLIntf.SubElement(actions, u"a", href=self.editItemHref(virtualTable.name, id), title=u"Edit / View this row in detail").text = u"E"
-            HTMLIntf.SubElement(actions, u"a", href=self.buildQueryOnSameTable(orderColumn=orderColumn, orderDirection=orderDirection, touch=id), title=u"Touch this object (set the Modified timestamp to the current time).").text = u"T"
+            HTMLIntf.SubElement(actions, u"a", href=self.buildQueryOnSameTable(orderColumn=orderColumn.name, orderDirection=orderDirection, touch=id), title=u"Touch this object (set the Modified timestamp to the current time).").text = u"T"
             for column in virtualTable.columns:
                 HTMLIntf.SubElement(tr, u"td").text = column.getFormattedValue(obj)
         
