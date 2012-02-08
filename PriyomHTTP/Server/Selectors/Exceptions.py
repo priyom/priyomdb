@@ -69,7 +69,7 @@ class ExceptionSelector(object):
         elif hasattr(obj, "__unicode__") or type(obj) == unicode:
             return u"""[{1}] u"{0}\"""".format(unicode(obj), type(obj))
         elif hasattr(obj, "__str__") or type(obj) == str:
-            return u"""[{1}] "{0}\"""".format(str(obj).decode("ascii", "backslashreplace"), type(obj))
+            return u"""[{1}] {0}""".format(repr(str(obj)), type(obj))
         elif obj is None:
             return u"None"
         else:
