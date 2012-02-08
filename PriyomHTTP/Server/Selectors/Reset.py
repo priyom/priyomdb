@@ -28,6 +28,8 @@ class ResetSelector(object):
     def __init__(self, model, child):
         self.model = model
         self.child = child
+        # circumvent reset for now. See ticket #15
+        self.respond = self.child.respond
         
     def respond(self, trans):
         self.model.checkReset()

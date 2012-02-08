@@ -126,29 +126,35 @@ class WebModel(object):
         return self.limitResults(query)
         
     def getVarLastUpdate(self):
-        if self.varLastUpdate is None:
-            self.varLastUpdate = self.store.get(Variable, u"lastImport")
-        return self.varLastUpdate
+        #if self.varLastUpdate is None:
+        #    self.varLastUpdate = self.store.get(Variable, u"lastImport")
+        #return self.varLastUpdate
+        return None
         
     def checkReset(self):
-        if self.varLastUpdate is None:
+        """if self.varLastUpdate is None:
             self.varLastUpdate = self.store.get(Variable, u"lastImport")
         if self.varLastUpdate is not None:
             self.varLastUpdate.Value = AutoReload
             if self.varLastUpdate.Value is not None:
                 if self.lastReset < int(self.varLastUpdate.Value):
                     self.resetStore()
-                    
+        """
+        # this does not help much. it does not fix the LostObjectErrors
+        # and lastImport has not been used for ages. There has to come
+        # a better solution though. See ticket #15
+        
     def resetStore(self):
         self.store.reset()
         self.varLastUpdate = self.store.get(Variable, u"lastImport")
         self.lastReset = int(TimeUtils.now())
         
     def getLastUpdate(self):
-        self.getVarLastUpdate()
-        if self.varLastUpdate is None:
-            return int(TimeUtils.now())
-        return self.varLastUpdate.Value
+        #self.getVarLastUpdate()
+        #if self.varLastUpdate is None:
+        #    return int(TimeUtils.now())
+        #return self.varLastUpdate.Value
+        return int(TimeUtils.now())
         
     def etreeToFile(self, file, etree, encoding="UTF-8", defaultNamespace=XMLIntf.namespace, serializer=None):
         if serializer is None:
