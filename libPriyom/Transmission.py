@@ -58,26 +58,19 @@ class Transmission(PriyomBase, XMLIntf.XMLStorm):
             for block in store.find(table.PythonClass, table.PythonClass.TransmissionID == self.ID):
                 blocks.append(block)
         blocks.sort(cmp=lambda x,y: cmp(x.Order, y.Order))
-        self.blocks = blocks
+        self._blocks = blocks
     
     def __init__(self):
         super(Transmission, self).__init__()
         self.ForeignCallsign = None
-        self.blocks = []
+        self._blocks = None
+        self._blockUpdate = None
     
     def __storm_invalidated__(self):
-        self.updateBlocks()
-        
         self.ForeignCallsign = ForeignHelper(self, "Callsign")
     
     def __storm_loaded__(self):
-        self.updateBlocks()
-        
         self.ForeignCallsign = ForeignHelper(self, "Callsign")
-    
-    def __storm_flushed__(self):
-        # possibly some changes were made here which require reloading the blocks
-        self.updateBlocks()
         
     def _loadCallsign(self, element, context):
         if self.ForeignCallsign is None:
@@ -198,6 +191,16 @@ class Transmission(PriyomBase, XMLIntf.XMLStorm):
         
     def __unicode__(self):
         return u"Transmission with callsign {0} and {1} segments".format(self.Callsign, len(self.blocks))
+
+    @property
+    def blocks(self):
+        if not hasattr(self, "_blocks") or not hasattr(self, "_blockUpdate"):
+            self._blocks = None
+            self._blockUpdate = None
+        self.Modified = AutoReload
+        if self._blockUpdate is None or self._blockUpdate != self.Modified:
+            self.updateBlocks()
+        return self._blocks
 
 class TransmissionClassBase(object):
     def __getitem__(self, index):
