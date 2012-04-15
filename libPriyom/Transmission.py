@@ -184,6 +184,7 @@ class Transmission(PriyomBase, XMLIntf.XMLStorm):
         except NodeError as e:
             raise ValueError(unicode(e))
         self.setParsedContents(parsed)
+        self.touch()
     
     @Contents.deleter
     def Contents(self):
