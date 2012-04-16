@@ -36,6 +36,7 @@ from Types import Typecasts
 import libPriyom
 import libPriyom.Formatting as Formatting
 import libPriyom.Helpers.TimeUtils as TimeUtils
+from libPriyom.TransmissionParser import NodeError
 
 import PriyomHTTP.Server.HTMLIntf as HTMLIntf
 from PriyomHTTP.Server.Resources.Admin.Components.Base import EditorComponent
