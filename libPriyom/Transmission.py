@@ -163,15 +163,21 @@ class Transmission(PriyomBase, XMLIntf.XMLStorm):
             contentDict = rowData[1]
 
             row = tableClass(store)
-            row.Transmission = self
-            row.Order = order
+            try:
+                row.Transmission = self
+                row.Order = order
 
-            for key, (value, foreign) in contentDict.iteritems():
-                setattr(row, key, value)
-                if foreign is not None:
-                    supplement = row.supplements[key]
-                    supplement.LangCode = foreign[0]
-                    supplement.Value = foreign[1]
+                for key, (value, foreign) in contentDict.iteritems():
+                    setattr(row, key, value)
+                    if foreign is not None:
+                        supplement = row.supplements[key]
+                        try:
+                            supplement.LangCode = foreign[0]
+                            supplement.Value = foreign[1]
+                        except:
+                            supplement.removeSupplement()
+            except:
+                store.remove(row)
 
     @property
     def Contents(self):
