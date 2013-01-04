@@ -176,8 +176,10 @@ class Transmission(PriyomBase, XMLIntf.XMLStorm):
                             supplement.Value = foreign[1]
                         except:
                             supplement.removeSupplement()
+                            raise
             except:
                 store.remove(row)
+                raise
 
     @property
     def Contents(self):
