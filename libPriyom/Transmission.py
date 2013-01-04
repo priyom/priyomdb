@@ -366,6 +366,8 @@ class TransmissionClass(PriyomBase):
                     if field.ForeignGroup is not None and field.ForeignLangGroup is not None:
                         foreignLangCode = match.group(field.ForeignLangGroup+1)
                         foreignContents = match.group(field.ForeignGroup+1)
+                        print(foreignLangCode)
+                        print(foreignContents)
                         if (not foreignContents) ^ (not foreignLangCode):
                             raise ValueError("Foreign contents or lang code given without the respective other")
                     else:
