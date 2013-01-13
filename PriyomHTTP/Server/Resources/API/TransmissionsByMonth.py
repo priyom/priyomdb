@@ -56,5 +56,5 @@ class TransmissionsByMonthAPI(API):
         if self.head:
             return
 
-        self.model.exportListToFile(self.out, transmissions, Transmission, encoding=self.encoding, flags={"with-freq"})
+        self.model.exportListToFile(self.out, transmissions, Transmission, encoding=self.encoding, flags={"with-freqs"})
 
