@@ -133,6 +133,10 @@ class Transmission(PriyomBase, XMLIntf.XMLStorm):
         XMLIntf.SubElement(transmission, u"ID").text = unicode(self.ID)
         self._metadataToDom(transmission)
 
+        if flags is not None and self.Broadcast is not None and "with-freqs" in flags:
+            for freq in self.Broadcast.Frequencies:
+                freq.toDom(transmission)
+
         contents = XMLIntf.SubElement(transmission, u"Contents")
         for block in self.blocks:
             block.toDom(contents)
