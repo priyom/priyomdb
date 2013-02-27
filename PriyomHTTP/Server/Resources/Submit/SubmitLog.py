@@ -305,8 +305,9 @@ class SubmitLogResource(SubmitResource):
             transmission.updateBlocks()
         except:
             if added_broadcast:
-                self.store.remove(broadcast)
+                self.store.remove(self.broadcast)
             self.intf.delete(transmission, force=True)
+            raise
         self.store.commit()
 
         self.SubElement(self.body, u"pre").text = u"""Added transmission
