@@ -304,9 +304,9 @@ class SubmitLogResource(SubmitResource):
 
             transmission.updateBlocks()
         except:
+            self.priyomInterface.delete(transmission, force=True)
             if added_broadcast:
                 self.store.remove(self.broadcast)
-            self.priyomInterface.delete(transmission, force=True)
             raise
         self.store.commit()
 
