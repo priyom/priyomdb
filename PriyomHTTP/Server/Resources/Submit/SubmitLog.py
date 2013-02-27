@@ -306,7 +306,7 @@ class SubmitLogResource(SubmitResource):
         except:
             if added_broadcast:
                 self.store.remove(self.broadcast)
-            self.intf.delete(transmission, force=True)
+            self.priyomInterface.delete(transmission, force=True)
             raise
         self.store.commit()
 
