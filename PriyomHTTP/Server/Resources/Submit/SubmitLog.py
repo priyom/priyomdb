@@ -232,7 +232,7 @@ class SubmitLogResource(SubmitResource):
 
         timestamp = TimeUtils.toTimestamp(self.timestamp)
         if self.broadcast is not None:
-            if abs(timestamp - broadcast.BroadcastStart) > 600:
+            if abs(timestamp - self.broadcast.BroadcastStart) > 600:
                 self.setError(u"Cannot use this broadcast: It is more than one minute away from transmission time.")
         print("f")
 
