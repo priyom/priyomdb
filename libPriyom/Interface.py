@@ -390,7 +390,7 @@ class PriyomInterface:
             return (lastModified, None)
         if notModifiedCheck is not None:
             notModifiedCheck(lastModified)
-        transmissions.order_by(Asc(Transmission.Timestamp))
+        transmissions.order_by(Desc(Transmission.Timestamp))
         if limiter is not None:
             transmissions = limiter(transmissions)
         return (lastModified, (transmission for (transmission, broadcast) in transmissions))
