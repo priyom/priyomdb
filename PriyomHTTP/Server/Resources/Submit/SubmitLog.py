@@ -272,7 +272,7 @@ class SubmitLogResource(SubmitResource):
             if self.broadcast.BroadcastStart > timestamp:
                 self.broadcast.BroadcastStart = timestamp - self.broadcastBefore
             else:
-                self.broadcast.BroadcastEnd = timestamp + duration + self.broadcastAfter
+                self.broadcast.BroadcastEnd = timestamp + self.duration + self.broadcastAfter
 
         transmission = Transmission()
         transmission.Broadcast = self.broadcast
